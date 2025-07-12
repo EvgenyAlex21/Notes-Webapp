@@ -114,6 +114,28 @@ class NoteController extends Controller
             }
         }
         
+        // Исправим проблему с валидацией files перед вызовом validate
+        if ($request->has('files') && is_string($request->input('files'))) {
+            try {
+                $filesJson = json_decode($request->input('files'), true);
+                if (is_array($filesJson)) {
+                    // Заменяем строку на массив
+                    $request->merge(['files' => $filesJson]);
+                    \Log::info('Преобразовано поле files из JSON-строки в массив при создании');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при декодировании JSON files при создании: ' . $e->getMessage());
+                // В случае ошибки устанавливаем пустой массив
+                $request->merge(['files' => []]);
+            }
+        }
+        
+        // Если files не передано, устанавливаем пустой массив
+        if (!$request->has('files')) {
+            $request->merge(['files' => []]);
+            \Log::info('Добавлен пустой массив files');
+        }
+        
         $data = $request->validate([
             'name' => 'required|string',
             'description' => 'required|string',
@@ -241,6 +263,20 @@ class NoteController extends Controller
             }
         }
         
+        // Исправим проблему с валидацией files перед вызовом validate
+        if ($request->has('files') && is_string($request->input('files'))) {
+            try {
+                $filesJson = json_decode($request->input('files'), true);
+                if (is_array($filesJson)) {
+                    // Заменяем строку на массив
+                    $request->merge(['files' => $filesJson]);
+                    \Log::info('Преобразовано поле files из JSON-строки в массив');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при декодировании JSON files: ' . $e->getMessage());
+            }
+        }
+        
         $data = $request->validate([
             'name' => 'required|string',
             'description' => 'required|string',
@@ -314,12 +350,24 @@ class NoteController extends Controller
         
         // Обработка новых загруженных файлов
         \Log::info('Проверка наличия загруженных файлов: ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
+        \Log::info('Проверка для upload_files[]: ' . ($request->hasFile('upload_files[]') ? 'ДА' : 'НЕТ'));
         \Log::info('Все входящие файлы: ' . json_encode($request->allFiles()));
         
+        // Попробуем получить файлы из разных возможных имен полей
+        $uploadFiles = null;
+        
         if ($request->hasFile('upload_files')) {
-            \Log::info('Количество загруженных файлов: ' . count($request->file('upload_files')));
+            $uploadFiles = $request->file('upload_files');
+            \Log::info('Файлы найдены в поле upload_files');
+        } elseif ($request->hasFile('upload_files[]')) {
+            $uploadFiles = $request->file('upload_files[]');
+            \Log::info('Файлы найдены в поле upload_files[]');
+        }
+        
+        if ($uploadFiles) {
+            \Log::info('Количество загруженных файлов: ' . count($uploadFiles));
             
-            foreach ($request->file('upload_files') as $file) {
+            foreach ($uploadFiles as $file) {
                 \Log::info('Обработка файла: ' . $file->getClientOriginalName() . ' (' . $file->getSize() . ' байт)');
                 if ($file->isValid()) {
                     $fileName = $file->getClientOriginalName();
@@ -342,6 +390,14 @@ class NoteController extends Controller
                     ];
                 }
             }
+        } else {
+            \Log::error('Не найдены файлы для загрузки. Проверьте имя поля формы.');
+            
+            // Проверяем все ключи в request для отладки
+            \Log::info('Все ключи в запросе: ' . json_encode($request->keys()));
+            
+            // Проверяем, правильно ли установлен enctype в форме
+            \Log::info('Content-Type запроса: ' . $request->header('Content-Type'));
         }
         
         // Добавляем файлы к данным заметки

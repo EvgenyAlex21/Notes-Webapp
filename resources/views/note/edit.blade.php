@@ -980,6 +980,44 @@
                 console.log(`${key}: ${value}`);
             }
             
+            // Добавляем загруженные файлы в formData
+            const uploadInput = document.getElementById('upload-files');
+            if (uploadInput && uploadInput.files && uploadInput.files.length > 0) {
+                console.log('Добавляем', uploadInput.files.length, 'новых файлов к отправке');
+                
+                // Проверим, что имя поля правильное для множественной загрузки
+                if (uploadInput.name !== 'upload_files[]') {
+                    console.log('Корректировка имени поля для файлов:', uploadInput.name, '->', 'upload_files[]');
+                    // Мы не можем изменить имя элемента напрямую в FormData, 
+                    // но можем использовать правильное имя при добавлении файлов
+                }
+                
+                // Добавляем каждый файл отдельно с именем upload_files[]
+                for (let i = 0; i < uploadInput.files.length; i++) {
+                    formData.append('upload_files[]', uploadInput.files[i]);
+                }
+            }
+            
+            // Добавляем существующие файлы как JSON
+            if (window.currentNoteFiles && window.currentNoteFiles.length > 0) {
+                console.log('Добавляем существующие файлы:', window.currentNoteFiles.length);
+                // Исправляем проблему - убеждаемся, что files передаётся как массив
+                formData.append('files', JSON.stringify(window.currentNoteFiles));
+            } else {
+                console.log('Нет существующих файлов для отправки');
+                formData.append('files', JSON.stringify([]));
+            }
+            
+            // Отладка - покажем все содержимое FormData
+            console.log('Полное содержимое FormData:');
+            for (let pair of formData.entries()) {
+                if (pair[0] === 'upload_files[]') {
+                    console.log(pair[0], pair[1].name, pair[1].size + ' байт');
+                } else {
+                    console.log(pair[0], pair[1]);
+                }
+            }
+            
             // Отправляем AJAX запрос
             $.ajax({
                 url: `/api/notes/${id}`,

@@ -351,6 +351,33 @@
         </div>
     </div>
 
+    <!-- Модальное окно для ошибок -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="errorModalLabel">Ошибка</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-exclamation-triangle text-danger fs-1 me-3"></i>
+                        <div>
+                            <p id="errorModalText">Произошла ошибка при сохранении заметки.</p>
+                        </div>
+                    </div>
+                    <div class="alert alert-secondary overflow-auto" style="max-height: 200px;">
+                        <pre id="errorModalDetails" class="m-0" style="white-space: pre-wrap;"></pre>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <button type="button" class="btn btn-primary" id="retryButton">Попробовать снова</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/note-colors.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/tags-form-improvements.js"></script>
@@ -383,6 +410,34 @@
                 e.preventDefault();
                 var htmlContent = quill.root.innerHTML;
                 $('#description').val(htmlContent);
+                
+                // Проверяем загружены ли файлы
+                const uploadInput = document.getElementById('upload-files');
+                if (uploadInput && uploadInput.files && uploadInput.files.length > 0) {
+                    console.log('Файлы для загрузки:', uploadInput.files.length);
+                    
+                    // Убедимся, что форма имеет правильный enctype
+                    const form = $('#create-note-form');
+                    if (form.attr('enctype') !== 'multipart/form-data') {
+                        console.log('Устанавливаем правильный enctype для формы');
+                        form.attr('enctype', 'multipart/form-data');
+                    }
+                    
+                    // Проверим имя поля для файлов
+                    if (uploadInput.name !== 'upload_files[]') {
+                        console.log('Исправляем имя поля для файлов:', uploadInput.name, '->', 'upload_files[]');
+                        uploadInput.name = 'upload_files[]';
+                    }
+                } else {
+                    // Даже если файлов нет, устанавливаем пустой массив для files
+                    // чтобы избежать ошибки "The files field must be an array"
+                    const filesInput = document.createElement('input');
+                    filesInput.type = 'hidden';
+                    filesInput.name = 'files';
+                    filesInput.value = '[]';
+                    document.getElementById('create-note-form').appendChild(filesInput);
+                }
+                
                 // Теперь вызываем функцию создания заметки вручную
                 createNote();
             });

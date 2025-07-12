@@ -218,16 +218,31 @@ $(document).ready(function() {
 });
 
 // Загрузка всех заметок
-function loadAllNotes(trashMode = false) {
+function loadAllNotes(trashMode = false, folder = null) {
     let url = `/api/notes`;
     // Проверяем текущий режим
     const currentPath = window.location.pathname;
     const archiveMode = currentPath === '/notes/archive';
     
+    // Проверяем, находимся ли в режиме папки
+    const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
+    const folderMode = folderMatch !== null || folder !== null;
+    let folderName = folder || (folderMode ? decodeURIComponent(folderMatch[1]) : null);
+    
+    console.log('Загрузка заметок:', { 
+        currentPath,
+        folderMode,
+        folderName,
+        trashMode,
+        archiveMode 
+    });
+    
     if (trashMode) {
         url += '?trash=true';
     } else if (archiveMode) {
         url += '?archive=true';
+    } else if (folderMode && folderName) {
+        url += `?folder=${encodeURIComponent(folderName)}`;
     }
     
     // Обновляем статистику
@@ -774,6 +789,13 @@ function createNote() {
     // Блокируем кнопку сохранения, чтобы предотвратить повторные нажатия
     $('#save-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Сохраняем...');
     
+    // Убедимся, что форма имеет правильный enctype для загрузки файлов
+    const form = $('#create-note-form');
+    if (form.attr('enctype') !== 'multipart/form-data') {
+        console.log('Устанавливаем enctype="multipart/form-data" для формы создания заметки');
+        form.attr('enctype', 'multipart/form-data');
+    }
+    
     // Используем глобальную переменную selectedColor
     const noteColor = $('.color-option.selected').data('color');
     
@@ -786,6 +808,15 @@ function createNote() {
     // Проверяем, есть ли файлы для загрузки
     const fileInput = $('#upload-files')[0];
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+    
+    if (hasFiles) {
+        console.log('Обнаружены файлы для загрузки:', fileInput.files.length);
+        // Проверяем правильное имя поля для файлов
+        if (fileInput.name !== 'upload_files[]') {
+            console.log('Исправляем имя поля для файлов:', fileInput.name, '->', 'upload_files[]');
+            fileInput.name = 'upload_files[]';
+        }
+    }
     
     // Создаем FormData для отправки файлов
     const formData = new FormData();
@@ -812,17 +843,24 @@ function createNote() {
     
     // Добавляем файлы, если они есть
     if (hasFiles) {
+        console.log('Добавляем', fileInput.files.length, 'файлов к запросу');
         for (let i = 0; i < fileInput.files.length; i++) {
-            formData.append('upload_files[]', fileInput.files[i]);
+            const file = fileInput.files[i];
+            console.log('Файл', i+1, ':', file.name, file.size, 'байт', file.type);
+            formData.append('upload_files[]', file);
         }
+    } else {
+        console.log('Файлы для загрузки не выбраны');
     }
     
     if (!$('#name').val() || !$('#description').val()) {
         showNotification('Пожалуйста, заполните название и описание заметки', 'warning');
+        $('#save-button').prop('disabled', false).html('<i class="fas fa-save"></i> Сохранить');
+        window.isCreatingNote = false;
         return;
     }
     
-    console.log('Отправляю данные на сервер (с файлами)');
+    console.log('Отправляю данные на сервер' + (hasFiles ? ' (с файлами)' : ''));
     
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
@@ -852,12 +890,33 @@ function createNote() {
         contentType: false,
         processData: false,
         cache: false,
+        xhr: function() {
+            var xhr = new window.XMLHttpRequest();
+            // Обработчик загрузки для отображения прогресса
+            xhr.upload.addEventListener("progress", function(evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = evt.loaded / evt.total * 100;
+                    console.log('Загрузка: ' + percentComplete.toFixed(1) + '%');
+                    
+                    // Обновляем текст кнопки
+                    if (percentComplete < 100) {
+                        $('#save-button').html('<i class="fas fa-spinner fa-spin"></i> Загрузка ' + percentComplete.toFixed(0) + '%');
+                    } else {
+                        $('#save-button').html('<i class="fas fa-spinner fa-spin"></i> Обработка...');
+                    }
+                }
+            }, false);
+            return xhr;
+        },
         success: function(response) {
             // Сбрасываем флаг создания заметки
             window.isCreatingNote = false;
             
             console.log('Успешно создана заметка:', response);
             showNotification('Заметка успешно создана', 'success');
+            
+            // Обновляем кнопку
+            $('#save-button').html('<i class="fas fa-check"></i> Сохранено!');
             
             // Небольшая задержка перед перенаправлением
             setTimeout(() => {
@@ -872,20 +931,63 @@ function createNote() {
             console.error('Ошибка при создании заметки:', xhr.responseText);
             console.error('Статус ошибки:', status);
             console.error('Текст ошибки:', error);
+            console.error('Заголовки ответа:', xhr.getAllResponseHeaders ? xhr.getAllResponseHeaders() : 'Недоступно');
             
             let errorMessage = 'Неизвестная ошибка';
+            let errorDetails = '';
+            
             try {
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
+                    
+                    // Проверяем наличие детальных ошибок валидации
+                    if (xhr.responseJSON.errors) {
+                        errorDetails = Object.entries(xhr.responseJSON.errors)
+                            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                            .join('\n');
+                    }
                 } else if (xhr.responseText) {
-                    const response = JSON.parse(xhr.responseText);
-                    errorMessage = response.message || errorMessage;
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.message || errorMessage;
+                        
+                        // Проверяем наличие детальных ошибок валидации
+                        if (response.errors) {
+                            errorDetails = Object.entries(response.errors)
+                                .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                                .join('\n');
+                        }
+                    } catch (parseError) {
+                        console.error('Ошибка при парсинге ответа:', parseError);
+                        errorDetails = xhr.responseText;
+                    }
                 }
             } catch (e) {
-                console.error('Ошибка при парсинге ответа:', e);
+                console.error('Ошибка при обработке ответа:', e);
             }
             
             showNotification('Ошибка при создании заметки: ' + errorMessage, 'danger');
+            
+            // Отображаем модальное окно с деталями ошибки, если они есть
+            if (errorDetails) {
+                if ($('#errorModal').length > 0) {
+                    $('#errorModalText').text(errorMessage);
+                    $('#errorModalDetails').text(errorDetails);
+                    
+                    // Настраиваем обработчик повторной отправки
+                    $('#retryButton').one('click', function() {
+                        $('#errorModal').modal('hide');
+                        setTimeout(() => createNote(), 500);
+                    });
+                    
+                    // Показываем модальное окно
+                    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorModal.show();
+                } else {
+                    // Если модального окна нет, показываем обычное сообщение
+                    alert('Ошибка при создании заметки:\n' + errorMessage + '\n\nДетали:\n' + errorDetails);
+                }
+            }
         }
     });
 }

@@ -170,6 +170,8 @@ class FolderController extends Controller
      */
     public function moveNotesToFolder(Request $request)
     {
+        \Log::info('Запрос на перемещение заметок в папку', ['request' => $request->all()]);
+        
         $validatedData = $request->validate([
             'note_ids' => 'required|array',
             'note_ids.*' => 'required|integer|exists:notes,id',
@@ -179,18 +181,55 @@ class FolderController extends Controller
         $noteIds = $validatedData['note_ids'];
         $folder = $validatedData['folder'] ?? null;
         
-        // Обновляем все указанные заметки
-        $updatedCount = Note::whereIn('id', $noteIds)
-                          ->where('is_deleted', false)
-                          ->update(['folder' => $folder]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Заметки успешно перемещены',
-            'data' => [
-                'count' => $updatedCount
-            ]
+        \Log::info('Перемещение заметок в папку', [
+            'note_ids' => $noteIds,
+            'folder' => $folder,
+            'count' => count($noteIds)
         ]);
+        
+        try {
+            // Если указана папка, убедимся что она существует или создадим её
+            if ($folder) {
+                $folderExists = Folder::where('name', $folder)->exists();
+                
+                if (!$folderExists) {
+                    \Log::info('Создаем новую папку', ['folder' => $folder]);
+                    $newFolder = new Folder();
+                    $newFolder->name = $folder;
+                    $newFolder->is_deleted = false;
+                    $newFolder->save();
+                }
+            }
+            
+            // Обновляем все указанные заметки и принудительно преобразуем folder в строку 
+            // или NULL, чтобы избежать проблем с типом данных
+            $folder = $folder === '' ? null : (string)$folder;
+            $updatedCount = Note::whereIn('id', $noteIds)
+                            ->where('is_deleted', false)
+                            ->update(['folder' => $folder]);
+            
+            \Log::info('Обновлено заметок', ['count' => $updatedCount, 'folder_type' => gettype($folder)]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Заметки успешно перемещены',
+                'data' => [
+                    'count' => $updatedCount,
+                    'folder' => $folder
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при перемещении заметок в папку', [
+                'error' => $e->getMessage(),
+                'note_ids' => $noteIds,
+                'folder' => $folder
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при перемещении заметок: ' . $e->getMessage()
+            ], 500);
+        }
     }
     
     /**
