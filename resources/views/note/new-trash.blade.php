@@ -20,9 +20,11 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
+    <script src="{{ asset('js/mobile-responsive.js') }}"></script>
     <script>
         const originalWarn = console.warn;
         

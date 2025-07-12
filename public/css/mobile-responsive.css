@@ -1,0 +1,1107 @@
+/* 
+ * Мобильная адаптация для приложения Заметок
+ * Responsive Design для всех устройств
+ * Senior-level implementation
+ */
+
+/* Основные переменные для адаптивного дизайна */
+:root {
+    --mobile-breakpoint: 768px;
+    --tablet-breakpoint: 1024px;
+    --small-mobile-breakpoint: 480px;
+    --header-height-mobile: 60px;
+    --sidebar-width-mobile: 280px;
+    --content-padding-mobile: 15px;
+    --card-padding-mobile: 15px;
+    --font-size-mobile: 14px;
+    --line-height-mobile: 1.4;
+}
+
+/* Базовые стили для мобильных устройств */
+@media (max-width: 768px) {
+    /* Основные контейнеры */
+    body {
+        font-size: var(--font-size-mobile) !important;
+        line-height: var(--line-height-mobile) !important;
+        overflow-x: hidden;
+    }
+    
+    .container-fluid {
+        padding-left: var(--content-padding-mobile) !important;
+        padding-right: var(--content-padding-mobile) !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    .container {
+        max-width: 100% !important;
+        padding-left: var(--content-padding-mobile) !important;
+        padding-right: var(--content-padding-mobile) !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* Заголовки */
+    .header {
+        padding: 3px var(--content-padding-mobile) !important;
+        margin-bottom: 3px !important;
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        min-height: 50px !important;
+    }
+    
+    .header h1 {
+        font-size: 1.2rem !important;
+        margin-bottom: 0 !important;
+        padding-right: 0 !important;
+        text-align: left !important;
+        flex: 1 !important;
+        line-height: 1.2 !important;
+    }
+    
+    .header h1 i {
+        font-size: 1rem !important;
+        margin-right: 6px !important;
+    }
+    
+    .header .d-flex {
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+    
+    /* Сетка Bootstrap - адаптация для мобильных */
+    .row {
+        margin-left: -10px !important;
+        margin-right: -10px !important;
+    }
+    
+    .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-9, .col-md-12 {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    
+    /* Специфичные исправления расстояний */
+    .row {
+        margin-bottom: 10px !important;
+    }
+    
+    .col-md-12,
+    .col-md-9,
+    .col-md-8 {
+        padding-top: 5px !important;
+        padding-bottom: 5px !important;
+    }
+    
+    /* Форма поиска */
+    .form-control {
+        margin-bottom: 10px !important;
+    }
+    
+    /* Исправление поисковой строки */
+    .form-control,
+    input[type="search"],
+    input[placeholder*="Поиск"] {
+        height: 32px !important;
+        padding: 6px 10px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        border: 1px solid #ddd !important;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Контейнер поиска */
+    .input-group,
+    .search-container {
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Кнопка поиска */
+    .input-group .btn,
+    .btn-outline-secondary {
+        height: 32px !important;
+        padding: 6px 10px !important;
+        border-radius: 0 6px 6px 0 !important;
+        font-size: 12px !important;
+    }
+    
+    /* Иконка поиска */
+    .input-group-text {
+        height: 32px !important;
+        padding: 6px 10px !important;
+        background-color: #f8f9fa !important;
+        border: 1px solid #ddd !important;
+        border-radius: 6px 0 0 6px !important;
+        font-size: 12px !important;
+    }
+    
+    /* Кнопки действий */
+    .btn-group {
+        margin: 8px 0 !important;
+    }
+    
+    /* Стили для блока фильтров и сортировки */
+    .filters {
+        padding: 5px 0 !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .filters .btn-group {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .filters .btn-group .filter-btn {
+        flex: 1 !important;
+        font-size: 12px !important;
+        padding: 6px 8px !important;
+        white-space: nowrap !important;
+        border-radius: 4px !important;
+        margin: 0 1px !important;
+    }
+    
+    .filters .dropdown {
+        width: 100% !important;
+        text-align: center !important;
+    }
+    
+    .filters .dropdown .btn {
+        width: 60% !important;
+        font-size: 12px !important;
+        padding: 6px 12px !important;
+    }
+    
+    /* Заголовки секций */
+    h1, h2, h3, h4, h5, h6 {
+        margin-bottom: 8px !important;
+    }
+    
+    /* Исправление для мобильного хедера */
+    .header + .container,
+    .header + .main-content {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Полное устранение отступов */
+    body > .container:first-of-type,
+    .header ~ .container:first-of-type {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+    
+    /* Убираем Bootstrap отступы */
+    .mt-1, .mt-2, .mt-3, .mt-4, .mt-5,
+    .my-1, .my-2, .my-3, .my-4, .my-5 {
+        margin-top: 0 !important;
+    }
+    
+    /* Боковая панель - трансформация в мобильное меню */
+    .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: var(--sidebar-width-mobile) !important;
+        height: 100vh !important;
+        z-index: 1050 !important;
+        background-color: #fff !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1) !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        padding: 20px !important;
+        margin: 0 !important;
+    }
+    
+    .sidebar.show {
+        left: 0 !important;
+    }
+    
+    /* Оверлей для мобильного меню */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1049;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
+    }
+    
+    /* Кнопка для открытия мобильного меню */
+    .mobile-menu-toggle {
+        display: block !important;
+        position: relative !important;
+        background: rgba(255, 255, 255, 0.95);
+        color: #007bff;
+        border: 1px solid rgba(0, 123, 255, 0.2);
+        border-radius: 8px;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 12px !important;
+        padding: 0 !important;
+        margin-left: 8px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .mobile-menu-toggle:hover {
+        background: rgba(0, 123, 255, 0.1);
+        border-color: #007bff;
+        transform: scale(1.05);
+    }
+    
+    .mobile-menu-toggle:active {
+        transform: scale(0.95);
+    }
+    
+    /* Основной контент */
+    .main-content {
+        margin-left: 0 !important;
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+    
+    /* Карточки заметок */
+    .note-item {
+        padding: var(--card-padding-mobile) !important;
+        margin-bottom: 15px !important;
+        border-radius: 8px !important;
+    }
+    
+    .note-item h5 {
+        font-size: 1.1rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .note-item p {
+        font-size: 0.9rem !important;
+        line-height: 1.3 !important;
+    }
+    
+    /* Кнопки действий */
+    .note-actions {
+        margin-top: 10px !important;
+    }
+    
+    .note-actions .btn {
+        padding: 6px 12px !important;
+        font-size: 0.85rem !important;
+        margin-right: 5px !important;
+        margin-bottom: 5px !important;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    /* Формы */
+    .form-control {
+        font-size: var(--font-size-mobile) !important;
+        padding: 10px 12px !important;
+    }
+    
+    .form-label {
+        font-size: 0.9rem !important;
+        margin-bottom: 5px !important;
+    }
+    
+    /* Редактор Quill */
+    .ql-editor {
+        font-size: var(--font-size-mobile) !important;
+        line-height: var(--line-height-mobile) !important;
+        padding: 12px !important;
+    }
+    
+    .ql-toolbar {
+        border-radius: 8px 8px 0 0 !important;
+    }
+    
+    .ql-toolbar .ql-formats {
+        margin-right: 10px !important;
+    }
+    
+    .ql-toolbar .ql-picker-label {
+        padding: 2px 5px !important;
+    }
+    
+    /* Цветовая палитра */
+    .color-picker {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
+        margin: 15px 0 !important;
+        max-width: 200px !important;
+    }
+    
+    .color-option {
+        width: 35px !important;
+        height: 35px !important;
+        margin: 0 !important;
+        border-radius: 50% !important;
+        border: 2px solid transparent !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    .color-option.selected {
+        border-color: #007bff !important;
+        transform: scale(1.1) !important;
+    }
+    
+    /* Модальные окна */
+    .modal-dialog {
+        margin: 10px !important;
+        max-width: calc(100% - 20px) !important;
+    }
+    
+    .modal-content {
+        border-radius: 8px !important;
+    }
+    
+    .modal-header {
+        padding: 15px !important;
+    }
+    
+    .modal-body {
+        padding: 15px !important;
+    }
+    
+    .modal-footer {
+        padding: 15px !important;
+    }
+    
+    /* Поиск */
+    .search-container {
+        position: relative !important;
+        margin-bottom: 20px !important;
+    }
+    
+    .search-results {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 1000 !important;
+        max-height: 300px !important;
+        overflow-y: auto !important;
+        border-radius: 0 0 8px 8px !important;
+    }
+    
+    /* Пагинация */
+    .pagination {
+        justify-content: center !important;
+        margin-top: 20px !important;
+    }
+    
+    .pagination .page-link {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Уведомления */
+    .alert {
+        padding: 12px !important;
+        margin-bottom: 15px !important;
+        border-radius: 6px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Календарь */
+    .calendar-container {
+        overflow-x: auto !important;
+    }
+    
+    .calendar-table {
+        min-width: 320px !important;
+    }
+    
+    .calendar-day {
+        min-height: 80px !important;
+        padding: 5px !important;
+    }
+    
+    /* Исправления календаря для мобильных устройств */
+    .fc {
+        margin-bottom: 90px !important; /* Отступ для нижнего меню */
+    }
+    
+    /* FullCalendar адаптация */
+    .fc-view-harness {
+        padding-bottom: 20px !important;
+    }
+    
+    /* Заголовок календаря */
+    .fc-toolbar {
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.2rem !important;
+        margin: 0 !important;
+    }
+    
+    /* Кнопки навигации календаря */
+    .fc-button-group {
+        display: flex !important;
+        gap: 5px !important;
+    }
+    
+    .fc-button {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+        min-height: 36px !important;
+    }
+    
+    /* Виды календаря */
+    .fc-dayGridMonth-view .fc-daygrid-day {
+        min-height: 80px !important;
+    }
+    
+    .fc-col-header-cell {
+        padding: 8px 4px !important;
+        font-size: 0.8rem !important;
+    }
+    
+    .fc-daygrid-day-number {
+        font-size: 0.9rem !important;
+        padding: 4px !important;
+    }
+    
+    /* События в календаре */
+    .fc-event {
+        font-size: 0.75rem !important;
+        padding: 2px 4px !important;
+        margin: 1px 0 !important;
+    }
+    
+    .fc-event-title {
+        font-weight: 500 !important;
+    }
+    
+    /* Подсказка календаря */
+    .calendar-hint {
+        padding: 10px 15px !important;
+        margin: 10px 0 !important;
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* Кнопка "Назад к списку" */
+    .btn-secondary {
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Календарная сетка */
+    .fc-scrollgrid {
+        border: 1px solid #e9ecef !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+    
+    /* Адаптация для очень маленьких экранов */
+    @media (max-width: 480px) {
+        .fc-dayGridMonth-view .fc-daygrid-day {
+            min-height: 60px !important;
+        }
+        
+        .fc-daygrid-day-number {
+            font-size: 0.8rem !important;
+        }
+        
+        .fc-event {
+            font-size: 0.7rem !important;
+            padding: 1px 2px !important;
+        }
+        
+        .fc-toolbar-title {
+            font-size: 1rem !important;
+        }
+        
+        .fc-button {
+            padding: 4px 8px !important;
+            font-size: 0.75rem !important;
+        }
+    }
+    
+    /* Файловый просмотрщик */
+    .file-viewer {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+    
+    .file-viewer img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+    
+    /* Выбор заметок */
+    .note-selection-checkbox {
+        top: 8px !important;
+        right: 8px !important;
+        transform: scale(1.2) !important;
+    }
+    
+    /* Пустое состояние */
+    .empty-container {
+        padding: 30px 0 !important;
+    }
+    
+    .empty-icon {
+        font-size: 3rem !important;
+        margin-bottom: 15px !important;
+    }
+    
+    /* Скролл наверх - отключен на мобильных */
+    .scroll-to-top {
+        display: none !important; /* Полностью скрываем на мобильных */
+    }
+    
+    /* Переключатель темы */
+    .theme-toggle {
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Статистика */
+    .stats-card {
+        margin-bottom: 15px !important;
+    }
+    
+    .stats-card .card-body {
+        padding: 15px !important;
+    }
+    
+    /* Теги */
+    .badge {
+        font-size: 0.8rem !important;
+        padding: 4px 8px !important;
+        margin: 2px !important;
+    }
+    
+    /* Архив и корзина */
+    .archive-actions, .trash-actions {
+        margin-top: 15px !important;
+    }
+    
+    .archive-actions .btn, .trash-actions .btn {
+        width: 100% !important;
+        margin-bottom: 5px !important;
+    }
+}
+
+/* Для маленьких мобильных устройств */
+@media (max-width: 480px) {
+    :root {
+        --content-padding-mobile: 10px;
+        --card-padding-mobile: 12px;
+        --font-size-mobile: 13px;
+        --sidebar-width-mobile: 260px;
+    }
+    
+    .header h1 {
+        font-size: 1.3rem !important;
+    }
+    
+    .note-item {
+        padding: 12px !important;
+    }
+    
+    .note-item h5 {
+        font-size: 1rem !important;
+    }
+    
+    .note-item p {
+        font-size: 0.85rem !important;
+    }
+    
+    .btn {
+        font-size: 0.8rem !important;
+        padding: 6px 10px !important;
+    }
+    
+    .color-option {
+        width: 25px !important;
+        height: 25px !important;
+    }
+    
+    .modal-dialog {
+        margin: 5px !important;
+    }
+    
+    .mobile-menu-toggle {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* Для планшетов */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 95% !important;
+    }
+    
+    .sidebar {
+        width: 250px !important;
+    }
+    
+    .note-item {
+        padding: 18px !important;
+    }
+    
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    .main-content {
+        margin-left: 0 !important;
+    }
+    
+    .col-md-3 {
+        flex: 0 0 30% !important;
+        max-width: 30% !important;
+    }
+    
+    .col-md-9 {
+        flex: 0 0 70% !important;
+        max-width: 70% !important;
+    }
+}
+
+/* Скрыть элементы на мобильных устройствах */
+@media (max-width: 768px) {
+    .d-none-mobile {
+        display: none !important;
+    }
+    
+    .d-block-mobile {
+        display: block !important;
+    }
+    
+    .d-flex-mobile {
+        display: flex !important;
+    }
+}
+
+/* Показать элементы только на мобильных устройствах */
+@media (min-width: 769px) {
+    .d-none-desktop {
+        display: none !important;
+    }
+    
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+    
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* Улучшения для сенсорных устройств */
+@media (hover: none) and (pointer: coarse) {
+    .note-item:hover {
+        transform: none !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+    }
+    
+    .btn:hover {
+        transform: none !important;
+    }
+    
+    .color-option:hover {
+        transform: none !important;
+    }
+    
+    /* Увеличиваем области касания */
+    .note-actions .btn {
+        min-height: 44px !important;
+        min-width: 44px !important;
+    }
+    
+    .note-selection-checkbox {
+        width: 44px !important;
+        height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .color-option {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+}
+
+/* Анимации для мобильных устройств */
+@media (max-width: 768px) {
+    .note-item {
+        transition: all 0.2s ease !important;
+    }
+    
+    .sidebar {
+        transition: left 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+    }
+    
+    .sidebar-overlay {
+        transition: opacity 0.3s ease !important;
+    }
+    
+    .mobile-menu-toggle {
+        transition: all 0.2s ease !important;
+    }
+}
+
+/* Оптимизация для производительности на мобильных */
+@media (max-width: 768px) {
+    * {
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    
+    .note-item {
+        will-change: transform !important;
+        backface-visibility: hidden !important;
+    }
+    
+    .sidebar {
+        will-change: transform !important;
+        backface-visibility: hidden !important;
+    }
+}
+
+/* Поддержка альбомной ориентации */
+@media (max-width: 768px) and (orientation: landscape) {
+    .header {
+        padding: 10px 0 !important;
+    }
+    
+    .main-content {
+        padding-top: 60px !important;
+    }
+    
+    .mobile-menu-toggle {
+        top: 10px !important;
+        width: 40px !important;
+        height: 40px !important;
+    }
+    
+    .sidebar {
+        width: 250px !important;
+    }
+}
+
+/* Высокая плотность пикселей */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .note-item {
+        border-width: 0.5px !important;
+    }
+    
+    .sidebar {
+        border-width: 0.5px !important;
+    }
+}
+
+/* Темная тема для мобильной кнопки меню */
+@media (max-width: 768px) {
+    .dark-theme .mobile-menu-toggle {
+        background: rgba(52, 58, 64, 0.95) !important;
+        color: #007bff !important;
+        border-color: rgba(0, 123, 255, 0.3) !important;
+    }
+    
+    .dark-theme .mobile-menu-toggle:hover {
+        background: rgba(0, 123, 255, 0.2) !important;
+        border-color: #007bff !important;
+    }
+}
+
+/* Темная тема для мобильных улучшений */
+@media (max-width: 768px) {
+    /* Основные элементы темной темы */
+    .dark-theme body {
+        background-color: #1a1d20 !important;
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .header {
+        background-color: #212529 !important;
+        border-bottom: 1px solid #495057 !important;
+        color: #fff !important;
+    }
+    
+    .dark-theme .container,
+    .dark-theme .container-fluid {
+        background-color: #1a1d20 !important;
+        color: #e9ecef !important;
+    }
+    
+    /* Мобильное меню */
+    .dark-theme .mobile-menu-toggle {
+        background: rgba(33, 37, 41, 0.95) !important;
+        color: #007bff !important;
+        border-color: rgba(0, 123, 255, 0.3) !important;
+    }
+    
+    .dark-theme .mobile-menu-toggle:hover {
+        background: rgba(0, 123, 255, 0.2) !important;
+        border-color: rgba(0, 123, 255, 0.5) !important;
+    }
+    
+    /* Боковая панель */
+    .dark-theme .sidebar {
+        background-color: #212529 !important;
+        color: #e9ecef !important;
+        border-right: 1px solid #495057 !important;
+    }
+    
+    .dark-theme .sidebar-link {
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .sidebar-link:hover,
+    .dark-theme .sidebar-link.active {
+        background-color: rgba(0, 123, 255, 0.2) !important;
+        color: #fff !important;
+    }
+    
+    /* Карточки заметок */
+    .dark-theme .note-item {
+        background-color: #343a40 !important;
+        border-color: #495057 !important;
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .note-item:hover {
+        background-color: #3d4449 !important;
+    }
+    
+    /* Кнопки */
+    .dark-theme .btn-primary {
+        background-color: #007bff !important;
+        border-color: #007bff !important;
+    }
+    
+    .dark-theme .btn-secondary {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+    }
+    
+    .dark-theme .btn-outline-secondary {
+        border-color: #6c757d !important;
+        color: #adb5bd !important;
+        background-color: transparent !important;
+    }
+    
+    .dark-theme .btn-outline-secondary:hover {
+        background-color: #6c757d !important;
+        color: #fff !important;
+    }
+    
+    /* Формы */
+    .dark-theme .form-control,
+    .dark-theme input[type="search"],
+    .dark-theme input[placeholder*="Поиск"] {
+        background-color: #343a40 !important;
+        border-color: #495057 !important;
+        color: #fff !important;
+    }
+    
+    .dark-theme .form-control:focus {
+        background-color: #343a40 !important;
+        border-color: #007bff !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    }
+    
+    .dark-theme .form-control::placeholder {
+        color: #adb5bd !important;
+    }
+    
+    .dark-theme .input-group-text {
+        background-color: #495057 !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+    }
+    
+    .dark-theme .form-select {
+        background-color: #343a40 !important;
+        border-color: #495057 !important;
+        color: #fff !important;
+    }
+    
+    /* Бейджи и лейблы */
+    .dark-theme .badge {
+        color: #fff !important;
+    }
+    
+    .dark-theme .badge-primary {
+        background-color: #007bff !important;
+    }
+    
+    .dark-theme .badge-success {
+        background-color: #28a745 !important;
+    }
+    
+    .dark-theme .badge-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .dark-theme .badge-info {
+        background-color: #17a2b8 !important;
+    }
+    
+    /* Цвета приоритетов */
+    .dark-theme .color-option.selected {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3) !important;
+    }
+    
+    /* Модальные окна */
+    .dark-theme .modal-content {
+        background-color: #343a40 !important;
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .modal-header {
+        border-bottom: 1px solid #495057 !important;
+    }
+    
+    .dark-theme .modal-footer {
+        border-top: 1px solid #495057 !important;
+    }
+    
+    /* Нижняя навигация */
+    .dark-theme .mobile-bottom-nav {
+        background: rgba(33, 37, 41, 0.98) !important;
+        border-top: 1px solid #495057 !important;
+    }
+    
+    .dark-theme .mobile-bottom-nav .nav-item {
+        color: #adb5bd !important;
+    }
+    
+    .dark-theme .mobile-bottom-nav .nav-item.active {
+        color: #007bff !important;
+        background: rgba(0, 123, 255, 0.1) !important;
+    }
+    
+    /* Календарь */
+    .dark-theme .fc {
+        background-color: #1a1d20 !important;
+        color: #fff !important;
+    }
+    
+    .dark-theme .fc-scrollgrid {
+        border-color: #495057 !important;
+    }
+    
+    .dark-theme .fc-col-header-cell {
+        background-color: #343a40 !important;
+        color: #fff !important;
+        border-color: #495057 !important;
+    }
+    
+    .dark-theme .fc-daygrid-day {
+        background-color: #1a1d20 !important;
+        border-color: #495057 !important;
+    }
+    
+    .dark-theme .fc-day-today {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+    
+    .dark-theme .calendar-hint {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+        border-color: rgba(0, 123, 255, 0.3) !important;
+        color: #e9ecef !important;
+    }
+    
+    /* Темная тема для фильтров и сортировки */
+    .dark-theme .filters .btn-group .filter-btn {
+        background-color: #495057 !important;
+        border-color: #6c757d !important;
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .filters .btn-group .filter-btn.btn-secondary {
+        background-color: #007bff !important;
+        border-color: #007bff !important;
+        color: #ffffff !important;
+    }
+    
+    .dark-theme .filters .btn-group .filter-btn:hover {
+        background-color: #5a6268 !important;
+        border-color: #545b62 !important;
+    }
+    
+    .dark-theme .filters .dropdown .btn {
+        background-color: #495057 !important;
+        border-color: #6c757d !important;
+        color: #e9ecef !important;
+    }
+    
+    .dark-theme .filters .dropdown .btn:hover {
+        background-color: #5a6268 !important;
+        border-color: #545b62 !important;
+    }
+}
+
+/* Дополнительные улучшения темной темы */
+.dark-theme h1, .dark-theme h2, .dark-theme h3, 
+.dark-theme h4, .dark-theme h5, .dark-theme h6 {
+    color: #fff !important;
+}
+
+.dark-theme p, .dark-theme span, .dark-theme div {
+    color: #e9ecef !important;
+}
+
+.dark-theme .text-muted {
+    color: #adb5bd !important;
+}
+
+.dark-theme .border {
+    border-color: #495057 !important;
+}
+
+/* Улучшение контрастности кнопок */
+.dark-theme .btn-group .btn.active,
+.dark-theme .btn-group .btn:focus {
+    background-color: #007bff !important;
+    color: #fff !important;
+    border-color: #007bff !important;
+}
+
+/* Исправление видимости текста в карточках */
+.dark-theme .note-item h5,
+.dark-theme .note-item .note-title {
+    color: #fff !important;
+}
+
+.dark-theme .note-item .note-content,
+.dark-theme .note-item p {
+    color: #ced4da !important;
+}
+
+.dark-theme .note-item .note-meta,
+.dark-theme .note-item small {
+    color: #adb5bd !important;
+}

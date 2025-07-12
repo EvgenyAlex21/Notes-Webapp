@@ -24,6 +24,8 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
@@ -31,6 +33,9 @@
     <script src="{{ asset('js/view-buttons.js') }}"></script>
     <script src="{{ asset('js/note-buttons-fix.js') }}"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
+    <script src="{{ asset('js/mobile-responsive.js') }}"></script>
+    <script src="{{ asset('js/advanced-mobile.js') }}"></script>
+    <script src="{{ asset('js/mobile-init.js') }}"></script>
     <script>
         const originalWarn = console.warn;
         console.warn = function() {
@@ -660,12 +665,18 @@
                     <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : (isset($archiveMode) && $archiveMode ? 'Архив' : (isset($folderMode) && $folderMode ? '' . $folderName : 'Заметки')) }}</span>
                 </h1>
                 @if(isset($trashMode) && $trashMode)
-                    <button id="empty-trash" class="btn btn-danger">
+                    <button id="empty-trash" class="btn btn-danger d-none-mobile">
                         <i class="fas fa-trash-alt"></i> Очистить корзину
                     </button>
+                    <button id="empty-trash-mobile" class="btn btn-danger d-block-mobile d-none">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
                 @else
-                    <a href="/notes/create" class="btn btn-primary d-flex align-items-center">
+                    <a href="/notes/create" class="btn btn-primary d-flex align-items-center d-none-mobile">
                         <i class="fas fa-plus me-2"></i> Создать заметку
+                    </a>
+                    <a href="/notes/create" class="btn btn-primary d-block-mobile d-none">
+                        <i class="fas fa-plus"></i>
                     </a>
                 @endif
             </div>
@@ -753,42 +764,44 @@
                 </div>
             </div>
             <div class="col-md-9">
-                <div class="search-container mb-4">
-                    <div class="input-group">
-                        <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="search-notes" placeholder="Поиск заметок..." autocomplete="off">
-                        <button class="btn btn-outline-secondary search-clear" id="search-clear" type="button"><i class="fas fa-times"></i></button>
+                <div class="main-content">
+                    <div class="search-container mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="search-notes" placeholder="Поиск заметок..." autocomplete="off">
+                            <button class="btn btn-outline-secondary search-clear" id="search-clear" type="button"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="search-results" id="search-results"></div>
                     </div>
-                    <div class="search-results" id="search-results"></div>
-                </div>
-                <div class="filters d-flex justify-content-between align-items-center mb-4">
-                    <div class="btn-group">
-                        <button class="btn btn-secondary filter-btn" data-filter="all">Все</button>
-                        <button class="btn btn-outline-secondary filter-btn" data-filter="active">Активные</button>
-                        <button class="btn btn-outline-secondary filter-btn" data-filter="completed">Выполненные</button>
-                        <button class="btn btn-outline-secondary filter-btn" data-filter="pinned">Закрепленные</button>
+                    <div class="filters d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                        <div class="btn-group mb-2 mb-md-0">
+                            <button class="btn btn-secondary filter-btn" data-filter="all">Все</button>
+                            <button class="btn btn-outline-secondary filter-btn" data-filter="active">Активные</button>
+                            <button class="btn btn-outline-secondary filter-btn" data-filter="completed">Выполненные</button>
+                            <button class="btn btn-outline-secondary filter-btn" data-filter="pinned">Закрепленные</button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-sort"></i> <span class="d-none-mobile">Сортировка</span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                                <li><a class="dropdown-item sort-option" data-sort="date-new" href="#"><i class="fas fa-calendar-alt"></i> Сначала новые</a></li>
+                                <li><a class="dropdown-item sort-option" data-sort="date-old" href="#"><i class="fas fa-calendar"></i> Сначала старые</a></li>
+                                <li><a class="dropdown-item sort-option" data-sort="alpha-asc" href="#"><i class="fas fa-sort-alpha-down"></i> По алфавиту (А-Я)</a></li>
+                                <li><a class="dropdown-item sort-option" data-sort="alpha-desc" href="#"><i class="fas fa-sort-alpha-up"></i> По алфавиту (Я-А)</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item sort-option" data-sort="color" href="#"><i class="fas fa-palette"></i> По цвету</a></li>
+                            </ul>
+                        </div>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-sort"></i> Сортировка
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="sortDropdown">
-                            <li><a class="dropdown-item sort-option" data-sort="date-new" href="#"><i class="fas fa-calendar-alt"></i> Сначала новые</a></li>
-                            <li><a class="dropdown-item sort-option" data-sort="date-old" href="#"><i class="fas fa-calendar"></i> Сначала старые</a></li>
-                            <li><a class="dropdown-item sort-option" data-sort="alpha-asc" href="#"><i class="fas fa-sort-alpha-down"></i> По алфавиту (А-Я)</a></li>
-                            <li><a class="dropdown-item sort-option" data-sort="alpha-desc" href="#"><i class="fas fa-sort-alpha-up"></i> По алфавиту (Я-А)</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item sort-option" data-sort="color" href="#"><i class="fas fa-palette"></i> По цвету</a></li>
-                        </ul>
+                    <div class="note-stats mb-3">
+                        <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
+                        <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
+                        <span class="badge bg-warning me-2" id="active-notes">Активно: 0</span>
+                        <span class="badge bg-info me-2" id="pinned-notes">Закреплено: 0</span>
                     </div>
-                </div>
-                <div class="note-stats mb-3">
-                    <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
-                    <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
-                    <span class="badge bg-warning me-2" id="active-notes">Активно: 0</span>
-                    <span class="badge bg-info me-2" id="pinned-notes">Закреплено: 0</span>
-                </div>
-                <div class="notes-container">
+                    <div class="notes-container">
+                    </div>
                 </div>
                 <div class="empty-container d-none">
                     <div class="empty-icon">

@@ -25,12 +25,17 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
+    <script src="{{ asset('js/mobile-responsive.js') }}"></script>
+    <script src="{{ asset('js/advanced-mobile.js') }}"></script>
+    <script src="{{ asset('js/mobile-init.js') }}"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -357,8 +362,11 @@
                     <i class="fas fa-plus me-2"></i> 
                     <span class="fw-bold">Создание заметки</span>
                 </h1>
-                <a href="/notes" class="btn btn-outline-secondary">
+                <a href="/notes" class="btn btn-outline-secondary d-none-mobile">
                     <i class="fas fa-arrow-left"></i> Назад к списку
+                </a>
+                <a href="/notes" class="btn btn-outline-secondary d-block-mobile d-none">
+                    <i class="fas fa-arrow-left"></i>
                 </a>
             </div>
         </div>
@@ -461,38 +469,39 @@
             
             <!-- Основное содержимое -->
             <div class="col-lg-9">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <form id="create-note-form" method="POST" action="/notes" enctype="multipart/form-data">
-                            <input type="hidden" name="files" value="[]">
-                            <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="due_date" value="{{ request('due_date') }}">
-                            <div class="mb-3">
-                                <label for="name" class="form-label fw-bold">Название</label>
-                                <input type="text" class="form-control form-control-lg" id="name" name="name" required 
-                                       placeholder="Добавьте заголовок заметки">
-                            </div>
-                            
-                            <div class="mb-4">
-                                <label for="description" class="form-label fw-bold">Описание</label>
-                                <div id="editor-container" style="height: 200px; border-radius: 0.25rem;"></div>
-                                <textarea class="form-control d-none" id="description" name="description" required></textarea>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Приоритет заметки</label>
-                                <div class="color-picker">
-                                    <div class="color-option color-default selected" data-color="default" title="Без приоритета"></div>
-                                    <div class="color-option color-red" data-color="red" title="Критически важно"></div>
-                                    <div class="color-option color-orange" data-color="orange" title="Очень важно"></div>
-                                    <div class="color-option color-yellow" data-color="yellow" title="Важно"></div>
-                                    <div class="color-option color-green" data-color="green" title="Средний приоритет"></div>
-                                    <div class="color-option color-blue" data-color="blue" title="Стандартная задача"></div>
-                                    <div class="color-option color-purple" data-color="purple" title="Планирование"></div>
-                                    <div class="color-option color-pink" data-color="pink" title="Личное"></div>
-                                    <div class="color-option color-teal" data-color="teal" title="Идея"></div>
-                                    <div class="color-option color-cyan" data-color="cyan" title="Информация"></div>
-                                    <div class="color-option color-indigo" data-color="indigo" title="Обучение"></div>
+                <div class="main-content">
+                    <div class="card">
+                        <div class="card-body p-4">
+                            <form id="create-note-form" method="POST" action="/notes" enctype="multipart/form-data">
+                                <input type="hidden" name="files" value="[]">
+                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="due_date" value="{{ request('due_date') }}">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label fw-bold">Название</label>
+                                    <input type="text" class="form-control form-control-lg" id="name" name="name" required 
+                                           placeholder="Добавьте заголовок заметки">
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="description" class="form-label fw-bold">Описание</label>
+                                    <div id="editor-container" style="height: 200px; border-radius: 0.25rem;"></div>
+                                    <textarea class="form-control d-none" id="description" name="description" required></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Приоритет заметки</label>
+                                    <div class="color-picker">
+                                        <div class="color-option color-default selected" data-color="default" title="Без приоритета"></div>
+                                        <div class="color-option color-red" data-color="red" title="Критически важно"></div>
+                                        <div class="color-option color-orange" data-color="orange" title="Очень важно"></div>
+                                        <div class="color-option color-yellow" data-color="yellow" title="Важно"></div>
+                                        <div class="color-option color-green" data-color="green" title="Средний приоритет"></div>
+                                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача"></div>
+                                        <div class="color-option color-purple" data-color="purple" title="Планирование"></div>
+                                        <div class="color-option color-pink" data-color="pink" title="Личное"></div>
+                                        <div class="color-option color-teal" data-color="teal" title="Идея"></div>
+                                        <div class="color-option color-cyan" data-color="cyan" title="Информация"></div>
+                                        <div class="color-option color-indigo" data-color="indigo" title="Обучение"></div>
                                     <div class="color-option color-brown" data-color="brown" title="Ожидание"></div>
                                     <div class="color-option color-black" data-color="black" title="Архивное"></div>
                                     <div class="color-option color-navy" data-color="navy" title="Ночное"></div>

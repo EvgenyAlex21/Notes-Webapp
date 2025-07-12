@@ -25,10 +25,15 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
+    <script src="{{ asset('js/mobile-responsive.js') }}"></script>
+    <script src="{{ asset('js/advanced-mobile.js') }}"></script>
+    <script src="{{ asset('js/mobile-init.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли и другие ошибки Quill -->
     <script>
         // Сохраняем оригинальные функции консоли
