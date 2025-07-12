@@ -8,7 +8,12 @@ class PagesController extends Controller
 {
     public function index()
     {
-        return view('note.index');
+        return view('note.index', ['trashMode' => false]);
+    }
+    
+    public function trash()
+    {
+        return view('note.index', ['trashMode' => true]);
     }
 
     public function create()

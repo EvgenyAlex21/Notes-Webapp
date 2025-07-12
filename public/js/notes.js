@@ -1,10 +1,82 @@
+// Глобальные переменные для всего файла
+let selectedColor = 'default';
+let currentTags = [];
+
 $(document).ready(function() {
     // Текущий URL
     const currentPath = window.location.pathname;
     
+    // Инициализация локальных переменных
+    let trashMode = currentPath === '/notes/trash';
+    
+    // Инициализация цветового выбора
+    $('.color-option').on('click', function() {
+        $('.color-option').removeClass('selected');
+        $(this).addClass('selected');
+        selectedColor = $(this).data('color');
+    });
+    
+    // Обработка ввода тегов
+    $('#tag-input').on('keydown', function(e) {
+        if (e.key === 'Enter' && $(this).val().trim() !== '') {
+            e.preventDefault();
+            const tagText = $(this).val().trim();
+            
+            // Проверяем, что такой тег еще не добавлен
+            if (!currentTags.includes(tagText)) {
+                currentTags.push(tagText);
+                
+                // Создаем элемент тега
+                const tagElement = $(`
+                    <div class="tag" data-tag="${tagText}">
+                        ${tagText}
+                        <span class="remove-tag ms-1">&times;</span>
+                    </div>
+                `);
+                
+                // Добавляем перед input
+                $(this).before(tagElement);
+                $(this).val('');
+                
+                // Обработчик для удаления тега
+                $('.remove-tag').off('click').on('click', function() {
+                    const tag = $(this).parent().data('tag');
+                    currentTags = currentTags.filter(t => t !== tag);
+                    $(this).parent().remove();
+                });
+            }
+        }
+    });
+    
     // Получение списка всех заметок
-    if (currentPath === '/notes') {
-        loadAllNotes();
+    if (currentPath === '/notes' || currentPath === '/notes/trash') {
+        loadAllNotes(trashMode);
+        
+        // Обработчики фильтров
+        $('#filter-pinned').on('change', function() {
+            applyFilters();
+        });
+        
+        $('#filter-completed').on('change', function() {
+            applyFilters();
+        });
+        
+        $('.filter-btn').on('click', function() {
+            $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+            $(this).removeClass('btn-outline-secondary').addClass('btn-secondary');
+            applyFilters();
+        });
+        
+        $('#search-notes').on('input', function() {
+            applyFilters();
+        });
+        
+        // Очистка корзины
+        $('#empty-trash').on('click', function() {
+            if (confirm('Вы уверены, что хотите окончательно удалить все заметки из корзины?')) {
+                emptyTrash();
+            }
+        });
     }
     
     // Загрузка данных для редактирования
@@ -14,12 +86,31 @@ $(document).ready(function() {
     }
     
     // Обработка создания заметки
-    $('#save-button').on('click', function() {
+    $('#save-button').on('click', function(e) {
+        e.preventDefault();
+        console.log('Кнопка "Сохранить" нажата');
+        createNote();
+    });
+    
+    // Обработка формы создания при нажатии Enter
+    $('#create-note-form').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Форма отправлена');
         createNote();
     });
     
     // Обработка обновления заметки
-    $('#update-button').on('click', function() {
+    $('#update-button').on('click', function(e) {
+        e.preventDefault();
+        console.log('Кнопка "Сохранить изменения" нажата');
+        const id = $('#note-id').val();
+        updateNote(id);
+    });
+    
+    // Обработка формы редактирования при нажатии Enter
+    $('#edit-note-form').on('submit', function(e) {
+        e.preventDefault();
+        console.log('Форма редактирования отправлена');
         const id = $('#note-id').val();
         updateNote(id);
     });
@@ -29,12 +120,23 @@ $(document).ready(function() {
         const id = $('#note-id').val();
         deleteNote(id);
     });
+    
+    // Обработка закрепления заметки
+    $('#toggle-pin-button').on('click', function() {
+        const id = $('#note-id').val();
+        togglePin(id);
+    });
 });
 
 // Загрузка всех заметок
-function loadAllNotes() {
+function loadAllNotes(trashMode = false) {
+    let url = `/api/notes`;
+    if (trashMode) {
+        url += '?trash=true';
+    }
+    
     $.ajax({
-        url: `/api/notes`,
+        url: url,
         method: 'GET',
         dataType: 'json',
         success: function(response) {
@@ -42,37 +144,111 @@ function loadAllNotes() {
             $('.notes-container').empty();
             
             if (notes.length === 0) {
-                $('.notes-container').append('<p>Заметок пока нет. Создайте свою первую заметку!</p>');
+                $('.notes-container').hide();
+                $('.empty-container').removeClass('d-none');
                 return;
             }
             
-            notes.forEach(note => {
-                $('.notes-container').append(`
-                    <div class="note-item note-wrapper" id="${note.id}">
-                        <div class="row align-items-center">
+            $('.notes-container').show();
+            $('.empty-container').addClass('d-none');
+            
+            // Сначала добавляем закрепленные заметки
+            const pinnedNotes = notes.filter(note => note.is_pinned);
+            const regularNotes = notes.filter(note => !note.is_pinned);
+            
+            // Функция для генерации HTML заметки
+            const generateNoteHTML = (note, isPinned = false) => {
+                // Получаем массив тегов, если они есть
+                const tagsArray = note.tags ? note.tags.split(',') : [];
+                const tagsHTML = tagsArray.length > 0 ? 
+                    `<div class="mt-2">
+                        ${tagsArray.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>` : '';
+                
+                return `
+                    <div class="note-item note-wrapper ${note.color} ${note.done ? 'completed' : ''} ${isPinned ? 'pinned' : ''}" 
+                         id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
+                         data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}">
+                         
+                        ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
+                        
+                        <div class="row">
                             <div class="col-md-8">
                                 <h4>${note.name}</h4>
-                                <p>${note.description}</p>
-                                <div>
+                                <div class="note-description">${note.description}</div>
+                                
+                                <div class="mt-2">
                                     <span class="badge ${note.done ? 'bg-success' : 'bg-warning'}">
                                         ${note.done ? 'Выполнено' : 'В процессе'}
                                     </span>
                                 </div>
+                                
+                                ${tagsHTML}
                             </div>
-                            <div class="col-md-4 text-end">
-                                <a href="/notes/${note.id}/edit" class="btn btn-primary btn-sm">Редактировать</a>
-                                <button class="btn btn-danger btn-sm delete-btn" data-id="${note.id}">Удалить</button>
+                            <div class="col-md-4 text-end note-actions">
+                                ${trashMode ? `
+                                    <button class="btn btn-success btn-sm restore-btn" data-id="${note.id}" title="Восстановить">
+                                        <i class="fas fa-trash-restore"></i>
+                                    </button>
+                                    <button class="btn btn-danger btn-sm force-delete-btn" data-id="${note.id}" title="Удалить навсегда">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : `
+                                    <button class="btn btn-outline-warning btn-sm toggle-pin-btn" data-id="${note.id}" title="${note.is_pinned ? 'Открепить' : 'Закрепить'}">
+                                        <i class="fas fa-thumbtack"></i>
+                                    </button>
+                                    <a href="/notes/${note.id}/edit" class="btn btn-outline-primary btn-sm" title="Редактировать">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-outline-danger btn-sm delete-btn" data-id="${note.id}" title="Удалить">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                `}
                             </div>
                         </div>
                     </div>
-                `);
+                `;
+            };
+            
+            // Добавляем закрепленные заметки
+            pinnedNotes.forEach(note => {
+                $('.notes-container').append(generateNoteHTML(note, true));
             });
             
-            // Добавим обработчики для кнопок удаления в списке
-            $('.delete-btn').on('click', function() {
-                const noteId = $(this).data('id');
-                deleteNote(noteId);
+            // Затем добавляем обычные заметки
+            regularNotes.forEach(note => {
+                $('.notes-container').append(generateNoteHTML(note, false));
             });
+            
+            // Добавляем обработчики событий
+            if (trashMode) {
+                // Восстановление заметки
+                $('.restore-btn').on('click', function() {
+                    const noteId = $(this).data('id');
+                    restoreNote(noteId);
+                });
+                
+                // Окончательное удаление заметки
+                $('.force-delete-btn').on('click', function() {
+                    const noteId = $(this).data('id');
+                    forceDeleteNote(noteId);
+                });
+            } else {
+                // Удаление заметки (перемещение в корзину)
+                $('.delete-btn').on('click', function() {
+                    const noteId = $(this).data('id');
+                    deleteNote(noteId);
+                });
+                
+                // Закрепление/открепление заметки
+                $('.toggle-pin-btn').on('click', function() {
+                    const noteId = $(this).data('id');
+                    togglePin(noteId);
+                });
+            }
+            
+            // Применяем текущие фильтры
+            applyFilters();
         },
         error: function(error) {
             console.error('Ошибка при загрузке заметок:', error);
@@ -89,9 +265,50 @@ function loadNote(id) {
         dataType: 'json',
         success: function(response) {
             const note = response.data;
+            
+            // Заполняем основные поля
             $('#name').val(note.name);
             $('#description').val(note.description);
             $('#done').prop('checked', note.done);
+            
+            // Выбираем цвет
+            $('.color-option').removeClass('selected');
+            $(`.color-option[data-color="${note.color || 'default'}"]`).addClass('selected');
+            
+            // Отображаем дату создания/обновления
+            const createdAt = new Date(note.created_at);
+            const updatedAt = new Date(note.updated_at);
+            const formattedDate = `Создано: ${formatDate(createdAt)}${createdAt.getTime() !== updatedAt.getTime() ? ` • Обновлено: ${formatDate(updatedAt)}` : ''}`;
+            $('#note-date').text(formattedDate);
+            
+            // Обновляем состояние кнопки закрепления
+            updatePinButtonState(note.is_pinned);
+            
+            // Загружаем теги
+            if (note.tags) {
+                const tagsList = note.tags.split(',');
+                currentTags = tagsList;
+                
+                // Очищаем контейнер тегов (оставляем только input)
+                $('#tags-container').find('.tag').remove();
+                
+                // Добавляем теги
+                tagsList.forEach(tag => {
+                    $('#tag-input').before(`
+                        <div class="tag" data-tag="${tag}">
+                            ${tag}
+                            <span class="remove-tag ms-1">&times;</span>
+                        </div>
+                    `);
+                });
+                
+                // Обработчик для удаления тега
+                $('.remove-tag').off('click').on('click', function() {
+                    const tag = $(this).parent().data('tag');
+                    currentTags = currentTags.filter(t => t !== tag);
+                    $(this).parent().remove();
+                });
+            }
         },
         error: function(error) {
             console.error('Ошибка при загрузке заметки:', error);
@@ -100,99 +317,494 @@ function loadNote(id) {
     });
 }
 
+// Функция для форматирования даты
+function formatDate(date) {
+    return new Intl.DateTimeFormat('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    }).format(date);
+}
+
+// Обновление состояния кнопки закрепления
+function updatePinButtonState(isPinned) {
+    if (isPinned) {
+        $('#toggle-pin-button')
+            .removeClass('btn-outline-warning')
+            .addClass('btn-warning')
+            .attr('title', 'Открепить')
+            .html('<i class="fas fa-thumbtack"></i> Закреплено');
+    } else {
+        $('#toggle-pin-button')
+            .removeClass('btn-warning')
+            .addClass('btn-outline-warning')
+            .attr('title', 'Закрепить')
+            .html('<i class="fas fa-thumbtack"></i>');
+    }
+}
+
 // Создание заметки
 function createNote() {
+    // Используем глобальную переменную selectedColor
+    const noteColor = $('.color-option.selected').data('color');
+    
+    // Убедимся, что currentTags существует
+    if (typeof currentTags === 'undefined') {
+        currentTags = [];
+        console.log('Инициализирована пустая переменная currentTags');
+    }
+    
     const data = {
         name: $('#name').val(),
-        description: $('#description').val()
+        description: $('#description').val(),
+        color: noteColor || 'default',
+        is_pinned: $('#is_pinned').is(':checked'),
+        tags: (currentTags && currentTags.length > 0) ? currentTags.join(',') : null
     };
     
     if (!data.name || !data.description) {
-        alert('Пожалуйста, заполните все поля');
+        showNotification('Пожалуйста, заполните название и описание заметки', 'warning');
         return;
     }
     
+    console.log('Отправляю данные на сервер:', data);
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Проверяем наличие CSRF-токена
+    if (!csrfToken) {
+        console.error('CSRF-токен отсутствует');
+        showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
+        return;
+    }
+    
+    console.log('CSRF-токен получен:', csrfToken);
+    
     $.ajax({
         url: '/api/notes',
-        method: 'POST',
-        dataType: 'json',
-        contentType: 'application/json',
-        data: JSON.stringify(data),
-        success: function(response) {
-            alert('Заметка успешно создана');
-            window.location.href = '/notes';
+        type: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
         },
-        error: function(error) {
-            console.error('Ошибка при создании заметки:', error);
-            alert('Ошибка при создании заметки');
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify(data),
+        processData: false,
+        success: function(response) {
+            console.log('Успешно создана заметка:', response);
+            showNotification('Заметка успешно создана', 'success');
+            
+            // Небольшая задержка перед перенаправлением
+            setTimeout(() => {
+                window.location.href = '/notes';
+            }, 1000);
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка при создании заметки:', xhr.responseText);
+            console.error('Статус ошибки:', status);
+            console.error('Текст ошибки:', error);
+            
+            let errorMessage = 'Неизвестная ошибка';
+            try {
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMessage = response.message || errorMessage;
+                }
+            } catch (e) {
+                console.error('Ошибка при парсинге ответа:', e);
+            }
+            
+            showNotification('Ошибка при создании заметки: ' + errorMessage, 'danger');
         }
     });
 }
 
+// Функция для отображения красивых уведомлений
+function showNotification(message, type = 'info', duration = 3000) {
+    // Удаляем существующие уведомления, если они есть
+    $('.notification-toast').remove();
+    
+    // Создаем HTML для уведомления
+    const toast = $(`
+        <div class="toast notification-toast align-items-center text-white bg-${type} border-0 position-fixed show" 
+             role="alert" aria-live="assertive" aria-atomic="true" style="top: 20px; right: 20px; z-index: 9999;">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `);
+    
+    // Добавляем в DOM
+    $('body').append(toast);
+    
+    // Создаем контейнер для тостов, если его нет
+    if ($('.toast-container').length === 0) {
+        $('body').append('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+    }
+    
+    // Показываем уведомление
+    toast.show();
+    
+    // Обработчик на кнопку закрытия
+    toast.find('.btn-close').on('click', function() {
+        toast.hide();
+        setTimeout(() => toast.remove(), 500);
+    });
+    
+    // Удаляем через указанный интервал
+    setTimeout(() => {
+        toast.hide();
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
+}
+
 // Обновление заметки
 function updateNote(id) {
+    // Получаем выбранный цвет
+    const noteColor = $('.color-option.selected').data('color');
+    
+    // Убедимся, что currentTags существует
+    if (typeof currentTags === 'undefined') {
+        currentTags = [];
+        console.log('Инициализирована пустая переменная currentTags в updateNote');
+    }
+    
     const data = {
         name: $('#name').val(),
         description: $('#description').val(),
-        done: $('#done').is(':checked')
+        done: $('#done').is(':checked'),
+        color: noteColor || 'default',
+        tags: (currentTags && currentTags.length > 0) ? currentTags.join(',') : null
     };
     
     if (!data.name || !data.description) {
-        alert('Пожалуйста, заполните все поля');
+        showNotification('Пожалуйста, заполните название и описание заметки', 'warning');
         return;
     }
     
+    console.log('Обновляю заметку:', id, data);
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Проверяем наличие CSRF-токена
+    if (!csrfToken) {
+        console.error('CSRF-токен отсутствует');
+        showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
+        return;
+    }
+    
+    console.log('CSRF-токен получен:', csrfToken);
+    
     $.ajax({
         url: `/api/notes/${id}`,
-        method: 'PUT',
-        dataType: 'json',
+        type: 'PUT',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
         contentType: 'application/json',
+        dataType: 'json',
         data: JSON.stringify(data),
+        processData: false,
         success: function(response) {
-            alert('Заметка успешно обновлена');
+            console.log('Заметка успешно обновлена:', response);
+            showNotification('Заметка успешно обновлена', 'success');
+            
             // Обновляем значения полей на форме
             const note = response.data;
             $('#name').val(note.name);
             $('#description').val(note.description);
             $('#done').prop('checked', note.done);
+            
+            // Обновляем дату
+            const updatedAt = new Date(note.updated_at);
+            const createdAt = new Date(note.created_at);
+            const formattedDate = `Создано: ${formatDate(createdAt)}${createdAt.getTime() !== updatedAt.getTime() ? ` • Обновлено: ${formatDate(updatedAt)}` : ''}`;
+            $('#note-date').text(formattedDate);
         },
-        error: function(error) {
-            console.error('Ошибка при обновлении заметки:', error);
-            alert('Ошибка при обновлении заметки');
+        error: function(xhr, status, error) {
+            console.error('Ошибка при обновлении заметки:', xhr.responseText);
+            console.error('Статус ошибки:', status);
+            console.error('Текст ошибки:', error);
+            
+            let errorMessage = 'Неизвестная ошибка';
+            try {
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseText) {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMessage = response.message || errorMessage;
+                }
+            } catch (e) {
+                console.error('Ошибка при парсинге ответа:', e);
+            }
+            
+            showNotification('Ошибка при обновлении заметки: ' + errorMessage, 'danger');
         }
     });
 }
 
-// Удаление заметки
+// Удаление заметки (перемещение в корзину)
 function deleteNote(id) {
-    if (!confirm('Вы действительно хотите удалить эту заметку?')) {
+    if (!confirm('Вы действительно хотите переместить эту заметку в корзину?')) {
         return;
     }
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
     $.ajax({
         url: `/api/notes/${id}`,
         method: 'DELETE',
-        dataType: 'json',
-        contentType: 'application/json',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
         success: function() {
-            alert('Заметка удалена');
+            showNotification('Заметка перемещена в корзину', 'info');
             
             // Если мы на странице редактирования, перенаправляем на список
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
-                window.location.href = '/notes';
+                setTimeout(() => {
+                    window.location.href = '/notes';
+                }, 1000);
             } else {
-                // Если мы на странице списка, просто удаляем элемент
-                $(`.note-wrapper#${id}`).remove();
-                
-                // Проверим, остались ли ещё заметки
-                if ($('.note-wrapper').length === 0) {
-                    $('.notes-container').html('<p>Заметок пока нет. Создайте свою первую заметку!</p>');
-                }
+                // Если мы на странице списка, анимируем удаление элемента
+                $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Проверим, остались ли ещё заметки
+                    if ($('.note-wrapper:visible').length === 0) {
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
             }
         },
         error: function(error) {
             console.error('Ошибка при удалении заметки:', error);
-            alert('Ошибка при удалении заметки');
+            showNotification('Ошибка при удалении заметки: ' + (error.responseJSON?.message || 'Неизвестная ошибка'), 'danger');
         }
     });
+}
+
+// Восстановление заметки из корзины
+function restoreNote(id) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/restore`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        success: function() {
+            showNotification('Заметка восстановлена', 'success');
+            
+            // Удаляем элемент из списка
+            $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                $(this).remove();
+                
+                // Проверим, остались ли ещё заметки
+                if ($('.note-wrapper:visible').length === 0) {
+                    $('.notes-container').hide();
+                    $('.empty-container').removeClass('d-none');
+                }
+            });
+        },
+        error: function(error) {
+            console.error('Ошибка при восстановлении заметки:', error);
+            showNotification('Ошибка при восстановлении заметки: ' + (error.responseJSON?.message || 'Неизвестная ошибка'), 'danger');
+        }
+    });
+}
+
+// Окончательное удаление заметки
+function forceDeleteNote(id) {
+    if (!confirm('Вы действительно хотите удалить эту заметку навсегда? Это действие нельзя отменить.')) {
+        return;
+    }
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/force`,
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        success: function() {
+            showNotification('Заметка окончательно удалена', 'warning');
+            
+            // Удаляем элемент из списка
+            $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                $(this).remove();
+                
+                // Проверим, остались ли ещё заметки
+                if ($('.note-wrapper:visible').length === 0) {
+                    $('.notes-container').hide();
+                    $('.empty-container').removeClass('d-none');
+                }
+            });
+        },
+        error: function(error) {
+            console.error('Ошибка при удалении заметки:', error);
+            showNotification('Ошибка при удалении заметки: ' + (error.responseJSON?.message || 'Неизвестная ошибка'), 'danger');
+        }
+    });
+}
+
+// Очистка корзины (удаление всех заметок)
+function emptyTrash() {
+    // Получаем все идентификаторы заметок в корзине
+    const noteIds = Array.from($('.note-wrapper')).map(el => $(el).attr('id'));
+    
+    if (noteIds.length === 0) {
+        showNotification('Корзина уже пуста', 'info');
+        return;
+    }
+    
+    // Последовательно удаляем каждую заметку
+    let deletedCount = 0;
+    
+    noteIds.forEach(id => {
+        $.ajax({
+            url: `/api/notes/${id}/force`,
+            method: 'DELETE',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function() {
+                deletedCount++;
+                $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Если все заметки удалены
+                    if (deletedCount === noteIds.length) {
+                        showNotification('Корзина очищена', 'success');
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
+            },
+            error: function(error) {
+                console.error(`Ошибка при удалении заметки ${id}:`, error);
+            }
+        });
+    });
+}
+
+// Закрепление/открепление заметки
+function togglePin(id) {
+    $.ajax({
+        url: `/api/notes/${id}/toggle-pin`,
+        method: 'POST',
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function(response) {
+            const note = response.data;
+            
+            // Если мы на странице редактирования
+            if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
+                updatePinButtonState(note.is_pinned);
+                showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
+            } 
+            // Если мы на странице списка
+            else {
+                loadAllNotes(window.location.pathname === '/notes/trash');
+                showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
+            }
+        },
+        error: function(error) {
+            console.error('Ошибка при изменении статуса закрепления:', error);
+            showNotification('Ошибка при изменении статуса закрепления', 'danger');
+        }
+    });
+}
+
+// Фильтрация заметок
+function applyFilters() {
+    // Получаем параметры фильтрации
+    const showOnlyPinned = $('#filter-pinned').is(':checked');
+    const showOnlyCompleted = $('#filter-completed').is(':checked');
+    const searchQuery = $('#search-notes').val().toLowerCase();
+    const activeFilter = $('.filter-btn.btn-secondary').data('filter');
+    
+    // Перебираем все заметки и скрываем/показываем их в соответствии с фильтрами
+    $('.note-wrapper').each(function() {
+        let shouldShow = true;
+        
+        // Фильтр по закрепленным
+        if (showOnlyPinned && $(this).data('pinned') !== true) {
+            shouldShow = false;
+        }
+        
+        // Фильтр по выполненным
+        if (showOnlyCompleted && $(this).data('done') !== true) {
+            shouldShow = false;
+        }
+        
+        // Фильтр по активным/выполненным/всем
+        if (activeFilter === 'active' && $(this).data('done') === true) {
+            shouldShow = false;
+        } else if (activeFilter === 'completed' && $(this).data('done') !== true) {
+            shouldShow = false;
+        }
+        
+        // Поиск по тексту
+        if (searchQuery) {
+            const title = $(this).find('h4').text().toLowerCase();
+            const description = $(this).find('.note-description').text().toLowerCase();
+            const tags = $(this).data('tags') ? $(this).data('tags').toLowerCase() : '';
+            
+            if (!title.includes(searchQuery) && !description.includes(searchQuery) && !tags.includes(searchQuery)) {
+                shouldShow = false;
+            }
+        }
+        
+        // Показываем или скрываем заметку
+        if (shouldShow) {
+            $(this).fadeIn(300);
+        } else {
+            $(this).fadeOut(300);
+        }
+    });
+    
+    // Проверяем, есть ли видимые заметки после фильтрации
+    setTimeout(() => {
+        const visibleNotes = $('.note-wrapper:visible').length;
+        
+        if (visibleNotes === 0) {
+            // Показываем сообщение о том, что ничего не найдено
+            if ($('.no-results').length === 0) {
+                $('.notes-container').append(`
+                    <div class="no-results alert alert-info text-center my-4">
+                        <i class="fas fa-search mb-3" style="font-size: 2rem;"></i>
+                        <h5>Ничего не найдено</h5>
+                        <p>Попробуйте изменить параметры поиска</p>
+                    </div>
+                `);
+            } else {
+                $('.no-results').fadeIn(300);
+            }
+        } else {
+            $('.no-results').fadeOut(300, function() {
+                $(this).remove();
+            });
+        }
+    }, 350);
 }
