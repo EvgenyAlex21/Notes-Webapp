@@ -448,3 +448,145 @@
     color: #adb5bd !important;
     opacity: 1;
 }
+
+/* Исправляем отображение архива */
+.dark-theme .archive-empty-container .card,
+.dark-theme .trash-empty-container .card {
+    background-color: var(--dark-bg-secondary);
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Убираем нижнюю линию в архиве на темной теме */
+.dark-theme .archive-header:after,
+.dark-theme .trash-header:after {
+    display: none;
+}
+
+/* Улучшаем контрастность текста в пустом архиве и корзине */
+.dark-theme .archive-empty-text,
+.dark-theme .trash-empty-text {
+    color: var(--dark-text-primary);
+    font-weight: 500;
+}
+
+/* Улучшаем видимость иконок в пустом архиве и корзине */
+.dark-theme .archive-icon,
+.dark-theme .trash-icon {
+    color: var(--dark-text-secondary);
+    opacity: 0.9;
+}
+
+/* Улучшаем контраст для информационных уведомлений в темной теме */
+.dark-theme .alert-info,
+.dark-theme .alert-warning,
+.dark-theme .alert-danger {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+/* Исправляем отображение уведомления о корзине */
+.dark-theme .trash-notification,
+.dark-theme .archive-notification {
+    background-color: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: #fff;
+}
+
+/* Улучшаем отображение панели фильтров и сортировки */
+.dark-theme .filter-buttons .btn {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .filter-buttons .btn.active {
+    background-color: #0d6efd;
+    color: white;
+}
+
+/* Исправляем отображение счетчиков */
+.dark-theme .badge.bg-primary,
+.dark-theme .badge.bg-success,
+.dark-theme .badge.bg-info,
+.dark-theme .badge.bg-warning {
+    color: #fff !important;
+}
+
+/* Улучшаем отображение поиска */
+.dark-theme .search-container input {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .search-container .btn-close {
+    filter: invert(1);
+}
+
+/* Улучшаем читаемость текста в заметках */
+.dark-theme .note-content {
+    color: var(--dark-text-primary) !important;
+}
+
+.dark-theme .note-title {
+    color: var(--dark-text-primary) !important;
+    font-weight: 600;
+}
+
+.dark-theme .note-date,
+.dark-theme .note-meta {
+    color: var(--dark-text-secondary) !important;
+}
+
+/* Улучшаем контраст для статусов заметок */
+.dark-theme .note-status {
+    background-color: var(--dark-bg-tertiary);
+    border: 1px solid var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+/* Стилизация заметок в корзине и архиве */
+.dark-theme .archived-note,
+.dark-theme .trashed-note {
+    background-color: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--dark-border-color);
+}
+
+/* Улучшаем отображение меток заметок */
+.dark-theme .note-tag {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+}
+
+/* Исправляем отображение предупреждений в заметках */
+.dark-theme .note-warning {
+    background-color: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: #fff;
+}
+
+/* Исправляем отображение текста в уведомлениях и тостах */
+.dark-theme .toast-header,
+.dark-theme .toast-body {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+    border-color: var(--dark-border-color);
+}
+
+/* Исправляем отображение активных табов и кнопок */
+.dark-theme .nav-tabs .nav-link.active {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+    border-color: var(--dark-border-color);
+    border-bottom-color: transparent;
+}
+
+.dark-theme .nav-tabs {
+    border-bottom-color: var(--dark-border-color);
+}
+
+.dark-theme .nav-tabs .nav-link:not(.active) {
+    color: var(--dark-text-muted);
+}
