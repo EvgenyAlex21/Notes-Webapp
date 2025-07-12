@@ -650,8 +650,8 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <h1 class="h3 mb-0">
-                    <i class="fas fa-sticky-note me-2"></i> 
-                    <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Заметки' }}</span>
+                    <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : (isset($archiveMode) && $archiveMode ? 'fas fa-archive' : 'fas fa-sticky-note') }} me-2"></i> 
+                    <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : (isset($archiveMode) && $archiveMode ? 'Архив' : 'Заметки') }}</span>
                 </h1>
                 @if(isset($trashMode) && $trashMode)
                     <button id="empty-trash" class="btn btn-danger">
@@ -672,7 +672,7 @@
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
-                    <a href="/notes" class="sidebar-link {{ (!isset($trashMode) || !$trashMode) && (!isset($folderMode) || !$folderMode) ? 'active' : '' }}">
+                    <a href="/notes" class="sidebar-link {{ (!isset($trashMode) || !$trashMode) && (!isset($archiveMode) || !$archiveMode) && (!isset($folderMode) || !$folderMode) ? 'active' : '' }}">
                         <i class="fas fa-sticky-note"></i> Все заметки
                     </a>
                     <a href="/notes/archive" class="sidebar-link {{ isset($archiveMode) && $archiveMode ? 'active' : '' }}">
@@ -801,11 +801,27 @@
                 
                 <div class="empty-container d-none">
                     <div class="empty-icon">
-                        <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : 'fas fa-sticky-note' }}"></i>
+                        <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : (isset($archiveMode) && $archiveMode ? 'fas fa-archive' : 'fas fa-sticky-note') }}"></i>
                     </div>
-                    <h3>{{ isset($trashMode) && $trashMode ? 'Корзина пуста' : 'Заметок пока нет' }}</h3>
-                    <p class="text-muted">{{ isset($trashMode) && $trashMode ? 'Удаленные заметки будут появляться здесь' : 'Создайте свою первую заметку!' }}</p>
-                    @if(!isset($trashMode) || !$trashMode)
+                    <h3>
+                        @if(isset($trashMode) && $trashMode)
+                            Корзина пуста
+                        @elseif(isset($archiveMode) && $archiveMode)
+                            Архив пуст
+                        @else
+                            Заметок пока нет
+                        @endif
+                    </h3>
+                    <p class="text-muted">
+                        @if(isset($trashMode) && $trashMode)
+                            Удаленные заметки будут появляться здесь
+                        @elseif(isset($archiveMode) && $archiveMode)
+                            Архивированные заметки будут отображаться здесь
+                        @else
+                            Создайте свою первую заметку!
+                        @endif
+                    </p>
+                    @if((!isset($trashMode) || !$trashMode) && (!isset($archiveMode) || !$archiveMode))
                     <a href="/notes/create" class="btn btn-primary mt-3">Создать заметку</a>
                     @else
                     <a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>

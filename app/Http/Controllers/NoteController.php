@@ -21,7 +21,26 @@ class NoteController extends Controller
             
             // Фильтр по статусу архивации
             if ($request->has('archive')) {
+                \Log::info('Запрос архивных заметок', [
+                    'query' => $request->all(),
+                    'url' => $request->fullUrl()
+                ]);
+                
                 $query->where('is_archived', true);
+                
+                // Отладка: проверяем количество архивных заметок в базе
+                $archiveCount = Note::where('is_archived', true)
+                                   ->where('is_deleted', false)
+                                   ->count();
+                
+                \Log::info('Количество архивных заметок в базе: ' . $archiveCount);
+                
+                // Получаем сами заметки для отладки
+                $archiveNotes = Note::where('is_archived', true)
+                                   ->where('is_deleted', false)
+                                   ->get();
+                
+                \Log::info('Архивные заметки:', ['notes' => $archiveNotes->toArray()]);
             } else {
                 $query->where('is_archived', false);
             }
@@ -554,9 +573,27 @@ class NoteController extends Controller
     // Архивация заметки
     public function archive(Note $note)
     {
+        \Log::info('Архивация заметки', [
+            'id' => $note->id,
+            'title' => $note->title,
+            'before_status' => [
+                'is_archived' => $note->is_archived,
+                'is_deleted' => $note->is_deleted
+            ]
+        ]);
+        
         $note->update([
             'is_archived' => true,
             'archived_at' => now()
+        ]);
+        
+        \Log::info('Заметка архивирована', [
+            'id' => $note->id,
+            'title' => $note->title,
+            'after_status' => [
+                'is_archived' => $note->is_archived,
+                'is_deleted' => $note->is_deleted
+            ]
         ]);
         
         return response()->json(['success' => true, 'data' => $note]);

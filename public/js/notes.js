@@ -27,6 +27,17 @@ $(document).ready(function() {
     let trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || currentPath === '/notes/trash';
     let archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
     
+    // Проверяем и устанавливаем активные пункты навигации
+    if (trashMode) {
+        $('.sidebar-link').removeClass('active');
+        $('a[href="/notes/trash"]').addClass('active');
+        console.log('Активирован режим корзины');
+    } else if (archiveMode) {
+        $('.sidebar-link').removeClass('active');
+        $('a[href="/notes/archive"]').addClass('active');
+        console.log('Активирован режим архива');
+    }
+    
     // Инициализация темы
     initTheme();
     
@@ -70,13 +81,18 @@ $(document).ready(function() {
     });
     
     // Получение списка всех заметок
-    if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath.match(/\/notes\/folder\//)) {
+    if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath === '/notes/archive' || currentPath.match(/\/notes\/folder\//)) {
+        console.log('Инициализация загрузки заметок для страницы:', currentPath);
+        
         // Проверяем, находимся ли мы в режиме папки
         const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
         if (folderMatch) {
             console.log('Загружаем заметки для папки из URL:', folderMatch[1]);
             // В этом случае loadAllNotes сам определит папку из URL
             loadAllNotes(trashMode);
+        } else if (currentPath === '/notes/archive') {
+            console.log('Загружаем архивные заметки');
+            loadAllNotes(false, null, true); // trashMode=false, folder=null, archiveMode=true
         } else {
             loadAllNotes(trashMode);
         }
@@ -264,12 +280,20 @@ function updatePageCounters() {
 }
 
 // Загрузка всех заметок
-function loadAllNotes(trashMode = false, folder = null) {
+function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false) {
     let url = `/api/notes`;
     // Проверяем текущий режим
     const currentPath = window.location.pathname;
-    const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
+    let archiveMode = archiveModeParam || (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
     const trashModeFromPage = typeof pageData !== 'undefined' && pageData.trashMode;
+    
+    console.log('loadAllNotes вызван с параметрами:', {
+        trashMode, 
+        folder,
+        archiveModeParam,
+        archiveMode,
+        currentPath
+    });
     
     // Если trashMode передан как параметр, используем его, иначе берем из pageData
     if (trashMode === false && trashModeFromPage) {
@@ -406,8 +430,10 @@ function loadAllNotes(trashMode = false, folder = null) {
     
     if (trashMode) {
         url += '?trash=true';
+        console.log('Формируем URL для режима корзины:', url);
     } else if (archiveMode) {
         url += '?archive=true';
+        console.log('Формируем URL для режима архива:', url);
     } else if (folderMode && folderName) {
         // Явно декодируем имя папки (на случай, если оно уже закодировано)
         try {
@@ -440,7 +466,44 @@ function loadAllNotes(trashMode = false, folder = null) {
             console.log('Загружено заметок:', notes.length, notes);
             console.log('URL запроса:', url);
             console.log('Режим архива:', archiveMode, 'Режим корзины:', trashMode, 'Режим папки:', folderMode);
+            
+            // Отладка для архивных заметок
+            if (archiveMode) {
+                console.log('ОТЛАДКА АРХИВА: Получено данных', {
+                    total: notes.length,
+                    archived: notes.filter(note => note.is_archived).length,
+                    nonArchived: notes.filter(note => !note.is_archived).length,
+                    deleted: notes.filter(note => note.is_deleted).length,
+                    notDeleted: notes.filter(note => !note.is_deleted).length
+                });
+            }
+            
             $('.notes-container').empty();
+            
+            // Сразу проверяем, есть ли заметки в массиве response
+            if (notes.length === 0) {
+                console.log('Пустой массив заметок для режима: ' + 
+                    (archiveMode ? 'архива' : trashMode ? 'корзины' : 'основной'));
+                $('.notes-container').hide();
+                $('.empty-container').removeClass('d-none');
+                
+                // Принудительно устанавливаем правильное сообщение для пустого состояния
+                if (archiveMode) {
+                    $('.empty-container h3').html('<i class="fas fa-archive me-2"></i>Архив пуст');
+                    $('.empty-container p').text('Архивированные заметки будут отображаться здесь');
+                    // Проверяем наличие кнопки и добавляем, если нет
+                    if ($('.empty-container .btn').length === 0) {
+                        $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
+                    }
+                } else if (trashMode) {
+                    $('.empty-container h3').html('<i class="fas fa-trash me-2"></i>Корзина пуста');
+                    $('.empty-container p').text('Удаленные заметки будут появляться здесь');
+                    // Проверяем наличие кнопки и добавляем, если нет
+                    if ($('.empty-container .btn').length === 0) {
+                        $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
+                    }
+                }
+            }
             
             // Фильтрация заметок в зависимости от режима отображения
             let filteredNotes = notes;
