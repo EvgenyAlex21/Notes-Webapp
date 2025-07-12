@@ -1,45 +1,26 @@
-// Функции для работы с просмотром заметки
-
-/**
- * Инициализация обработчиков для просмотра заметок
- */
 function initViewNoteHandlers() {
-    // Обработчик для кнопки "Просмотреть" в контекстном меню
     $('.view-note-btn').off('click').on('click', function(e) {
         e.preventDefault();
         const noteId = $(this).data('id');
-        
-        // Определяем источник вызова по URL
         const currentPath = window.location.pathname;
         let source = null;
-        
         if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
             source = 'trash';
         } else if (currentPath.includes('/archive')) {
             source = 'archive';
         }
-        
         viewNote(noteId, source);
     });
 }
 
-// Инициализация обработчиков при загрузке документа
 $(document).ready(function() {
     console.log('Инициализация обработчиков для просмотра заметок');
     initViewNoteHandlers();
 });
 
-/**
- * Показать заметку в модальном окне
- * @param {number} id - ID заметки
- * @param {string} [source] - Источник вызова (trash, archive и т.д.)
- */
 function viewNote(id, source) {
-    // Получаем числовой ID заметки (если передан с префиксом note-)
     const noteId = id.toString().replace('note-', '');
     console.log(`Запрос на просмотр заметки: получен ID=${id}, преобразован в noteId=${noteId}, источник=${source || 'не указан'}`);
-    
-    // Определяем текущую страницу, если источник не указан явно
     if (!source) {
         const currentPath = window.location.pathname;
         if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
@@ -52,8 +33,6 @@ function viewNote(id, source) {
             console.log('URL не содержит признаков источника: просто просмотр заметки');
         }
     }
-    
-    // Получаем заметку по ID
     $.ajax({
         url: `/api/notes/${noteId}`,
         method: 'GET',
@@ -65,7 +44,6 @@ function viewNote(id, source) {
                 console.log('[NOTE-VIEW.JS] Файлы заметки для просмотра:', note.files);
                 console.log('[NOTE-VIEW.JS] Источник вызова перед рендерингом модального окна:', source);
                 renderNoteInModal(note, source);
-                // Открываем модальное окно
                 viewNoteModal.show();
             }
         },
@@ -76,15 +54,8 @@ function viewNote(id, source) {
     });
 }
 
-/**
- * Отображение заметки в модальном окне
- * @param {Object} note - Данные заметки
- * @param {string} [source] - Источник вызова (trash, archive и т.д.)
- */
 function renderNoteInModal(note, source) {
-    // Проверяем параметр source и устанавливаем его значение, если оно не определено
     if (!source) {
-        // Сначала попробуем определить по URL
         const currentPath = window.location.pathname;
         if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
             source = 'trash';
@@ -93,8 +64,6 @@ function renderNoteInModal(note, source) {
             source = 'archive';
             console.log('[renderNoteInModal] Определен источник по URL: заметка из архива');
         }
-        
-        // Если не удалось определить по URL, проверим данные самой заметки
         if (!source && note) {
             if (note.is_deleted) {
                 source = 'trash';
@@ -105,10 +74,7 @@ function renderNoteInModal(note, source) {
             }
         }
     }
-    
     console.log('[renderNoteInModal] Рендеринг заметки ' + note.id + ' из источника: ' + (source || 'не определен'));
-    
-    // Получаем массив тегов, если они есть
     const tagsArray = note.tags ? note.tags.split(',') : [];
     const tagsHTML = tagsArray.length > 0 ? 
         `<div class="tags-section mt-3">
@@ -117,21 +83,14 @@ function renderNoteInModal(note, source) {
                 ${tagsArray.map(tag => `<span class="tag">#${tag}</span>`).join('')}
             </div>
         </div>` : '';
-    
-    // Форматируем даты
     const createdAt = new Date(note.created_at);
     const updatedAt = new Date(note.updated_at);
     const isUpdated = createdAt.getTime() !== updatedAt.getTime();
     const dateCreated = formatDate(createdAt);
     const dateUpdated = formatDate(updatedAt);
-    
-    // Формируем HTML для файлов
     console.log('Проверка файлов перед рендерингом:', note.files);
     console.log('Тип файлов:', typeof note.files, Array.isArray(note.files));
-    
-    // Обработка разных форматов файлов
     let fileArray = [];
-    
     if (note.files === null || note.files === undefined) {
         note.files = [];
         console.log('Файлы отсутствуют (null/undefined), установлен пустой массив');
@@ -152,39 +111,26 @@ function renderNoteInModal(note, source) {
         console.error('Файлы не являются массивом:', typeof note.files);
         note.files = [];
     }
-    
     let filesHTML = '';
-    
     console.log('Отображение файлов, тип:', typeof note.files, 'isArray:', Array.isArray(note.files), 'длина:', note.files ? note.files.length : 0);
-    
-    // Подробная отладка файлов
     if (note.files && note.files.length > 0) {
         console.log('Первый файл:', JSON.stringify(note.files[0]));
     }
-    
-    // Дополнительная проверка на корректность структуры файлов
     if (note.files && Array.isArray(note.files) && note.files.length > 0) {
         let validFiles = note.files.filter(file => 
             file && typeof file === 'object' && file.name && 
-            (file.url || file.path) // Должен быть либо url, либо path
+            (file.url || file.path)
         );
-        
         console.log('Проверенные файлы для отображения:', validFiles.length, 'из', note.files.length);
-        
-        // Если есть корректные файлы для отображения
         if (validFiles.length > 0) {
-            // Для файлов, у которых есть path, но нет url, добавляем url
             validFiles = validFiles.map(file => {
                 if (!file.url && file.path) {
                     file.url = `/storage/${file.path}`;
                     console.log('Добавлен URL для файла:', file.name, file.url);
                 } else if (!file.url && !file.path) {
-                    // Если нет ни url, ни path - ставим плейсхолдер
                     file.url = 'https://placehold.co/200?text=Файл+недоступен';
                     console.warn('У файла нет ни URL, ни path:', file);
                 }
-                
-                // Определяем тип файла, если не указан
                 if (!file.type && file.extension) {
                     const ext = file.extension.toLowerCase();
                     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
@@ -197,10 +143,8 @@ function renderNoteInModal(note, source) {
                         file.type = 'document';
                     }
                 }
-                
                 return file;
             });
-            
             filesHTML = `
                 <div class="note-files mt-4">
                     <h6 class="mb-3">Прикрепленные файлы (${validFiles.length}):</h6>
@@ -212,7 +156,6 @@ function renderNoteInModal(note, source) {
                             } else if (file.type === 'video') {
                                 preview = `<video src="${file.url}" controls style="width: 100%; height: 100px; object-fit: cover; background: #f8f9fa;" onerror="this.onerror=null;this.outerHTML='<div class=\\'d-flex align-items-center justify-content-center\\' style=\\'height:100px;background:#f8f9fa;\\'><i class=\\'fas fa-film fa-2x text-danger\\'></i></div>'"></video>`;
                             } else {
-                                // Документы и прочее
                                 let iconClass = 'fa-file';
                                 if (file.extension && typeof file.extension === 'string') {
                                     if (file.extension.match(/pdf/i)) iconClass = 'fa-file-pdf';
@@ -250,8 +193,6 @@ function renderNoteInModal(note, source) {
                     </div>
                 </div>
             `;
-            
-            // Обновляем глобальный массив для галереи
             if (typeof updateGlobalCurrentFiles === 'function') {
                 const fileData = validFiles.map((file, index) => ({
                     url: file.url,
@@ -265,15 +206,9 @@ function renderNoteInModal(note, source) {
             }
         }
     }
-    
-    // Определим, нужны ли дополнительные плашки статуса
     const isTrash = source === 'trash';
     const isArchive = source === 'archive';
-    
-    // Переопределим размер шрифта для бейджей в заголовке для лучшей видимости
     const badgeStyle = "font-size: 0.7em; font-weight: 600;";
-    
-    // Устанавливаем содержимое модального окна с более заметными статусами
     $('#viewNoteModalLabel').html(`
         <span class="me-2" style="color: ${getNoteColorHex(note.color)};">●</span>
         ${note.name}
@@ -292,7 +227,6 @@ function renderNoteInModal(note, source) {
             ${note.is_pinned ? `<span class="badge pin-badge ms-1" style="${badgeStyle}">Закреплено</span>` : ''}
         </div>
     `);
-    
     $('#viewNoteContent').html(`
         <div class="note-full-content mb-4">
             ${note.formatted_description || note.description}
@@ -312,26 +246,15 @@ function renderNoteInModal(note, source) {
             </div>
         </div>
     `);
-    
-    // Устанавливаем ссылку на редактирование
     const editButton = $('#viewNoteEditBtn');
     editButton.attr('href', `/notes/${note.id}/edit`);
-    
-    // Выведем отладочную информацию
     console.log(`Управление кнопкой редактирования для заметки: источник=${source}, ID=${note.id}`);
-    
-    // Управляем видимостью и доступностью кнопки редактирования в зависимости от источника
     console.log('[КНОПКА] Состояние source перед обработкой кнопки редактирования:', source);
-    
     if (source === 'trash') {
-        // ПОЛНОСТЬЮ УДАЛЯЕМ КНОПКУ "РЕДАКТИРОВАТЬ" для заметок в корзине
         editButton.closest('.modal-footer').find('#viewNoteEditBtn').remove();
         console.log('[КНОПКА] 🔴 Кнопка редактирования УДАЛЕНА, так как заметка из корзины');
-        
-        // Добавим сообщение вместо кнопки
         editButton.closest('.modal-footer').append('<span class="text-danger ms-2">Редактирование недоступно для заметок в корзине</span>');
     } else {
-        // Показываем кнопку для других источников
         editButton.show();
         editButton.removeClass('disabled btn-secondary').addClass('btn-primary');
         editButton.removeAttr('aria-disabled');
@@ -340,13 +263,7 @@ function renderNoteInModal(note, source) {
         editButton.removeAttr('title');
         console.log('[КНОПКА] ✅ Кнопка редактирования доступна');
     }
-    
-    // Дополнительно выводим плашки статусов прямо в тело модального окна для большей видимости
-    
-    // Массив для хранения всех необходимых уведомлений
     const statusAlerts = [];
-    
-    // Добавляем уведомление о папке, если она есть
     if (note.folder) {
         statusAlerts.push({
             type: 'warning',
@@ -354,8 +271,6 @@ function renderNoteInModal(note, source) {
             message: `<strong>Внимание!</strong> Эта заметка находится в папке <strong>${note.folder}</strong>.`
         });
     }
-    
-    // Добавляем уведомление о корзине или архиве
     if (source === 'trash' || source === 'archive') {
         statusAlerts.push(`
             <div class="alert ${source === 'trash' ? 'alert-danger' : 'alert-info'} mb-3">
@@ -365,8 +280,6 @@ function renderNoteInModal(note, source) {
             </div>
         `);
     }
-    
-    // Добавляем уведомление о принадлежности к папке
     if (note.folder) {
         statusAlerts.push(`
             <div class="alert alert-secondary mb-3">
@@ -375,11 +288,7 @@ function renderNoteInModal(note, source) {
             </div>
         `);
     }
-    
-    // Добавляем все уведомления в начало содержимого
     if (statusAlerts.length > 0) {
         $('#viewNoteContent').prepend(statusAlerts.join(''));
     }
 }
-
-

@@ -13,13 +13,11 @@ class NoteController extends Controller
     {
         $query = Note::query();
         
-        // Фильтр по статусу удаления
         if ($request->has('trash')) {
             $query->where('is_deleted', true);
         } else {
             $query->where('is_deleted', false);
             
-            // Фильтр по статусу архивации
             if ($request->has('archive')) {
                 \Log::info('Запрос архивных заметок', [
                     'query' => $request->all(),
@@ -28,14 +26,12 @@ class NoteController extends Controller
                 
                 $query->where('is_archived', true);
                 
-                // Отладка: проверяем количество архивных заметок в базе
                 $archiveCount = Note::where('is_archived', true)
                                    ->where('is_deleted', false)
                                    ->count();
                 
                 \Log::info('Количество архивных заметок в базе: ' . $archiveCount);
                 
-                // Получаем сами заметки для отладки
                 $archiveNotes = Note::where('is_archived', true)
                                    ->where('is_deleted', false)
                                    ->get();
@@ -45,7 +41,6 @@ class NoteController extends Controller
                 $query->where('is_archived', false);
             }
             
-            // Фильтр по папке
             if ($request->has('folder')) {
                 $folder = $request->get('folder');
                 \Log::info('Запрос заметок с фильтром по папке', [
@@ -53,10 +48,8 @@ class NoteController extends Controller
                     'decoded_folder' => urldecode($folder)
                 ]);
                 
-                // Выполняем полное декодирование имени папки (на случай двойного кодирования)
                 try {
                     $decodedFolder = $folder;
-                    // Продолжаем декодировать, пока результат меняется
                     while ($decodedFolder !== urldecode($decodedFolder)) {
                         $decodedFolder = urldecode($decodedFolder);
                     }
@@ -67,7 +60,6 @@ class NoteController extends Controller
                         'fully_decoded' => $decodedFolder
                     ]);
                     
-                    // Проверим, какие заметки существуют для этой папки
                     $notesInFolder = Note::where('folder', $decodedFolder)->get();
                     \Log::info('Найденные заметки в папке', [
                         'folder' => $decodedFolder,
@@ -84,7 +76,6 @@ class NoteController extends Controller
             }
         }
         
-        // Сортировка: сначала закрепленные
         $query->orderBy('is_pinned', 'desc')
               ->orderBy('updated_at', 'desc');
               
@@ -96,14 +87,12 @@ class NoteController extends Controller
         $filesArray = $note->files;
         $needsUpdate = false;
         
-        // Убедимся, что files всегда массив
         if ($filesArray === null) {
             $filesArray = [];
             $needsUpdate = true;
             \Log::info('Файлы заметки были null, преобразованы в пустой массив');
         }
         
-        // Если файлы в формате строки, преобразуем в массив
         if (is_string($filesArray)) {
             \Log::info('Файлы заметки в виде строки: ' . $filesArray);
             try {
@@ -124,7 +113,6 @@ class NoteController extends Controller
             }
         }
         
-        // Даже если files уже массив, убедимся что он действительно массив
         if (!is_array($filesArray)) {
             \Log::error('files не является массивом после обработки: ' . gettype($filesArray));
             $filesArray = [];
@@ -134,7 +122,6 @@ class NoteController extends Controller
         \Log::info('Показ заметки: ' . $note->id);
         \Log::info('Файлы заметки (до обработки): ' . json_encode($filesArray));
         
-        // Убедимся, что все файлы имеют URL для отображения
         if (is_array($filesArray)) {
             foreach ($filesArray as $key => $file) {
                 if (is_array($file) && isset($file['path']) && !isset($file['url'])) {
@@ -145,18 +132,19 @@ class NoteController extends Controller
             }
         }
         
-        // Если были изменения, обновляем запись в БД
         if ($needsUpdate) {
             \Log::info('Обновляем поле files в БД для заметки ' . $note->id);
             $note->update(['files' => $filesArray]);
-            // Перезагружаем заметку после обновления
             $note = Note::find($note->id);
         }
         
-        // Убедимся, что возвращаем подготовленный массив файлов
         $note->files = $filesArray;
         
-        \Log::info('Файлы заметки (окончательно): ' . json_encode($note->files));
+        \Log::info('Напоминание заметки ' . $note->id . ': ' . ($note->reminder_at ? $note->reminder_at->format('Y-m-d\TH:i:s') : 'отсутствует'));
+        
+        if ($note->reminder_at) {
+            $note->reminder_at = $note->reminder_at->format('Y-m-d\TH:i:s');
+        }
         return response()->json(['data' => $note]);
     }
 
@@ -165,32 +153,26 @@ class NoteController extends Controller
         \Log::info('Создание новой заметки');
         \Log::info('Входящие данные: ' . json_encode($request->all()));
         
-        // Убедимся, что правильно обрабатываем булево значение is_pinned
         if ($request->has('is_pinned')) {
             $isPinned = $request->input('is_pinned');
             if (is_string($isPinned)) {
-                // Если передано как строка, преобразуем в булево значение
                 $request->merge(['is_pinned' => filter_var($isPinned, FILTER_VALIDATE_BOOLEAN)]);
             }
         }
         
-        // Исправим проблему с валидацией files перед вызовом validate
         if ($request->has('files') && is_string($request->input('files'))) {
             try {
                 $filesJson = json_decode($request->input('files'), true);
                 if (is_array($filesJson)) {
-                    // Заменяем строку на массив
                     $request->merge(['files' => $filesJson]);
                     \Log::info('Преобразовано поле files из JSON-строки в массив при создании');
                 }
             } catch (\Exception $e) {
                 \Log::error('Ошибка при декодировании JSON files при создании: ' . $e->getMessage());
-                // В случае ошибки устанавливаем пустой массив
                 $request->merge(['files' => []]);
             }
         }
         
-        // Если files не передано, устанавливаем пустой массив
         if (!$request->has('files')) {
             $request->merge(['files' => []]);
             \Log::info('Добавлен пустой массив files');
@@ -208,31 +190,23 @@ class NoteController extends Controller
             'folder' => 'nullable|string',
         ]);
         
-        // Явно устанавливаем значение is_pinned, если оно не было предоставлено
         if (!isset($data['is_pinned'])) {
             $data['is_pinned'] = false;
         }
         
-        // Сохраняем отформатированное описание только если столбец существует
         if (Schema::hasColumn('notes', 'formatted_description')) {
             $data['formatted_description'] = $data['description'];
         }
         
-        // Устанавливаем значение done по умолчанию как false
         if (!isset($data['done'])) {
             $data['done'] = false;
         }
         
-        // Явно устанавливаем is_deleted как false
         $data['is_deleted'] = false;
         
-        // Обработка загруженных файлов
         $uploadedFiles = [];
-        
-        // Проверим все возможные имена полей с файлами
         $uploadFiles = null;
         
-        // Детальный лог HTTP-запроса
         \Log::info('Метод запроса: ' . $request->method());
         \Log::info('Content-Type: ' . $request->header('Content-Type'));
         \Log::info('Все параметры запроса: ' . json_encode($request->all()));
@@ -241,14 +215,12 @@ class NoteController extends Controller
         \Log::info('Наличие поля upload_files[]: ' . ($request->hasFile('upload_files[]') ? 'ДА' : 'НЕТ'));
         \Log::info('Содержимое $_FILES: ' . json_encode($_FILES));
         
-        // Проверка директории для загрузки файлов
         $uploadDir = storage_path('app/public/uploads');
         if (!file_exists($uploadDir)) {
             \Log::info('Создаем директорию для загрузки файлов: ' . $uploadDir);
             mkdir($uploadDir, 0755, true);
         }
         
-        // Проверяем все возможные вариации имени поля
         if ($request->hasFile('upload_files')) {
             $uploadFiles = $request->file('upload_files');
             \Log::info('Обнаружены файлы для загрузки в поле upload_files: ' . count($uploadFiles));
@@ -256,14 +228,12 @@ class NoteController extends Controller
             $uploadFiles = $request->file('upload_files[]');
             \Log::info('Обнаружены файлы для загрузки в поле upload_files[]: ' . count($uploadFiles));
         } else {
-            // Проверяем все поля запроса для поиска файлов
             foreach ($request->allFiles() as $key => $files) {
                 \Log::info('Обнаружено поле с файлами: ' . $key . ' (количество: ' . count($files) . ')');
                 $uploadFiles = $files;
                 break;
             }
             
-            // Если файлы не найдены через allFiles(), проверяем через $_FILES
             if (!$uploadFiles && !empty($_FILES)) {
                 \Log::info('Пытаемся получить файлы напрямую через $_FILES');
                 foreach ($_FILES as $key => $fileData) {
@@ -280,7 +250,6 @@ class NoteController extends Controller
             }
         }
         
-        // Проверка отладочного поля
         if ($request->has('debug_files_count')) {
             \Log::info('Отладочное поле debug_files_count: ' . $request->input('debug_files_count'));
         }
@@ -292,13 +261,11 @@ class NoteController extends Controller
         if ($uploadFiles) {
             \Log::info('Обнаружены файлы для загрузки: ' . count($uploadFiles));
             
-            // Создаем символическую ссылку для storage, если её нет
             if (!file_exists(public_path('storage'))) {
                 \Artisan::call('storage:link');
                 \Log::info('Создана символическая ссылка на storage');
             }
             
-            // Убедимся, что директория для загрузок существует
             $uploadDir = storage_path('app/public/uploads');
             if (!file_exists($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
@@ -315,34 +282,29 @@ class NoteController extends Controller
                     $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '_' . uniqid() . '.' . $fileExt;
                     
                     try {
-                        // Убедимся, что директория существует
                         $uploadDir = storage_path('app/public/uploads');
                         if (!file_exists($uploadDir)) {
                             \Log::info('Создаем директорию для загрузки файлов: ' . $uploadDir);
                             mkdir($uploadDir, 0755, true);
                         }
                         
-                        // Сохраняем файл в public/uploads
                         $path = $file->storeAs('uploads', $uniqueFileName, 'public');
                         
-                        // Проверяем, что файл существует
                         $fullPath = storage_path('app/public/' . $path);
                         if (!file_exists($fullPath)) {
                             \Log::error('Файл не был сохранен по пути: ' . $fullPath);
                             
-                            // Пробуем сохранить альтернативным способом
                             if ($file->move(storage_path('app/public/uploads'), $uniqueFileName)) {
                                 \Log::info('Файл успешно сохранен альтернативным способом');
                                 $path = 'uploads/' . $uniqueFileName;
                             } else {
                                 \Log::error('Не удалось сохранить файл альтернативным способом');
-                                continue; // Пропускаем этот файл и переходим к следующему
+                                continue;
                             }
                         } else {
                             \Log::info('Файл успешно сохранен: ' . $fullPath);
                         }
                         
-                        // Определяем тип файла
                         $fileType = $this->getFileType($fileExt);
                         
                         $fileData = [
@@ -368,11 +330,10 @@ class NoteController extends Controller
             $data['files'] = $uploadedFiles;
         } else {
             \Log::info('Файлы для загрузки не обнаружены');
-            // Устанавливаем пустой массив для файлов
             $data['files'] = [];
         }
         
-        $data['done'] = false; // По умолчанию задача не выполнена
+        $data['done'] = false;
         $data['is_deleted'] = false;
         
         return response()->json(['data' => Note::create($data)]);
@@ -385,20 +346,15 @@ class NoteController extends Controller
         \Log::info('Метод запроса: ' . $request->method());
         \Log::info('Content-Type заголовок: ' . $request->header('Content-Type'));
         
-        // Подробная информация о файлах
         \Log::info('Проверка файлов в запросе через $request->hasFile("upload_files"): ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
         \Log::info('Проверка файлов в запросе через $request->file("upload_files"): ' . ($request->file('upload_files') ? 'ДА' : 'НЕТ'));
         \Log::info('Все файлы в запросе ($request->allFiles()): ' . json_encode($request->allFiles()));
         \Log::info('Все входящие поля запроса: ' . json_encode($request->all()));
-        
-        // Проверка наличия файлов через $_FILES
         \Log::info('Содержимое $_FILES: ' . json_encode($_FILES));
         
-        // Убедимся, что правильно обрабатываем булевы значения
         if ($request->has('is_pinned')) {
             $isPinned = $request->input('is_pinned');
             if (is_string($isPinned)) {
-                // Если передано как строка, преобразуем в булево значение
                 $request->merge(['is_pinned' => filter_var($isPinned, FILTER_VALIDATE_BOOLEAN)]);
             }
         }
@@ -406,17 +362,14 @@ class NoteController extends Controller
         if ($request->has('done')) {
             $done = $request->input('done');
             if (is_string($done)) {
-                // Если передано как строка, преобразуем в булево значение
                 $request->merge(['done' => filter_var($done, FILTER_VALIDATE_BOOLEAN)]);
             }
         }
         
-        // Исправим проблему с валидацией files перед вызовом validate
         if ($request->has('files') && is_string($request->input('files'))) {
             try {
                 $filesJson = json_decode($request->input('files'), true);
                 if (is_array($filesJson)) {
-                    // Заменяем строку на массив
                     $request->merge(['files' => $filesJson]);
                     \Log::info('Преобразовано поле files из JSON-строки в массив');
                 }
@@ -437,20 +390,25 @@ class NoteController extends Controller
             'due_date' => 'nullable|date',
         ]);
         
-        // Проверяем, существует ли столбец formatted_description в таблице
-        // и только тогда добавляем его в данные
+        if ($request->has('reminder_at')) {
+            $reminderAt = $request->input('reminder_at');
+            if ($reminderAt && $reminderAt !== '') {
+                $data['reminder_at'] = $reminderAt;
+                \Log::info('Установлено напоминание: ' . $data['reminder_at']);
+            } else {
+                $data['reminder_at'] = null;
+                \Log::info('Напоминание очищено');
+            }
+        }
+        
         if (Schema::hasColumn('notes', 'formatted_description')) {
             $data['formatted_description'] = $data['description'];
         }
         
-        // Инициализация массива файлов (всегда начинаем с пустого массива для безопасности)
         $uploadedFiles = [];
-        
-        // Получаем текущие файлы заметки
         $currentFiles = $note->files;
         \Log::info('Текущие файлы заметки (тип: ' . gettype($currentFiles) . '): ' . json_encode($currentFiles));
         
-        // Если текущие файлы существуют и они в правильном формате, используем их как базу
         if (is_array($currentFiles)) {
             $uploadedFiles = $currentFiles;
             \Log::info('Использую существующие файлы как базу (массив)');
@@ -466,12 +424,10 @@ class NoteController extends Controller
             }
         }
         
-        // Проверяем, были ли переданы файлы в запросе
         if ($request->has('files')) {
             \Log::info('Получены файлы из запроса. Тип: ' . gettype($request->input('files')));
             $filesData = $request->input('files');
             
-            // Обработка разных форматов входящих данных
             if (is_string($filesData)) {
                 \Log::info('Содержимое files (строка): ' . $filesData);
                 try {
@@ -481,7 +437,6 @@ class NoteController extends Controller
                         $uploadedFiles = $existingFiles;
                     } else {
                         \Log::error('Не удалось декодировать JSON файлов (результат не массив): ' . json_last_error_msg());
-                        // Сохраняем существующие файлы (если они уже установлены выше)
                     }
                 } catch (\Exception $e) {
                     \Log::error('Ошибка при обработке JSON файлов: ' . $e->getMessage());
@@ -496,12 +451,10 @@ class NoteController extends Controller
             \Log::info('Поле files отсутствует в запросе - используем текущие файлы');
         }
         
-        // Обработка новых загруженных файлов
         \Log::info('Проверка наличия загруженных файлов: ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
         \Log::info('Проверка для upload_files[]: ' . ($request->hasFile('upload_files[]') ? 'ДА' : 'НЕТ'));
         \Log::info('Все входящие файлы: ' . json_encode($request->allFiles()));
         
-        // Попробуем получить файлы из разных возможных имен полей
         $uploadFiles = null;
         
         if ($request->hasFile('upload_files')) {
@@ -511,7 +464,6 @@ class NoteController extends Controller
             $uploadFiles = $request->file('upload_files[]');
             \Log::info('Файлы найдены в поле upload_files[]');
         } else {
-            // Проверяем, возможно, файлы передаются под другим именем
             foreach ($request->allFiles() as $key => $files) {
                 \Log::info('Обнаружено поле с файлами: ' . $key . ' (количество: ' . count($files) . ')');
                 $uploadFiles = $files;
@@ -522,11 +474,10 @@ class NoteController extends Controller
         if ($uploadFiles) {
             \Log::info('Количество загруженных файлов: ' . count($uploadFiles));
             
-            // Проверяем общее количество файлов (существующие + новые)
             $existingFilesCount = is_array($uploadedFiles) ? count($uploadedFiles) : 0;
             $newFilesCount = count($uploadFiles);
             $totalFiles = $existingFilesCount + $newFilesCount;
-            $maxFiles = 10; // Максимальное количество файлов
+            $maxFiles = 10;
             
             \Log::info("Проверка лимита файлов: существующих=$existingFilesCount, новых=$newFilesCount, итого=$totalFiles, лимит=$maxFiles");
             
@@ -537,10 +488,9 @@ class NoteController extends Controller
                 ], 422);
             }
             
-            // Проверяем размер каждого файла
             foreach ($uploadFiles as $file) {
                 if (!is_string($file) && $file->isValid()) {
-                    $maxSize = 100 * 1024 * 1024; // 100 MB в байтах
+                    $maxSize = 100 * 1024 * 1024;
                     if ($file->getSize() > $maxSize) {
                         $sizeMB = round($file->getSize() / (1024 * 1024), 1);
                         \Log::error("Файл {$file->getClientOriginalName()} превышает лимит размера: {$sizeMB} MB");
@@ -551,13 +501,11 @@ class NoteController extends Controller
                 }
             }
             
-            // Создаем символическую ссылку для storage, если её нет
             if (!file_exists(public_path('storage'))) {
                 \Artisan::call('storage:link');
                 \Log::info('Создана символическая ссылка на storage');
             }
             
-            // Убедимся, что директория для загрузок существует
             $uploadDir = storage_path('app/public/uploads');
             if (!file_exists($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
@@ -565,7 +513,6 @@ class NoteController extends Controller
             }
             
             foreach ($uploadFiles as $file) {
-                // Проверяем, что это действительно файл, а не пустая строка
                 if (!is_string($file) && $file->isValid()) {
                     try {
                         \Log::info('Обработка файла: ' . $file->getClientOriginalName() . ' (' . $file->getSize() . ' байт)');
@@ -573,11 +520,9 @@ class NoteController extends Controller
                         $fileExt = $file->getClientOriginalExtension();
                         $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
                         
-                        // Сохраняем файл в public/uploads
                         $path = $file->storeAs('uploads', $uniqueFileName, 'public');
                         \Log::info('Файл сохранен по пути: ' . $path);
                         
-                        // Проверяем, что файл действительно сохранился
                         $fullPath = storage_path('app/public/' . $path);
                         if (file_exists($fullPath)) {
                             \Log::info('Проверка - файл существует по пути: ' . $fullPath);
@@ -585,7 +530,6 @@ class NoteController extends Controller
                             \Log::error('Файл не найден по указанному пути: ' . $fullPath);
                         }
                         
-                        // Определяем тип файла
                         $fileType = $this->getFileType($fileExt);
                         
                         $fileData = [
@@ -612,19 +556,13 @@ class NoteController extends Controller
             }
         } else {
             \Log::error('Не найдены файлы для загрузки. Проверьте имя поля формы.');
-            
-            // Проверяем все ключи в request для отладки
             \Log::info('Все ключи в запросе: ' . json_encode($request->keys()));
-            
-            // Проверяем, правильно ли установлен enctype в форме
             \Log::info('Content-Type запроса: ' . $request->header('Content-Type'));
         }
         
-        // Добавляем файлы к данным заметки
-        $data['files'] = $uploadedFiles; // Всегда сохраняем массив, даже пустой
+        $data['files'] = $uploadedFiles;
         \Log::info('Финальные файлы для сохранения: ' . json_encode($data['files']));
         
-        // Дополнительная проверка, что files действительно массив
         if (!is_array($data['files'])) {
             \Log::error('КРИТИЧЕСКАЯ ОШИБКА: files не является массивом перед сохранением, исправляем');
             $data['files'] = is_string($data['files']) ? json_decode($data['files'], true) : [];
@@ -634,11 +572,8 @@ class NoteController extends Controller
         }
         
         $note->update($data);
-        
-        // Перезагрузим заметку, чтобы получить актуальные данные
         $note = Note::find($note->id);
         
-        // Убедимся, что files всегда массив
         if ($note->files === null) {
             $note->update(['files' => []]);
             $note = Note::find($note->id);
@@ -654,6 +589,10 @@ class NoteController extends Controller
             }
         }
         
+        if ($note->reminder_at) {
+            $note->reminder_at = $note->reminder_at->format('Y-m-d\TH:i:s');
+        }
+        
         \Log::info('Обновленная заметка возвращена: ' . json_encode($note->files));
         
         return response()->json(['data' => $note]);
@@ -661,7 +600,6 @@ class NoteController extends Controller
 
     public function destroy(Note $note)
     {
-        // Soft delete - перемещение в корзину
         $note->update([
             'is_deleted' => true,
             'deleted_at' => now()
@@ -670,7 +608,6 @@ class NoteController extends Controller
         return response()->json(['success' => true]);
     }
     
-    // Восстановление заметки из корзины
     public function restore(Note $note)
     {
         $note->update([
@@ -681,7 +618,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Окончательное удаление заметки
     public function forceDelete(Note $note)
     {
         $note->delete();
@@ -689,7 +625,6 @@ class NoteController extends Controller
         return response()->json(['success' => true]);
     }
     
-    // Изменение цвета заметки
     public function updateColor(Request $request, Note $note)
     {
         $data = $request->validate([
@@ -701,7 +636,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Переключение состояния закрепления
     public function togglePin(Note $note)
     {
         $note->update([
@@ -711,20 +645,17 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Быстрое переключение статуса "Выполнено"
     public function toggleDone(Request $request, Note $note)
     {
         try {
             $done = $request->input('done', null);
             
-            // Если параметр не передан, инвертируем текущее значение
             if ($done === null) {
                 $done = !$note->done;
             } else {
                 $done = (bool)$done;
             }
             
-            // Обновляем только поле done, так как completed_at не существует в таблице
             $note->update([
                 'done' => $done
             ]);
@@ -742,7 +673,6 @@ class NoteController extends Controller
         }
     }
     
-    // Архивация заметки
     public function archive(Note $note)
     {
         \Log::info('Архивация заметки', [
@@ -771,7 +701,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Восстановление из архива
     public function unarchive(Note $note)
     {
         $note->update([
@@ -782,7 +711,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Установка напоминания
     public function setReminder(Request $request, Note $note)
     {
         $data = $request->validate([
@@ -794,7 +722,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Отмена напоминания
     public function removeReminder(Note $note)
     {
         $note->update([
@@ -804,7 +731,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Перемещение заметки в папку
     public function moveToFolder(Request $request, Note $note)
     {
         $data = $request->validate([
@@ -816,18 +742,15 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Получение списка всех папок
     public function getFolders()
     {
         try {
-            // Получаем папки из специальной таблицы папок
             $newFolders = Folder::where('is_deleted', false)
                           ->select('name')
                           ->get()
                           ->pluck('name')
                           ->toArray();
             
-            // Получаем папки из старой системы (папки, указанные в заметках)
             $oldFolders = Note::where('is_deleted', false)
                           ->whereNotNull('folder')
                           ->select('folder')
@@ -836,10 +759,8 @@ class NoteController extends Controller
                           ->pluck('folder')
                           ->toArray();
             
-            // Объединяем и удаляем дубликаты
             $folders = array_unique(array_merge($newFolders, $oldFolders));
             
-            // Подготовка данных с количеством заметок в каждой папке
             $folderData = [];
             foreach ($folders as $folderName) {
                 $count = Note::where('folder', $folderName)
@@ -867,7 +788,6 @@ class NoteController extends Controller
         }
     }
     
-    // Изменение режима отображения заметки
     public function updateViewMode(Request $request, Note $note)
     {
         $data = $request->validate([
@@ -879,7 +799,6 @@ class NoteController extends Controller
         return response()->json(['success' => true, 'data' => $note]);
     }
     
-    // Получение заметок для заданной даты
     public function getByDueDate(Request $request)
     {
         $date = $request->validate([
@@ -895,7 +814,6 @@ class NoteController extends Controller
         return response()->json(['data' => $notes]);
     }
     
-    // Получение статистики
     public function getStats()
     {
         $stats = [
@@ -908,8 +826,6 @@ class NoteController extends Controller
             'with_reminders' => Note::where('is_deleted', false)->whereNotNull('reminder_at')->count(),
         ];
         
-        // Добавляем статистику по папкам
-        // Получаем папки из старой системы (папки, указанные в заметках)
         $oldFolders = Note::where('is_deleted', false)
             ->whereNotNull('folder')
             ->select('folder')
@@ -917,13 +833,11 @@ class NoteController extends Controller
             ->get()
             ->pluck('folder');
             
-        // Получаем папки из новой системы
         $newFolders = Folder::where('is_deleted', false)
             ->select('name')
             ->get()
             ->pluck('name');
             
-        // Объединяем папки
         $folders = $oldFolders->merge($newFolders)->unique();
         
         $folderStats = [];
@@ -935,7 +849,6 @@ class NoteController extends Controller
         
         $stats['by_folder'] = $folderStats;
         
-        // Статистика по цветам
         $colors = ['red', 'green', 'blue', 'yellow', 'purple', 'pink', 'orange', 'teal', 'cyan', 'indigo', 'brown', 'black', 'navy', 'default'];
         $colorStats = [];
         foreach ($colors as $color) {
@@ -952,29 +865,17 @@ class NoteController extends Controller
         return response()->json(['data' => $stats]);
     }
     
-    /**
-     * Определяет тип файла по расширению
-     *
-     * @param string $extension Расширение файла
-     * @return string Тип файла (image, video, document, other)
-     */
     protected function getFileType($extension)
     {
         $extension = strtolower($extension);
-        
-        // Изображения
         $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
         if (in_array($extension, $imageExtensions)) {
             return 'image';
         }
-        
-        // Видео
         $videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'];
         if (in_array($extension, $videoExtensions)) {
             return 'video';
         }
-        
-        // Документы
         $documentExtensions = [
             'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 
             'txt', 'rtf', 'csv', 'odt', 'ods', 'odp'
@@ -982,36 +883,19 @@ class NoteController extends Controller
         if (in_array($extension, $documentExtensions)) {
             return 'document';
         }
-        
-        // Другие типы файлов
         return 'other';
     }
     
-    /**
-     * Удаляет все заметки из базы данных
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function clearAll()
     {
-        // Получаем количество заметок перед удалением
         $count = Note::count();
-        
-        // Удаляем все записи из таблицы notes
         Note::truncate();
-        
         return response()->json([
             'success' => true,
             'message' => "Успешно удалено {$count} заметок из базы данных."
         ]);
     }
     
-    /**
-     * Создает новую папку без создания технической заметки
-     *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function createFolder(Request $request)
     {
         $data = $request->validate([
@@ -1020,7 +904,6 @@ class NoteController extends Controller
         
         $folderName = $data['folder'];
         
-        // Проверяем, существует ли уже такая папка
         $existingFolders = Note::where('is_deleted', false)
             ->whereNotNull('folder')
             ->select('folder')
@@ -1035,9 +918,6 @@ class NoteController extends Controller
             ], 422);
         }
         
-        // Создаем запись о папке в кэше или другом хранилище (здесь мы просто возвращаем успех)
-        // В будущем можно добавить таблицу folders для более правильной организации
-        
         return response()->json([
             'success' => true,
             'message' => 'Папка успешно создана',
@@ -1045,12 +925,6 @@ class NoteController extends Controller
         ]);
     }
     
-    /**
-     * Переименование папки
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
     public function renameFolder(Request $request)
     {
         $validatedData = $request->validate([
@@ -1058,7 +932,6 @@ class NoteController extends Controller
             'new_folder' => 'required|string|different:old_folder'
         ]);
         
-        // Проверяем существование новой папки
         $folderExists = Note::where('folder', $validatedData['new_folder'])
                           ->where('is_deleted', false)
                           ->exists();
@@ -1070,7 +943,6 @@ class NoteController extends Controller
             ], 400);
         }
         
-        // Обновляем все заметки в этой папке
         $updatedCount = Note::where('folder', $validatedData['old_folder'])
                           ->where('is_deleted', false)
                           ->update(['folder' => $validatedData['new_folder']]);

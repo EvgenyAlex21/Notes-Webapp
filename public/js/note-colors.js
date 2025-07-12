@@ -1,7 +1,7 @@
 /**
  * Получение названия приоритета по цвету заметки
- * @param {string} color - Цвет заметки
- * @return {string} - Название приоритета
+ * @param {string} color 
+ * @return {string} 
  */
 function getPriorityName(color) {
     const priorityMap = {
@@ -26,8 +26,8 @@ function getPriorityName(color) {
 
 /**
  * Получить цвет заметки в формате hex по названию цвета
- * @param {string} colorName - Название цвета
- * @return {string} - Hex-код цвета
+ * @param {string} colorName 
+ * @return {string} 
  */
 function getNoteColorHex(colorName) {
     const colorMap = {

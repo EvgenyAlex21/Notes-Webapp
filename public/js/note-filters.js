@@ -1,37 +1,28 @@
-/**
- * Синхронизация фильтров между радиокнопками в сайдбаре и кнопками в верхней плашке
- */
 $(document).ready(function() {
-    // Обработчик радиокнопок в сайдбаре
+
     $('.sidebar-filter').on('change', function() {
         const filter = $(this).val();
         
-        // Обновляем состояние кнопок в верхней плашке
         $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
         $(`.filter-btn[data-filter="${filter}"]`).removeClass('btn-outline-secondary').addClass('btn-secondary');
         
-        // Применяем фильтрацию
         applyFilterByValue(filter);
     });
     
-    // Обработчик кнопок в верхней плашке
     $('.filter-btn').on('click', function() {
         const filter = $(this).data('filter');
         
-        // Обновляем состояние кнопок
         $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
         $(this).removeClass('btn-outline-secondary').addClass('btn-secondary');
         
-        // Обновляем состояние радиокнопок в сайдбаре
         $(`.sidebar-filter[value="${filter}"]`).prop('checked', true);
         
-        // Применяем фильтрацию
         applyFilterByValue(filter);
     });
     
     /**
      * Применение фильтра по значению
-     * @param {string} filterValue - значение фильтра (all, active, completed, pinned)
+     * @param {string} filterValue 
      */
     function applyFilterByValue(filterValue) {
         const notes = $('.note-item');
@@ -60,7 +51,6 @@ $(document).ready(function() {
                 break;
         }
         
-        // Показываем сообщение, если нет заметок для отображения
         if ($('.note-item:visible').length === 0) {
             $('.empty-container').removeClass('d-none');
         } else {

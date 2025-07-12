@@ -6,14 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // Проверим существование колонки files в таблице notes
         if (Schema::hasColumn('notes', 'files')) {
-            // Изменим тип колонки на JSON если не используется SQLite
             if (DB::connection()->getDriverName() !== 'sqlite') {
                 Schema::table('notes', function (Blueprint $table) {
                     $table->json('files')->nullable()->change();
@@ -21,15 +16,12 @@ return new class extends Migration
                 \Log::info('Изменен тип колонки files на JSON');
             }
             
-            // Получаем все записи из таблицы notes
             $notes = DB::table('notes')->get();
             \Log::info('Обработка ' . count($notes) . ' заметок для миграции files');
             
-            // Преобразуем файлы в правильный формат JSON для каждой заметки
             foreach ($notes as $note) {
                 $files = $note->files;
                 
-                // Если files NULL, устанавливаем пустой массив
                 if ($files === null) {
                     DB::table('notes')
                         ->where('id', $note->id)
@@ -38,25 +30,20 @@ return new class extends Migration
                     continue;
                 }
                 
-                // Проверяем, является ли значение уже валидным JSON
                 if (!$this->isValidJson($files)) {
                     try {
-                        // Попробуем преобразовать в JSON, если это строка
                         $filesArray = json_decode($files, true);
                         if ($filesArray === null) {
-                            // Если не удалось декодировать, устанавливаем пустой массив
                             $filesArray = [];
                             \Log::info('Заметка ' . $note->id . ': не удалось декодировать строку, установлен пустой массив');
                         } else {
                             \Log::info('Заметка ' . $note->id . ': успешно декодировано ' . count($filesArray) . ' файлов');
                         }
                         
-                        // Обновляем запись
                         DB::table('notes')
                             ->where('id', $note->id)
                             ->update(['files' => json_encode($filesArray)]);
                     } catch (\Exception $e) {
-                        // В случае ошибки, устанавливаем пустой массив
                         DB::table('notes')
                             ->where('id', $note->id)
                             ->update(['files' => json_encode([])]);
@@ -71,9 +58,6 @@ return new class extends Migration
         }
     }
     
-    /**
-     * Проверяет, является ли строка валидным JSON
-     */
     private function isValidJson($string) {
         if (!is_string($string)) {
             return false;
@@ -83,14 +67,10 @@ return new class extends Migration
         return json_last_error() === JSON_ERROR_NONE;
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('notes', function (Blueprint $table) {
             if (Schema::hasColumn('notes', 'files')) {
-                // В down методе возвращаем прежний тип колонки (если был text)
                 $table->text('files')->nullable()->change();
             }
         });

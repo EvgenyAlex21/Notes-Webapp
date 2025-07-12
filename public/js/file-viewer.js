@@ -1,13 +1,7 @@
-/**
- * Модуль для просмотра различных типов файлов в модальном окне
- * Поддерживает изображения, аудио, видео, PDF и другие типы файлов
- */
-
 let fileViewerModal = null;
 let currentFileIndex = 0;
 let filesList = [];
 
-// Делаем переменные доступными глобально для взаимодействия с другими скриптами
 window.currentFileIndex = currentFileIndex;
 window.filesList = filesList;
 
@@ -23,49 +17,31 @@ function updateGlobalCurrentFiles(newFilesList) {
     console.log('Обновлен глобальный массив файлов:', filesList.length, 'файлов');
 }
 
-// Делаем функцию доступной глобально
 window.updateGlobalCurrentFiles = updateGlobalCurrentFiles;
 
-/**
- * Инициализация просмотрщика файлов
- */
 function initFileViewer() {
     console.log('Инициализация просмотрщика файлов...');
-    
-    // Инициализация модального окна
     const fileViewerModalElement = document.getElementById('fileViewerModal');
     if (fileViewerModalElement) {
         fileViewerModal = new bootstrap.Modal(fileViewerModalElement);
-        
-        // Инициализация кнопок навигации
         document.getElementById('prev-file-btn').addEventListener('click', showPreviousFile);
         document.getElementById('next-file-btn').addEventListener('click', showNextFile);
-        
         console.log('Просмотрщик файлов инициализирован');
     } else {
         console.warn('Элемент модального окна просмотрщика не найден');
     }
-    
-    // Добавляем обработчики для предпросмотра файлов
     setupFilePreviewHandlers();
 }
 
-/**
- * Настройка обработчиков для предпросмотра файлов
- */
 function setupFilePreviewHandlers() {
-    // Обработчик для предпросмотра файлов в карточках заметок
     $(document).on('click', '.file-preview-item', function(e) {
         e.preventDefault();
-        
         const fileUrl = $(this).data('url');
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
         const fileIndex = $(this).data('index');
         const files = $(this).closest('.files-container').find('.file-preview-item');
-        
-        // Собираем информацию о всех файлах для галереи
         filesList = [];
         files.each(function() {
             filesList.push({
@@ -75,31 +51,21 @@ function setupFilePreviewHandlers() {
                 type: $(this).data('type')
             });
         });
-        
-        // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
-        
-        // Обновляем глобальные переменные
         window.filesList = filesList;
         window.currentFileIndex = currentFileIndex;
-        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        
         console.log('Открытие файла в просмотрщике:', fileName);
     });
-    
-    // Обработчик для списка файлов в модальном окне просмотра заметки
+
     $(document).on('click', '.note-file-item', function(e) {
         e.preventDefault();
-        
         const fileUrl = $(this).data('url');
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
         const fileIndex = $(this).data('index');
         const files = $(this).closest('.note-files-list').find('.note-file-item');
-        
-        // Собираем информацию о всех файлах для галереи
         filesList = [];
         files.each(function() {
             filesList.push({
@@ -109,33 +75,21 @@ function setupFilePreviewHandlers() {
                 type: $(this).data('type')
             });
         });
-        
-        // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
-        
-        // Обновляем глобальные переменные
         window.filesList = filesList;
         window.currentFileIndex = currentFileIndex;
-        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        
         console.log('Открытие файла из модального окна заметки:', fileName);
     });
-    
-    // Обработчик для существующих файлов в модальном окне просмотра заметки
+
     $(document).on('click', '.existing-file-preview', function(e) {
         e.preventDefault();
-        
         const fileUrl = $(this).data('url');
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
         const fileIndex = $(this).data('index');
-        
-        // Ищем все файлы в модальном окне просмотра заметки
         const files = $('#viewNoteModal .existing-files-container .existing-file-preview, #viewNoteModal .note-files .existing-file-preview');
-        
-        // Собираем информацию о всех файлах для галереи
         filesList = [];
         files.each(function() {
             filesList.push({
@@ -145,31 +99,21 @@ function setupFilePreviewHandlers() {
                 type: $(this).data('type')
             });
         });
-        
-        // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
-        
-        // Обновляем глобальные переменные
         window.filesList = filesList;
         window.currentFileIndex = currentFileIndex;
-        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        
         console.log('Открытие существующего файла в просмотрщике:', fileName, 'из', filesList.length, 'файлов');
     });
-    
-    // Обработчик для страницы редактирования
+
     $(document).on('click', '.edit-file-preview', function(e) {
         e.preventDefault();
-        
         const fileUrl = $(this).data('url');
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
         const fileIndex = $(this).data('index');
         const files = $(this).closest('.existing-files-container').find('.edit-file-preview');
-        
-        // Собираем информацию о всех файлах для галереи
         filesList = [];
         files.each(function() {
             filesList.push({
@@ -179,31 +123,21 @@ function setupFilePreviewHandlers() {
                 type: $(this).data('type')
             });
         });
-        
-        // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
-        
-        // Обновляем глобальные переменные
         window.filesList = filesList;
         window.currentFileIndex = currentFileIndex;
-        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        
         console.log('Открытие файла на странице редактирования:', fileName, 'из', filesList.length, 'файлов');
     });
-    
-    // Обработчик для новых загруженных файлов на страницах создания/редактирования
+
     $(document).on('click', '.new-file-preview', function(e) {
         e.preventDefault();
-        
         const fileUrl = $(this).data('url');
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
         const fileIndex = $(this).data('index');
         const files = $(this).closest('#file-preview').find('.new-file-preview');
-        
-        // Собираем информацию о всех новых файлах для галереи
         filesList = [];
         files.each(function() {
             filesList.push({
@@ -213,50 +147,38 @@ function setupFilePreviewHandlers() {
                 type: $(this).data('type')
             });
         });
-        
-        // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
-        
-        // Обновляем глобальные переменные
         window.filesList = filesList;
         window.currentFileIndex = currentFileIndex;
-        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        
         console.log('Открытие нового файла в просмотрщике:', fileName, 'из', filesList.length, 'файлов');
     });
 }
 
 /**
- * Показать файл в модальном окне просмотрщика
- * @param {string} url - URL файла
- * @param {string} name - Имя файла
- * @param {string|number} size - Размер файла (в байтах или форматированный)
- * @param {string} type - Тип файла (image, audio, video, pdf, doc, etc)
+ * Показать файл в модальном окне
+ * @param {string} url 
+ * @param {string} name 
+ * @param {string|number} size 
+ * @param {string} type 
  */
 function showFileInViewer(url, name, size, type) {
-    // Заполняем информацию о файле
     document.getElementById('file-name').textContent = name;
     document.getElementById('file-size').textContent = formatFileSize(size);
     
-    // Настраиваем кнопку скачивания
     const downloadBtn = document.getElementById('download-file');
     downloadBtn.href = url;
     downloadBtn.setAttribute('download', name);
     
-    // Получаем контейнер для содержимого файла
     const contentContainer = document.getElementById('file-viewer-content');
     contentContainer.innerHTML = '';
     
-    // Определяем тип файла по расширению, если не передан
     if (!type) {
         type = getFileTypeByExtension(name);
     }
     
-    // Получаем расширение файла для более точного определения типа
     const extension = name.toLowerCase().split('.').pop();
     
-    // В зависимости от типа файла создаем соответствующий элемент
     switch (type) {
         case 'image':
             createImageViewer(contentContainer, url, name);
@@ -307,11 +229,9 @@ function showFileInViewer(url, name, size, type) {
             createArchiveViewer(contentContainer, url, name, type);
             break;
         default:
-            // Проверяем наличие функции перед вызовом
             if (typeof createGenericFileInfo === 'function') {
                 createGenericFileInfo(contentContainer, url, name, extension || type);
             } else {
-                // Запасной вариант, если функция не определена
                 console.error('Функция createGenericFileInfo не найдена, используем запасной вариант');
                 const infoDiv = document.createElement('div');
                 infoDiv.className = 'p-4 text-center';
@@ -328,16 +248,11 @@ function showFileInViewer(url, name, size, type) {
             break;
     }
     
-    // Настраиваем отображение кнопок навигации
     updateNavigationButtons();
     
-    // Открываем модальное окно
     fileViewerModal.show();
 }
 
-/**
- * Создает просмотрщик изображений
- */
 function createImageViewer(container, url, name) {
     const img = document.createElement('img');
     img.src = url;
@@ -346,47 +261,35 @@ function createImageViewer(container, url, name) {
     img.style.maxHeight = '80vh';
     container.appendChild(img);
     
-    // Настраиваем контейнер
     container.style.textAlign = 'center';
     container.style.padding = '20px';
 }
 
-/**
- * Создает аудиоплеер
- */
 function createAudioPlayer(container, url, name) {
     const audioContainer = document.createElement('div');
     audioContainer.className = 'p-4 text-center';
     
-    // Иконка аудиофайла
     const icon = document.createElement('div');
     icon.innerHTML = '<i class="fas fa-file-audio fa-4x mb-3 text-primary"></i>';
     
-    // Название файла
     const title = document.createElement('h5');
     title.textContent = name;
     title.className = 'mb-3';
     
-    // Аудиоплеер
     const audio = document.createElement('audio');
     audio.controls = true;
     audio.src = url;
     audio.className = 'w-100';
     audio.style.maxWidth = '500px';
-    
-    // Добавляем элементы в контейнер
+
     audioContainer.appendChild(icon);
     audioContainer.appendChild(title);
     audioContainer.appendChild(audio);
     container.appendChild(audioContainer);
     
-    // Автоматически запускаем воспроизведение
     audio.play().catch(e => console.log('Автоматическое воспроизведение не разрешено браузером'));
 }
 
-/**
- * Создает видеоплеер
- */
 function createVideoPlayer(container, url, name) {
     const video = document.createElement('video');
     video.controls = true;
@@ -395,13 +298,9 @@ function createVideoPlayer(container, url, name) {
     video.style.maxHeight = '70vh';
     container.appendChild(video);
     
-    // Автоматически запускаем воспроизведение
     video.play().catch(e => console.log('Автоматическое воспроизведение не разрешено браузером'));
 }
 
-/**
- * Создает просмотрщик PDF
- */
 function createPdfViewer(container, url, name) {
     const iframe = document.createElement('iframe');
     iframe.src = url;
@@ -411,18 +310,12 @@ function createPdfViewer(container, url, name) {
     container.appendChild(iframe);
 }
 
-/**
- * Создает просмотрщик офисных документов (через Google Docs Viewer или Office Online)
- */
 function createOfficeViewer(container, url, name, type) {
-    // Формируем абсолютный URL файла
     const absoluteUrl = new URL(url, window.location.origin).href;
     
-    // Создаем контейнер с информацией
     const infoDiv = document.createElement('div');
     infoDiv.className = 'file-info-block';
     
-    // Иконка в зависимости от типа файла
     let iconClass = 'fa-file';
     if (type.includes('doc')) iconClass = 'fa-file-word';
     else if (type.includes('xls')) iconClass = 'fa-file-excel';
@@ -443,7 +336,6 @@ function createOfficeViewer(container, url, name, type) {
         </div>
     `;
     
-    // Пытаемся встроить предпросмотр через iframe с Google Docs
     const previewContainer = document.createElement('div');
     previewContainer.className = 'mt-4';
     previewContainer.innerHTML = `
@@ -466,21 +358,15 @@ function createOfficeViewer(container, url, name, type) {
     container.appendChild(previewContainer);
 }
 
-/**
- * Создает просмотрщик текстовых файлов
- */
 function createTextViewer(container, url, name) {
-    // Создаем контейнер для текста
     const textContainer = document.createElement('div');
     textContainer.className = 'text-content';
     
-    // Добавляем лоадер, пока загружается содержимое
     const loader = document.createElement('div');
     loader.className = 'd-flex justify-content-center align-items-center p-5';
     loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div>';
     container.appendChild(loader);
     
-    // Загружаем содержимое текстового файла
     fetch(url)
         .then(response => response.text())
         .then(text => {
@@ -493,9 +379,6 @@ function createTextViewer(container, url, name) {
     container.appendChild(textContainer);
 }
 
-/**
- * Создает просмотрщик для архивов
- */
 function createArchiveViewer(container, url, name, type) {
     const infoDiv = document.createElement('div');
     infoDiv.className = 'file-info-block';
@@ -514,9 +397,6 @@ function createArchiveViewer(container, url, name, type) {
     container.appendChild(infoDiv);
 }
 
-/**
- * Создает информацию о недоступном файле
- */
 function createErrorFileInfo(container, url, name, errorType = 'not-found') {
     container.innerHTML = '';
     
@@ -562,13 +442,12 @@ function createErrorFileInfo(container, url, name, errorType = 'not-found') {
 
 /**
  * Создает информацию о файле для неподдерживаемых типов
- * @param {HTMLElement} container - Контейнер для размещения
- * @param {string} url - URL файла
- * @param {string} name - Имя файла
- * @param {string} type - Тип файла
+ * @param {HTMLElement} container 
+ * @param {string} url 
+ * @param {string} name 
+ * @param {string} type 
  */
 function createGenericFileInfo(container, url, name, type) {
-    // Определяем подходящую иконку в зависимости от типа
     let iconClass = 'fa-file';
     let fileTypeText = 'Файл';
     
@@ -598,11 +477,7 @@ function createGenericFileInfo(container, url, name, type) {
     container.appendChild(infoDiv);
 }
 
-/**
- * Показывает предыдущий файл в галерее
- */
 function showPreviousFile() {
-    // Используем глобальные переменные
     const currentList = window.filesList || filesList;
     let currentIndex = window.currentFileIndex !== undefined ? window.currentFileIndex : currentFileIndex;
     
@@ -610,19 +485,14 @@ function showPreviousFile() {
     
     currentIndex = (currentIndex - 1 + currentList.length) % currentList.length;
     const file = currentList[currentIndex];
-    
-    // Обновляем глобальные переменные
+
     window.currentFileIndex = currentIndex;
     currentFileIndex = currentIndex;
     
     showFileInViewer(file.url, file.name, file.size, file.type);
 }
 
-/**
- * Показывает следующий файл в галерее
- */
 function showNextFile() {
-    // Используем глобальные переменные
     const currentList = window.filesList || filesList;
     let currentIndex = window.currentFileIndex !== undefined ? window.currentFileIndex : currentFileIndex;
     
@@ -631,63 +501,48 @@ function showNextFile() {
     currentIndex = (currentIndex + 1) % currentList.length;
     const file = currentList[currentIndex];
     
-    // Обновляем глобальные переменные
     window.currentFileIndex = currentIndex;
     currentFileIndex = currentIndex;
     
     showFileInViewer(file.url, file.name, file.size, file.type);
 }
 
-/**
- * Обновляет отображение кнопок навигации
- */
 function updateNavigationButtons() {
     const prevBtn = document.getElementById('prev-file-btn');
     const nextBtn = document.getElementById('next-file-btn');
     
-    // Используем глобальные переменные
     const currentList = window.filesList || filesList;
     
     if (currentList.length <= 1) {
-        // Если в галерее только один файл, скрываем кнопки навигации
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
     } else {
-        // Показываем кнопки навигации
         prevBtn.style.display = 'block';
         nextBtn.style.display = 'block';
     }
 }
 
-/**
- * Определяет тип файла по расширению
- */
 function getFileTypeByExtension(filename) {
     if (!filename) return 'unknown';
     
     const extension = filename.split('.').pop().toLowerCase();
     
-    // Изображения
     if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'tiff', 'ico', 'heic'].includes(extension)) {
         return 'image';
     }
     
-    // Аудио
     if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'wma', 'opus', '3gp', 'mid', 'midi'].includes(extension)) {
         return 'audio';
     }
     
-    // Видео
     if (['mp4', 'webm', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'mpeg', 'mpg', '3gp', 'ogv', 'ts', 'm4v'].includes(extension)) {
         return 'video';
     }
     
-    // PDF
     if (extension === 'pdf') {
         return 'pdf';
     }
     
-    // Офисные документы - Microsoft Office
     if (['doc', 'docx', 'docm', 'dot', 'dotx'].includes(extension)) {
         return 'doc';
     }
@@ -698,55 +553,46 @@ function getFileTypeByExtension(filename) {
         return 'ppt';
     }
     
-    // Офисные документы - OpenOffice / LibreOffice
     if (['odt', 'ott', 'fodt'].includes(extension)) {
-        return 'doc'; // OpenDocument Text
+        return 'doc'; 
     }
     if (['ods', 'ots', 'fods'].includes(extension)) {
-        return 'xls'; // OpenDocument Spreadsheet
+        return 'xls'; 
     }
     if (['odp', 'otp', 'fodp'].includes(extension)) {
-        return 'ppt'; // OpenDocument Presentation
+        return 'ppt'; 
     }
     
-    // Текстовые файлы
     if (['txt', 'csv', 'json', 'xml', 'log', 'md', 'rtf', 'ini', 'conf', 'config', 'yml', 'yaml', 'toml'].includes(extension)) {
         return 'txt';
     }
     
-    // Код
     if (['html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx', 'php', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'go', 'rb', 'pl', 'swift'].includes(extension)) {
         return 'txt';
     }
     
-    // Архивы
     if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tgz'].includes(extension)) {
         return 'archive';
     }
     
-    // По умолчанию
     return 'other';
 }
 
 /**
  * Форматирует размер файла для отображения
- * @param {number|string} size - Размер файла в байтах или уже отформатированная строка
+ * @param {number|string} size 
  */
 function formatFileSize(size) {
-    // Если это уже строка и она не является числом
     if (typeof size === 'string' && isNaN(size)) {
         return size;
     }
     
-    // Преобразуем в число, если это строковое представление числа
     const sizeInBytes = typeof size === 'string' ? parseInt(size, 10) : size;
     
-    // Если не число, возвращаем пустую строку
     if (isNaN(sizeInBytes)) {
         return '';
     }
     
-    // Форматируем размер файла
     if (sizeInBytes < 1024) {
         return sizeInBytes + ' Б';
     } else if (sizeInBytes < 1024 * 1024) {
@@ -758,7 +604,6 @@ function formatFileSize(size) {
     }
 }
 
-// Инициализация при загрузке документа
 $(document).ready(function() {
     initFileViewer();
 });

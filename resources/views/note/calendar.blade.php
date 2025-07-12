@@ -45,6 +45,15 @@
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             padding: 20px;
+            min-height: 0;
+            display: block;
+        }
+        #calendar {
+            min-height: 0;
+            background: none;
+            border-radius: 0;
+            box-shadow: none;
+            display: block;
         }
         .fc-event {
             cursor: pointer;
@@ -136,18 +145,13 @@
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">Календарь заметок</h1>
-                <div class="d-flex">
-                    <div class="form-check form-switch me-3">
-                        <input class="form-check-input" type="checkbox" id="theme-toggle">
-                        <label class="form-check-label" for="theme-toggle">
-                            <i class="fas fa-moon"></i> Темная тема
-                        </label>
-                    </div>
-                    <a href="/notes" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> Назад к списку
-                    </a>
-                </div>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    <span class="fw-bold">Календарь</span>
+                </h1>
+                <a href="/notes" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад к списку
+                </a>
             </div>
         </div>
     </div>
@@ -170,21 +174,198 @@
                         <div><i class="fas fa-trash"></i> Корзина</div>
                         <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
                     </a>
-                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center active">
+                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-calendar"></i> Календарь</div>
                         <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
                     </a>
+                    <hr>
+                    <div class="theme-switch" id="theme-switch">
+                        <span class="d-flex align-items-center"><i class="fas fa-sun me-2"></i>Тема</span>
+                        <div class="form-check form-switch ms-auto">
+                            <input class="form-check-input" type="checkbox" id="theme-toggle">
+                        </div>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Фильтры</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-all" checked disabled>
+                        <label class="form-check-label" for="filter-all">
+                            <i class="fas fa-list"></i> Все
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-active" disabled>
+                        <label class="form-check-label" for="filter-active">
+                            <i class="fas fa-circle"></i> Только активные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-completed" disabled>
+                        <label class="form-check-label" for="filter-completed">
+                            <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-pinned" disabled>
+                        <label class="form-check-label" for="filter-pinned">
+                            <i class="fas fa-thumbtack"></i> Только закрепленные
+                        </label>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Папки</h5>
+                    <div id="folders-list">
+                        <!-- Список папок будет загружен динамически -->
+                    </div>
+                    <div class="mb-3 mt-2">
+                        <button id="add-folder-btn" class="btn btn-sm btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-plus"></i> Добавить папку
+                        </button>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Приоритет заметки</h5>
+                    <div class="color-picker d-flex flex-wrap mb-3" style="pointer-events: none; opacity: 0.7;">
+                        <div class="color-option color-default selected" data-color="default" title="Без приоритета" style="width: 20px; height: 20px; margin: 0 3px; border: 2px solid #333;"></div>
+                        <div class="color-option color-red" data-color="red" title="Критически важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Очень важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-green" data-color="green" title="Средний приоритет" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Планирование" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="w-100"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Личное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Идея" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Информация" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Обучение" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Ожидание" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-black" data-color="black" title="Архивное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Ночное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                    </div>
                 </div>
             </div>
-            
             <!-- Основное содержимое -->
-            <div class="col-md-9">
+            <div class="col-lg-9">
                 <div class="calendar-container">
-                    <div id="calendar"></div>
+                <div id="calendar" style="min-height:500px; border:2px dashed #007bff; display:flex; align-items:center; justify-content:center; color:#007bff; font-size:1.2rem;">
+                    <!-- Календарь будет инициализирован здесь -->
+                </div>
                 </div>
             </div>
         </div>
     </div>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar-counters.js"></script>
+    <script src="/js/note-colors.js"></script>
+    <script>
+    // Глобальная функция для уведомлений (как в edit.blade.php)
+    function showNotification(message, type = 'info', duration = 3000) {
+        if (!$('#app-notifications').length) {
+            $('body').append('<div id="app-notifications" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; width: 300px;"></div>');
+        }
+        let bgClass = 'bg-info';
+        let textClass = 'text-dark';
+        let icon = 'fas fa-info-circle';
+        switch(type) {
+            case 'success': bgClass = 'bg-success'; textClass = 'text-white'; icon = 'fas fa-check-circle'; break;
+            case 'error': case 'danger': bgClass = 'bg-danger'; textClass = 'text-white'; icon = 'fas fa-exclamation-triangle'; break;
+            case 'warning': bgClass = 'bg-warning'; textClass = 'text-dark'; icon = 'fas fa-exclamation-circle'; break;
+            case 'info': bgClass = 'bg-info'; textClass = 'text-white'; icon = 'fas fa-info-circle'; break;
+        }
+        const notificationId = 'notification-' + Date.now();
+        const notification = `
+            <div id="${notificationId}" class="alert ${bgClass} ${textClass} d-flex align-items-center fade show mb-2" role="alert" 
+                 style="border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative;">
+                <i class="${icon} me-2" style="font-size: 1.2rem;"></i>
+                <div class="flex-grow-1" style="font-size: 0.9rem;">${message}</div>
+                <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.8rem;"></button>
+            </div>
+        `;
+        $('#app-notifications').append(notification);
+        setTimeout(function() {
+            $(`#${notificationId}`).fadeOut(300, function() { $(this).remove(); });
+        }, duration);
+    }
+    // Динамическая загрузка папок (как в edit.blade.php)
+    function loadFoldersList() {
+        $.ajax({
+            url: '/api/folders',
+            type: 'GET',
+            success: function(response) {
+                if (response.success && response.data) {
+                    const foldersContainer = $('#folders-list');
+                    foldersContainer.empty();
+                    const sortedFolders = response.data.sort((a, b) => {
+                        const numA = parseInt(a.name.match(/\d+/)) || 0;
+                        const numB = parseInt(b.name.match(/\d+/)) || 0;
+                        return numA - numB;
+                    });
+                    sortedFolders.forEach(function(folder) {
+                        const folderName = folder.name;
+                        const count = folder.count || 0;
+                        const normalizedName = folderName.toLowerCase().trim();
+                        const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+                        const isActive = window.location.pathname.includes(`/notes/folder/${encodeURIComponent(folderName)}`);
+                        const activeClass = isActive ? 'active-folder' : '';
+                        foldersContainer.append(`
+                            <div class="folder-item d-flex align-items-center mb-2 ${activeClass}" 
+                                 id="${folderId}" 
+                                 data-folder-name="${normalizedName}" 
+                                 data-folder-original="${folderName}">
+                                <a href="/notes/folder/${encodeURIComponent(folderName)}" 
+                                   class="text-decoration-none text-dark folder-link" 
+                                   data-folder="${folderName}">
+                                    <i class="fas fa-folder me-1"></i> ${folderName}
+                                </a>
+                                <div class="ms-auto d-flex align-items-center gap-1">
+                                    <span class="badge bg-secondary">${count}</span>
+                                    <button class="btn btn-link p-0 ms-1 folder-actions" tabindex="-1" style="color:#adb5bd;" title="Действия">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                    });
+                    // Включаем обработчик для троеточий
+                    $('.folder-actions').off('click').on('click', function(e) {
+                        e.preventDefault();
+                        // Здесь можно реализовать выпадающее меню или действия для папки
+                        showNotification('Действия с папкой будут реализованы позже', 'info');
+                    });
+                }
+            },
+            error: function() {
+                console.error('Ошибка при загрузке папок');
+            }
+        });
+    }
+    // Загрузка папок при загрузке страницы
+    $(document).ready(function() {
+        loadFoldersList();
+        // Отключаем клики на цветах в боковой панели
+        $('.sidebar .color-option').css('pointer-events', 'none');
+        $('.sidebar .color-option.color-default').addClass('selected');
+        $('.sidebar .color-option:not(.color-default)').removeClass('selected');
+        // Счетчики заметок (если есть функция)
+        if (typeof loadSidebarStats === 'function') {
+            setTimeout(loadSidebarStats, 200);
+        }
+        // Переключение темы
+        const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
+        if (darkThemeEnabled) {
+            document.body.classList.add('dark-theme');
+            $('#theme-toggle').prop('checked', true);
+        }
+        $('#theme-toggle').on('change', function() {
+            const isDarkMode = $(this).is(':checked');
+            if (isDarkMode) {
+                document.body.classList.add('dark-theme');
+                localStorage.setItem('darkTheme', 'true');
+            } else {
+                document.body.classList.remove('dark-theme');
+                localStorage.setItem('darkTheme', 'false');
+            }
+        });
+    });
+    </script>
     
     <!-- Модальное окно для просмотра/редактирования заметки -->
     <div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
@@ -261,38 +442,49 @@
         let calendar;
         let selectedColor = 'default';
         let currentTheme = localStorage.getItem('theme') || 'light';
-        
+
         document.addEventListener('DOMContentLoaded', function() {
             // Инициализация темы
-            initTheme();
-            
-            // Инициализация календаря
-            initCalendar();
-            
+            if (typeof initTheme === 'function') initTheme();
+
+            // Проверка наличия контейнера календаря
+            const calendarEl = document.getElementById('calendar');
+            if (calendarEl) {
+                document.getElementById('calendar-debug-text').innerText = 'Инициализация календаря...';
+                try {
+                    initCalendar();
+                    document.getElementById('calendar-debug-text').style.display = 'none';
+                } catch (e) {
+                    document.getElementById('calendar-debug-text').innerText = 'Ошибка инициализации: ' + e;
+                    calendarEl.style.color = 'red';
+                }
+            } else {
+                console.error('Контейнер #calendar не найден!');
+            }
+
             // Инициализация цветового выбора
             $('.color-option').on('click', function() {
                 $('.color-option').removeClass('selected');
                 $(this).addClass('selected');
                 selectedColor = $(this).data('color');
             });
-            
+
             // Обработчик для перерисовки календаря при смене темы
             $('#theme-toggle').on('change', function() {
-                // Перерисовываем календарь при смене темы
-                calendar.render();
+                if (calendar) calendar.render();
             });
-            
+
             // Обработчик для создания заметки
             $('#save-event-btn').on('click', function() {
                 const title = $('#new-event-title').val();
                 const description = $('#new-event-description').val();
                 const reminderDate = $('#new-event-date').val();
-                
+
                 if (!title || !description || !reminderDate) {
                     alert('Пожалуйста, заполните все поля');
                     return;
                 }
-                
+
                 createNoteWithReminder(title, description, selectedColor, reminderDate);
             });
         });

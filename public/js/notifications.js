@@ -81,6 +81,18 @@ function initNotificationsSystem() {
                 border-left-color: #7e57c2;
             }
             
+            .notification-item.reminder.overdue {
+                border-left-color: #ff5722;
+                background: #fff3e0;
+            }
+            
+            .overdue-text {
+                font-size: 12px;
+                color: #ff5722;
+                font-style: italic;
+                margin-top: 4px;
+            }
+            
             .notification-header {
                 display: flex;
                 justify-content: space-between;
@@ -173,13 +185,22 @@ function initNotificationsSystem() {
             body.dark-theme .notification-actions .secondary {
                 color: #bdbdbd;
             }
+            
+            body.dark-theme .notification-item.reminder.overdue {
+                background: #3e2723;
+            }
+            
+            body.dark-theme .overdue-text {
+                color: #ff8a65;
+            }
         `;
         document.head.appendChild(style);
     }
     
-    // Запускаем проверку напоминаний каждую минуту
+    // Запускаем первую проверку напоминаний через 2 секунды после загрузки
+    // и затем проверяем каждую минуту
     if (!notificationCheckInterval) {
-        checkReminders();
+        setTimeout(checkReminders, 2000); // Первая проверка через 2 секунды
         notificationCheckInterval = setInterval(checkReminders, 60000); // Каждую минуту
         console.log('Настроена регулярная проверка напоминаний');
     }
@@ -220,12 +241,21 @@ function checkReminders() {
             'X-CSRF-TOKEN': csrfToken
         },
         success: function(response) {
+            console.log('[REMINDER] Ответ сервера:', response);
             if (response.success && response.reminders) {
                 console.log(`Получено ${response.reminders.length} напоминаний`);
                 
-                // Показываем каждое напоминание
+                // Показываем каждое напоминание (только если оно еще не показано)
                 response.reminders.forEach(reminder => {
-                    showReminderNotification(reminder);
+                    const notificationId = 'reminder-' + reminder.id;
+                    const alreadyShown = activeNotifications.some(n => n.id === notificationId);
+                    
+                    if (!alreadyShown) {
+                        console.log('Показываем новое напоминание:', reminder.note_name);
+                        showReminderNotification(reminder);
+                    } else {
+                        console.log('Напоминание уже показано:', reminder.note_name);
+                    }
                 });
             }
         },
@@ -240,7 +270,7 @@ function showReminderNotification(reminder) {
     const notificationId = 'reminder-' + reminder.id;
     
     // Проверяем, не показано ли уже это напоминание
-    if (activeNotifications.includes(notificationId)) {
+    if (activeNotifications.some(n => n.id === notificationId)) {
         return;
     }
     
@@ -248,32 +278,14 @@ function showReminderNotification(reminder) {
     const title = reminder.note_name || 'Напоминание';
     const content = reminder.description || 'Пора проверить заметку';
     
-    // Добавляем это напоминание в список активных
-    activeNotifications.push(notificationId);
-    
-    // Показываем уведомление
-    showNotification({
+    // Показываем красивое уведомление
+    showReminderNotificationUI({
         id: notificationId,
         title: title,
         message: content,
         type: 'reminder',
         autoClose: false,
-        actions: [
-            {
-                text: 'Открыть',
-                class: 'primary',
-                onClick: function() {
-                    window.location.href = `/notes/${reminder.note_id}`;
-                }
-            },
-            {
-                text: 'Отметить как выполнено',
-                class: 'secondary',
-                onClick: function() {
-                    markReminderAsDone(reminder.id, notificationId);
-                }
-            }
-        ]
+        reminder: reminder
     });
     
     // Также показываем браузерное уведомление, если доступно и разрешено
@@ -288,7 +300,7 @@ function markReminderAsDone(reminderId, notificationId) {
     console.log('Отмечаем напоминание как выполненное. ID:', reminderId);
     
     $.ajax({
-        url: `/reminders/${reminderId}/done`,
+        url: `/api/reminders/${reminderId}/done`,
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken
@@ -296,6 +308,18 @@ function markReminderAsDone(reminderId, notificationId) {
         success: function(response) {
             console.log('Напоминание отмечено как выполненное:', response);
             closeNotification(notificationId);
+            // Если на странице редактирования — сбрасываем напоминание в UI
+            if (window.location.pathname.match(/\/notes\//)) {
+                if ($('#reminder-type').length) {
+                    $('#reminder-type').val('none').trigger('change');
+                }
+                if ($('#reminder-date').length) {
+                    $('#reminder-date').val('');
+                }
+                if ($('#reminder-actions').length) {
+                    $('#reminder-actions').hide();
+                }
+            }
         },
         error: function(xhr, status, error) {
             console.error('Ошибка при отметке напоминания:', error || xhr.responseText);
@@ -328,6 +352,150 @@ function showBrowserNotification(title, message, url) {
     }
 }
 
+/**
+ * Показывает красивое уведомление о напоминании с кнопками действий
+ */
+function showReminderNotificationUI(options) {
+    const notificationId = options.id || `reminder-${Date.now()}`;
+    const reminder = options.reminder;
+    
+    // Создаем контейнер для уведомлений, если он не существует
+    if (!notificationContainer) {
+        initNotificationsSystem();
+    }
+    
+    // Определяем статус напоминания
+    const isOverdue = reminder.is_overdue || false;
+    const statusText = isOverdue ? '⚠️ Просрочено:' : '🔔';
+    const statusClass = isOverdue ? 'overdue' : 'active';
+
+    // Формируем корректный текст для просроченного напоминания
+    let overdueText = '';
+    if (isOverdue) {
+        // Если есть точная дата, показываем ее
+        if (reminder.reminder_at) {
+            const date = new Date(reminder.reminder_at);
+            overdueText = `<div class="overdue-text">Напоминание просрочено: ${date.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
+        } else if (reminder.time_diff) {
+            overdueText = `<div class="overdue-text">Напоминание просрочено: ${reminder.time_diff.replace('hours', 'часов').replace('hour', 'час').replace('minutes', 'минут').replace('minute', 'минута')}</div>`;
+        } else {
+            overdueText = `<div class="overdue-text">Напоминание просрочено</div>`;
+        }
+    }
+
+    // Создаем элемент уведомления
+    const notification = document.createElement('div');
+    notification.id = notificationId;
+    notification.className = `notification-item reminder ${statusClass}`;
+    notification.innerHTML = `
+        <div class="notification-header">
+            <h5 class="notification-title">${statusText} ${options.title}</h5>
+            <button class="notification-close" onclick="closeReminderNotification('${notificationId}')">&times;</button>
+        </div>
+        <div class="notification-content">
+            ${options.message}
+            ${overdueText}
+        </div>
+        <div class="notification-actions">
+            <button type="button" class="secondary" onclick="closeReminderNotification('${notificationId}')">Закрыть</button>
+            <button type="button" class="secondary" onclick="snoozeReminder(${reminder.id}, '${notificationId}', 15)">+15 мин</button>
+            <button type="button" class="secondary" onclick="markReminderAsDone(${reminder.id}, '${notificationId}')">Выполнено</button>
+            <button type="button" class="primary" onclick="openNoteFromReminder(${reminder.note_id}, '${notificationId}')">Открыть</button>
+        </div>
+    `;
+    
+    // Добавляем стили для просроченных напоминаний
+    if (isOverdue) {
+        notification.style.borderLeftColor = '#ff5722';
+    }
+    
+    // Добавляем в контейнер
+    notificationContainer.appendChild(notification);
+    
+    // Добавляем в список активных уведомлений
+    activeNotifications.push({
+        id: notificationId,
+        element: notification,
+        type: 'reminder',
+        reminderId: reminder.id,
+        createdAt: Date.now()
+    });
+    
+    // Прокручиваем контейнер вниз
+    notificationContainer.scrollTop = notificationContainer.scrollHeight;
+    
+    return notificationId;
+}
+
+/**
+ * Отложить напоминание на указанное количество минут
+ */
+function snoozeReminder(reminderId, notificationId, minutes) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    console.log('Откладываем напоминание на', minutes, 'минут. ID:', reminderId);
+    
+    // Вычисляем новое время напоминания
+    const newReminderTime = new Date();
+    newReminderTime.setMinutes(newReminderTime.getMinutes() + minutes);
+    
+    $.ajax({
+        url: `/api/notes/${reminderId}/reminder`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        data: {
+            reminder_at: newReminderTime.toISOString()
+        },
+        success: function(response) {
+            console.log('Напоминание отложено:', response);
+            closeReminderNotification(notificationId);
+            showNotification(`Напоминание отложено на ${minutes} минут`, 'info', 3000);
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка при откладывании напоминания:', error || xhr.responseText);
+            showNotification('Не удалось отложить напоминание', 'error', 5000);
+        }
+    });
+}
+
+/**
+ * Открывает заметку из напоминания
+ */
+function openNoteFromReminder(noteId, notificationId) {
+    closeReminderNotification(notificationId);
+    // Открываем модальное окно просмотра заметки, если функция доступна
+    if (typeof viewNote === 'function') {
+        viewNote(noteId);
+    } else {
+        window.location.href = `/notes/${noteId}`;
+    }
+}
+
+/**
+ * Закрывает уведомление о напоминании
+ */
+function closeReminderNotification(notificationId) {
+    const notification = document.getElementById(notificationId);
+    if (notification) {
+        notification.classList.add('closing');
+        
+        // Удаляем из DOM после завершения анимации
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+            
+            // Удаляем из списка активных
+            const index = activeNotifications.findIndex(n => n.id === notificationId);
+            if (index !== -1) {
+                activeNotifications.splice(index, 1);
+            }
+        }, 300);
+    }
+}
 /**
  * Отображает красивое всплывающее уведомление (обновленная версия)
  * @param {string} message - Текст уведомления
@@ -405,10 +573,12 @@ function showNotification(message, type = 'info', duration = 3000) {
     }
     
     // Добавляем обработчик для кнопки закрытия
-    const closeBtn = notification.querySelector('.notification-close-btn');
-    closeBtn.addEventListener('click', () => {
-        closeNotification(notificationId);
-    });
+    const closeBtn = notification.querySelector('.btn-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            closeNotification(notificationId);
+        });
+    }
     
     // Если уведомлений много, прокручиваем контейнер вниз
     notificationContainer.scrollTop = notificationContainer.scrollHeight;
@@ -418,29 +588,42 @@ function showNotification(message, type = 'info', duration = 3000) {
 
 // Закрывает уведомление по его ID
 function closeNotification(id) {
-    const notification = document.getElementById(id);
-    if (notification) {
-        notification.classList.add('closing');
+    const notificationIndex = activeNotifications.findIndex(n => n.id === id);
+    if (notificationIndex !== -1) {
+        const notificationObj = activeNotifications[notificationIndex];
+        const notification = notificationObj.element;
         
-        // Удаляем из DOM после завершения анимации
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
+        if (notification) {
+            notification.classList.add('closing');
+            
+            // Очищаем таймер, если есть
+            if (notificationObj.timeout) {
+                clearTimeout(notificationObj.timeout);
             }
             
-            // Удаляем из списка активных
-            const index = activeNotifications.indexOf(id);
-            if (index !== -1) {
-                activeNotifications.splice(index, 1);
-            }
-        }, 300);
+            // Удаляем из DOM после завершения анимации
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+                
+                // Удаляем из списка активных
+                activeNotifications.splice(notificationIndex, 1);
+            }, 300);
+        }
     }
 }
 
 // Закрывает все активные уведомления
 function closeAllNotifications() {
-    const ids = [...activeNotifications];
-    ids.forEach(id => closeNotification(id));
+    const notifications = [...activeNotifications];
+    notifications.forEach(notification => {
+        if (notification.type === 'reminder') {
+            closeReminderNotification(notification.id);
+        } else {
+            closeNotification(notification.id);
+        }
+    });
 }
 
 // Инициализируем систему уведомлений при загрузке страницы
@@ -459,3 +642,8 @@ window.showNotification = showNotification;
 window.closeNotification = closeNotification;
 window.closeAllNotifications = closeAllNotifications;
 window.checkReminders = checkReminders;
+window.showReminderNotificationUI = showReminderNotificationUI;
+window.closeReminderNotification = closeReminderNotification;
+window.openNoteFromReminder = openNoteFromReminder;
+window.markReminderAsDone = markReminderAsDone;
+window.snoozeReminder = snoozeReminder;

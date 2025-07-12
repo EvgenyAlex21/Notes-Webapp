@@ -6,23 +6,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('notes', function (Blueprint $table) {
-            $table->string('color')->default('default'); // Цвет для приоритета заметки
-            $table->boolean('is_deleted')->default(false); // Признак нахождения заметки в корзине
-            $table->timestamp('deleted_at')->nullable(); // Время удаления (для возможности восстановления)
-            $table->boolean('is_pinned')->default(false); // Признак закрепления заметки наверху списка
-            $table->string('tags')->nullable(); // Теги для категоризации заметок
+            $table->string('color')->default('default');
+            $table->boolean('is_deleted')->default(false);
+            $table->timestamp('deleted_at')->nullable();
+            $table->boolean('is_pinned')->default(false); 
+            $table->string('tags')->nullable(); 
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('notes', function (Blueprint $table) {

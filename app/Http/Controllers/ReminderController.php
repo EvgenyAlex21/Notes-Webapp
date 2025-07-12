@@ -17,21 +17,60 @@ class ReminderController extends Controller
     public function checkReminders()
     {
         try {
-            // Получаем заметки с напоминаниями, которые должны быть показаны
-            $now = Carbon::now();
-            
-            // Ищем все напоминания, срок которых наступил или прошел (не более 30 минут назад)
-            $startTime = $now->copy()->subMinutes(30);
-            
-            $notes = Note::where('is_deleted', false)
+            \Log::info('=== ПРОВЕРКА ЛОГИРОВАНИЯ ===', ['datetime' => now()->toDateTimeString()]);
+
+            // Логируем все заметки с напоминаниями (без фильтра по времени)
+            $allNotes = Note::where('is_deleted', false)
+                ->where('is_archived', false)
                 ->whereNotNull('reminder_at')
-                ->where('reminder_at', '<=', $now)
-                ->where('reminder_at', '>=', $startTime)
+                ->orderBy('reminder_at', 'desc')
                 ->get();
-            
-            $reminders = [];
-            
+            \Log::info('[REMINDER][DEBUG] Все заметки с reminder_at:', [
+                'count' => $allNotes->count(),
+                'reminders' => $allNotes->map(function($n) { return [
+                    'id' => $n->id,
+                    'reminder_at' => $n->reminder_at,
+                    'name' => $n->name
+                ]; })->toArray()
+            ]);
+            // Используем локальное время приложения
+            $nowLocal = Carbon::now(config('app.timezone', 'Europe/Moscow'));
+            $startTimeLocal = $nowLocal->copy()->subHours(24);
+
+            \Log::info('[REMINDER][DEBUG] Проверка напоминаний', [
+                'now_local' => $nowLocal->toDateTimeString(),
+                'startTime_local' => $startTimeLocal->toDateTimeString()
+            ]);
+
+            // Получаем заметки с напоминаниями, которые должны быть показаны
+            $notes = Note::where('is_deleted', false)
+                ->where('is_archived', false)
+                ->whereNotNull('reminder_at')
+                ->where('reminder_at', '<=', $nowLocal)
+                ->where('reminder_at', '>=', $startTimeLocal)
+                ->orderBy('reminder_at', 'desc')
+                ->get();
+
+            \Log::info('[REMINDER][DEBUG] Найдено напоминаний', [
+                'count' => $notes->count(),
+                'ids' => $notes->pluck('id')->toArray(),
+                'reminder_at' => $notes->pluck('reminder_at')->toArray()
+            ]);
+
+            // Логируем каждую заметку с напоминанием для диагностики таймзоны
             foreach ($notes as $note) {
+                \Log::info('[REMINDER][DEBUG] Сравнение времени', [
+                    'note_id' => $note->id,
+                    'reminder_at' => $note->reminder_at,
+                    'reminder_at_local' => Carbon::parse($note->reminder_at)->setTimezone(config('app.timezone', 'Europe/Moscow'))->toDateTimeString(),
+                    'now_local' => $nowLocal->toDateTimeString(),
+                ]);
+            }
+
+            $reminders = [];
+            foreach ($notes as $note) {
+                $reminderTime = Carbon::parse($note->reminder_at);
+                $isOverdue = $reminderTime->isPast();
                 $reminders[] = [
                     'id' => $note->id,
                     'note_id' => $note->id,
@@ -39,15 +78,34 @@ class ReminderController extends Controller
                     'description' => mb_substr(strip_tags($note->description), 0, 150) . (mb_strlen(strip_tags($note->description)) > 150 ? '...' : ''),
                     'color' => $note->color,
                     'reminder_at' => $note->reminder_at,
+                    'is_overdue' => $isOverdue,
+                    'time_diff' => $reminderTime->diffForHumans($nowLocal),
                     'created_at' => $note->created_at,
                 ];
             }
-            
+
+            // Логируем все напоминания в базе (без фильтра по времени)
+            $allReminders = Note::where('is_deleted', false)
+                ->where('is_archived', false)
+                ->whereNotNull('reminder_at')
+                ->orderBy('reminder_at', 'desc')
+                ->get();
+
+            \Log::info('[REMINDER][DEBUG] Все напоминания в базе:', [
+                'count' => $allReminders->count(),
+                'reminders' => $allReminders->map(function($n) { return [
+                    'id' => $n->id,
+                    'reminder_at' => $n->reminder_at,
+                    'name' => $n->name
+                ]; })->toArray()
+            ]);
+
             return response()->json([
                 'success' => true,
                 'reminders' => $reminders
             ]);
         } catch (\Exception $e) {
+            \Log::error('[REMINDER] Ошибка: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при проверке напоминаний: ' . $e->getMessage(),
@@ -67,15 +125,19 @@ class ReminderController extends Controller
         try {
             $note = Note::findOrFail($id);
             
+            \Log::info('Отмечаем напоминание как выполненное для заметки: ' . $note->name);
+            
             // Сбрасываем reminder_at
             $note->reminder_at = null;
             $note->save();
             
             return response()->json([
                 'success' => true,
-                'message' => 'Напоминание отмечено как выполненное'
+                'message' => 'Напоминание отмечено как выполненное',
+                'note' => $note
             ]);
         } catch (\Exception $e) {
+            \Log::error('Ошибка при обработке напоминания: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при обработке напоминания: ' . $e->getMessage()

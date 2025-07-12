@@ -1,8 +1,3 @@
-/**
- * Стили для счетчиков и папок в боковой панели
- */
-
-/* Принудительно устанавливаем серый цвет для всех счетчиков, даже в активном состоянии */
 .sidebar-link .badge,
 .folder-item .badge,
 .sidebar-link.active .badge,
@@ -12,14 +7,12 @@
     color: #fff !important;
 }
 
-/* Стиль для активной папки - точно как у активных разделов в навигации */
 .folder-item.active-folder {
     background-color: #e9ecef !important;
     border-radius: 0.375rem !important;
     margin-bottom: 0.5rem !important;
 }
 
-/* Стиль для ссылки в активной папке */
 .folder-item.active-folder .folder-link {
     color: #212529 !important;
     font-weight: bold !important;
@@ -27,7 +20,6 @@
     background-color: transparent !important;
 }
 
-/* Убираем синее выделение при клике на папки */
 .folder-link:focus,
 .folder-link:active,
 .folder-link:visited {
@@ -37,7 +29,6 @@
     box-shadow: none !important;
 }
 
-/* Убираем синее выделение при клике на активные папки */
 .folder-item.active-folder .folder-link:focus,
 .folder-item.active-folder .folder-link:active,
 .folder-item.active-folder .folder-link:visited {
@@ -47,17 +38,14 @@
     box-shadow: none !important;
 }
 
-/* Убираем синюю подсветку для всех элементов внутри активной папки */
 .folder-item.active-folder * {
     color: #495057 !important;
 }
 
-/* Исключение для счетчиков - они должны быть белыми внутри серого фона */
 .folder-item.active-folder .badge {
     color: #fff !important;
 }
 
-/* Темная тема - специфические стили */
 .dark-theme .folder-item.active-folder {
     background-color: #4a4f55 !important;
     border-radius: 0.375rem !important;
@@ -71,7 +59,6 @@
     background-color: transparent !important;
 }
 
-/* Убираем синее выделение при клике в темной теме */
 .dark-theme .folder-link:focus,
 .dark-theme .folder-link:active,
 .dark-theme .folder-link:visited {
@@ -90,28 +77,25 @@
     box-shadow: none !important;
 }
 
-/* Счетчики в темной теме - также всегда серые */
 .dark-theme .sidebar-link .badge,
 .dark-theme .folder-item .badge,
 .dark-theme .sidebar-link.active .badge,
 .dark-theme .active-folder .badge,
 .dark-theme .folder-item.active-folder .badge {
-    background-color: #6c757d !important; /* Явно устанавливаем цвет для темной темы */
+    background-color: #6c757d !important;
     color: #ffffff !important;
 }
 
-/* Дополнительные стили для предотвращения мигания при клике */
 .folder-link {
     transition: none !important;
     -webkit-tap-highlight-color: transparent !important;
-    padding: 10px 15px !important; /* Такой же padding как у sidebar-link */
+    padding: 10px 15px !important;
 }
 
 .folder-link:hover {
     text-decoration: none !important;
 }
 
-/* Убираем все возможные эффекты при клике */
 .folder-item {
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none !important;
@@ -122,7 +106,6 @@
     user-select: none !important;
 }
 
-/* Убираем outline для всех состояний */
 .folder-link:focus-visible {
     outline: none !important;
 }

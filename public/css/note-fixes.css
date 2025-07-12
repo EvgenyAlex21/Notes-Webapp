@@ -1,14 +1,8 @@
-/**
- * Стили для исправления проблем с отображением заметок
- */
-
-/* Обязательное отображение основных элементов заметки */
 .note-item, .note-wrapper {
     position: relative !important;
     overflow: visible !important;
 }
 
-/* Кнопки действий */
 .note-actions {
     display: block !important;
     visibility: visible !important;
@@ -35,7 +29,6 @@
     bottom: 100% !important;
 }
 
-/* Обязательное отображение кнопки просмотра */
 .view-button-container {
     display: block !important;
     visibility: visible !important;
@@ -51,14 +44,12 @@
     padding: 6px 12px !important;
 }
 
-/* Исправляем отображение заголовка заметки */
 .note-header {
     display: flex !important;
     justify-content: space-between !important;
     flex-wrap: wrap !important;
 }
 
-/* Исправляем отображение статусов заметки */
 .note-status-priority {
     display: flex !important;
     flex-wrap: wrap !important;
@@ -66,7 +57,6 @@
     margin: 5px 0 !important;
 }
 
-/* Исправляем отображение значков заметки */
 .badge {
     display: inline-flex !important;
     align-items: center !important;
@@ -74,24 +64,20 @@
     opacity: 1 !important;
 }
 
-/* Добавляем отступ между элементами заметки */
 .note-content {
     padding: 5px 0 !important;
     min-height: 30px !important;
 }
 
-/* Делаем заметку кликабельной */
 .note-content-text {
     cursor: pointer;
 }
 
-/* Исправление выпадающего меню */
 .note-actions .dropdown-menu {
     top: auto !important;
     bottom: 100% !important;
 }
 
-/* Улучшение внешнего вида карточек заметок */
 .note-item h4 {
     font-weight: 600 !important;
     color: #333 !important;
@@ -135,7 +121,6 @@
     margin-top: 0 !important;
 }
 
-/* Стили для плашки папки */
 .folder-badge {
     border-radius: 20px !important;
     padding: 4px 12px !important;

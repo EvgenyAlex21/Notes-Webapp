@@ -10,17 +10,15 @@ use Illuminate\Support\Facades\Auth;
 class TagController extends Controller
 {
     /**
-     * Получить все уникальные теги из заметок пользователя
+     * Получение уникальных тегов из заметок
      *
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
         try {
-            // Получаем все теги из заметок (не фильтруем по пользователю для упрощения)
             $notes = Note::whereNotNull('tags')->get();
             
-            // Собираем уникальные теги из всех заметок
             $allTags = [];
             foreach ($notes as $note) {
                 if (!empty($note->tags)) {
@@ -40,7 +38,6 @@ class TagController extends Controller
             ], 500);
         }
         
-        // Сортируем теги
         sort($allTags);
         
         return response()->json([

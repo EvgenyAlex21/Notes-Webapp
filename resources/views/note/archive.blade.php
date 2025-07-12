@@ -9,7 +9,6 @@
     <meta http-equiv="Expires" content="0">
     <title>Архив заметок</title>
     
-    <!-- Favicon с версионированием для обхода кэша -->
     <link rel="icon" href="/favicon.ico?v=1">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
@@ -30,20 +29,13 @@
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/notifications.js') }}"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
-    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
-        // Сохраняем оригинальную функцию console.warn
         const originalWarn = console.warn;
-        
-        // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
         console.warn = function() {
-            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted
             if (arguments[0] && typeof arguments[0] === 'string' && 
                 arguments[0].includes('DOMNodeInserted')) {
-                // Игнорируем это предупреждение
                 return;
             }
-            // Для всех остальных предупреждений используем оригинальную функцию
             originalWarn.apply(console, arguments);
         };
     </script>
@@ -224,7 +216,6 @@
             border: none;
             border-radius: 8px;
         }
-        /* Счетчики заметок */
         .note-stats {
             display: flex;
             flex-wrap: wrap;
@@ -232,7 +223,6 @@
             margin-bottom: 1rem;
         }
         
-        /* Темная тема */
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
@@ -345,7 +335,6 @@
     
     <div class="container">
         <div class="row">
-            <!-- Боковая панель -->
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
@@ -395,7 +384,6 @@
                     
                     <h5 class="mb-3">Папки</h5>
                     <div id="folders-list">
-                        <!-- Здесь будут отображаться папки, загруженные из базы данных -->
                     </div>
                     <button class="btn btn-sm btn-outline-secondary w-100" id="add-folder-btn">
                         <i class="fas fa-plus"></i> Добавить папку
@@ -423,7 +411,6 @@
                 </div>
             </div>
 
-            <!-- Основное содержимое -->
             <div class="col-md-9">
                 <div class="search-container mb-4">
                     <div class="input-group">
@@ -457,7 +444,6 @@
                     </div>
                 </div>
                 
-                <!-- Информация о количестве заметок (бейджи) -->
                 <div class="note-counters mb-3">
                     <div class="d-flex flex-wrap gap-2">
                         <span class="badge rounded-pill text-bg-primary" id="counter-all">
@@ -475,12 +461,9 @@
                     </div>
                 </div>
 
-                <!-- Список заметок -->
                 <div id="notes-container" class="notes-container">
-                    <!-- Здесь будут заметки -->
                 </div>
 
-                <!-- Пустое состояние -->
                 <div class="empty-container text-center py-5 d-none" id="empty-message">
                     <div class="empty-icon">
                         <i class="fas fa-archive"></i>
@@ -492,8 +475,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Модальные окна и дополнительные элементы -->
 
     <script src="/js/note-update-handler.js"></script>
     <script src="/js/note-status-handler.js"></script>

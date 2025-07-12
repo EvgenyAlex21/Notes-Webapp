@@ -9,8 +9,6 @@ use Illuminate\Http\Request;
 class FolderController extends Controller
 {
     /**
-     * Переименование папки
-     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -21,22 +19,18 @@ class FolderController extends Controller
             'new_folder' => 'required|string|different:old_folder'
         ]);
         
-        // Проверяем существование новой папки в таблице folders, включая удаленные
         $newFolderExists = Folder::where('name', $validatedData['new_folder'])->exists();
                               
-        // Проверяем существование в старой системе
         $oldNewFolderExists = Note::where('folder', $validatedData['new_folder'])
                                ->where('is_deleted', false)
                                ->exists();
         
         if ($newFolderExists || $oldNewFolderExists) {
-            // Проверим, может быть это папка была удалена
             $deletedFolder = Folder::where('name', $validatedData['new_folder'])
                             ->where('is_deleted', true)
                             ->first();
                 
             if ($deletedFolder) {
-                // Если папка была удалена, сначала удалим её полностью из БД
                 $deletedFolder->delete();
             } else {
                 return response()->json([
@@ -46,7 +40,6 @@ class FolderController extends Controller
             }
         }
         
-        // Проверяем дополнительные правила для имени папки
         if (trim($validatedData['new_folder']) === '') {
             return response()->json([
                 'success' => false,
@@ -62,7 +55,6 @@ class FolderController extends Controller
         }
         
         try {
-            // Обновляем запись в таблице folders
             $folder = Folder::where('name', $validatedData['old_folder'])
                       ->where('is_deleted', false)
                       ->first();
@@ -71,14 +63,12 @@ class FolderController extends Controller
                 $folder->name = $validatedData['new_folder'];
                 $folder->save();
             } else {
-                // Если папки нет в новой таблице, создаем ее
                 $folder = new Folder();
                 $folder->name = $validatedData['new_folder'];
                 $folder->is_deleted = false;
                 $folder->save();
             }
             
-            // Обновляем все заметки в этой папке
             $updatedCount = Note::where('folder', $validatedData['old_folder'])
                               ->where('is_deleted', false)
                               ->update(['folder' => $validatedData['new_folder']]);
@@ -103,8 +93,6 @@ class FolderController extends Controller
     }
     
     /**
-     * Удаление папки (заметки остаются, но без привязки к папке)
-     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -115,12 +103,10 @@ class FolderController extends Controller
         ]);
         
         try {
-            // Проверяем существование папки в новой таблице
             $folder = Folder::where('name', $validatedData['folder'])
                       ->where('is_deleted', false)
                       ->first();
             
-            // Проверяем существование папки в старой системе
             $oldFolderExists = Note::where('folder', $validatedData['folder'])
                              ->where('is_deleted', false)
                              ->exists();
@@ -132,13 +118,11 @@ class FolderController extends Controller
                 ], 404);
             }
             
-            // Если папка существует в новой таблице, помечаем ее как удаленную
             if ($folder) {
                 $folder->is_deleted = true;
                 $folder->save();
             }
-            
-            // Обновляем все заметки в этой папке (удаляем привязку к папке)
+
             $updatedCount = Note::where('folder', $validatedData['folder'])
                               ->where('is_deleted', false)
                               ->update(['folder' => null]);
@@ -163,8 +147,6 @@ class FolderController extends Controller
     }
     
     /**
-     * Перемещение нескольких заметок в папку
-     *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -188,7 +170,6 @@ class FolderController extends Controller
         ]);
         
         try {
-            // Если указана папка, убедимся что она существует или создадим её
             if ($folder) {
                 $folderExists = Folder::where('name', $folder)->exists();
                 
@@ -201,8 +182,6 @@ class FolderController extends Controller
                 }
             }
             
-            // Обновляем все указанные заметки и принудительно преобразуем folder в строку 
-            // или NULL, чтобы избежать проблем с типом данных
             $folder = $folder === '' ? null : (string)$folder;
             $updatedCount = Note::whereIn('id', $noteIds)
                             ->where('is_deleted', false)
@@ -233,8 +212,6 @@ class FolderController extends Controller
     }
     
     /**
-     * Создание новой папки в базе данных
-     * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
@@ -245,22 +222,18 @@ class FolderController extends Controller
         ]);
         
         try {
-            // Проверяем, существует ли уже такая папка в новой таблице folders, включая удаленные
             $folderExists = Folder::where('name', $validatedData['folder'])->exists();
             
-            // Также проверяем существование в старой системе (на случай миграции)
             $oldFolderExists = Note::where('folder', $validatedData['folder'])
                              ->where('is_deleted', false)
                              ->exists();
             
             if ($folderExists || $oldFolderExists) {
-                // Проверим, может быть это папка была удалена
                 $deletedFolder = Folder::where('name', $validatedData['folder'])
                                 ->where('is_deleted', true)
                                 ->first();
                 
                 if ($deletedFolder) {
-                    // Если папка была удалена, восстановим её
                     $deletedFolder->is_deleted = false;
                     $deletedFolder->save();
                     
@@ -280,7 +253,6 @@ class FolderController extends Controller
                 ], 400);
             }
             
-            // Проверяем дополнительные правила для имени папки
             if (trim($validatedData['folder']) === '') {
                 return response()->json([
                     'success' => false,
@@ -295,7 +267,6 @@ class FolderController extends Controller
                 ], 400);
             }
             
-            // Создаем запись о папке в новой таблице
             $folder = new Folder();
             $folder->name = $validatedData['folder'];
             $folder->is_deleted = false;

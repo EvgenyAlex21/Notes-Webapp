@@ -8,14 +8,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Корзина</title>
-
-    <!-- Favicon с версионированием для обхода кэша -->
     <link rel="icon" href="/favicon.ico?v=1">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
     <link rel="shortcut icon" href="/favicon.ico?v=1">
     <link rel="apple-touch-icon" href="/images/logo.png?v=1">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
@@ -26,20 +23,14 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
-    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
-        // Сохраняем оригинальную функцию console.warn
         const originalWarn = console.warn;
         
-        // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
         console.warn = function() {
-            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted
             if (arguments[0] && typeof arguments[0] === 'string' && 
                 arguments[0].includes('DOMNodeInserted')) {
-                // Игнорируем это предупреждение
                 return;
             }
-            // Для всех остальных предупреждений используем оригинальную функцию
             originalWarn.apply(console, arguments);
         };
     </script>
@@ -283,7 +274,6 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
-        /* Улучшенное позиционирование выпадающего меню */
         .dropdown {
             position: relative;
         }
@@ -296,7 +286,6 @@
             right: 0 !important;
             left: auto !important;
         }
-        /* Исправление наложения выпадающих меню */
         .note-item .dropdown-menu,
         .folder-item .dropdown-menu {
             position: fixed;
@@ -305,13 +294,11 @@
             max-width: 250px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
-        /* Предотвращение переполнения и обрезки выпадающих меню */
         .dropdown-menu.show {
             overflow: visible;
             display: block;
         }
-        
-        /* Стили для просмотра заметки */
+
         .tags-section .tag {
             font-size: 0.85rem;
             padding: 0.25rem 0.75rem;
@@ -334,7 +321,6 @@
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         }
         
-        /* Стили для темной темы */
         .dark-theme {
             background-color: #121212;
             color: #e0e0e0;
@@ -435,7 +421,6 @@
             color: #90caf9;
         }
         
-        /* Вертикальная полоса приоритета */
         .priority-indicator {
             position: absolute;
             left: 0;
@@ -449,7 +434,6 @@
         .priority-4 { background-color: #20c997; }
         .priority-5 { background-color: #0d6efd; }
         
-        /* Счетчики заметок */
         .note-counters {
             margin: 15px 0;
         }
@@ -457,7 +441,7 @@
             padding: 8px 15px;
             font-size: 0.9rem;
         }
-        /* Стили для кнопки добавления папки */
+
         .add-folder-btn {
             width: 100%;
             padding: 8px;
@@ -482,7 +466,6 @@
             color: #e0e0e0;
         }
         
-        /* Дополнительные стили для тегов в заметке */
         .note-tag {
             display: inline-block;
             padding: 3px 10px;
@@ -498,7 +481,6 @@
             color: #90caf9;
         }
         
-        /* Стили для цветовой палитры в настройках приоритета */
         .priority-colors {
             display: flex;
             flex-wrap: wrap;
@@ -522,7 +504,6 @@
             box-shadow: 0 0 0 2px #1e1e1e, 0 0 0 4px #90caf9;
         }
         
-        /* Улучшенное отображение кнопок статуса заметки */
         .note-done-toggle {
             padding: 2px 8px;
             border-radius: 12px;
@@ -533,7 +514,6 @@
             letter-spacing: 0.5px;
         }
         
-        /* Улучшенный стиль заголовка заметки */
         .note-title-row {
             display: flex;
             justify-content: space-between;
@@ -549,7 +529,6 @@
             white-space: nowrap;
         }
         
-        /* Стили для меток папок */
         .folder-badge {
             padding: 2px 10px;
             border-radius: 12px;
@@ -585,7 +564,6 @@
 
     <div class="container">
         <div class="row">
-            <!-- Боковая панель -->
             <div class="col-md-3">
                 <div class="sidebar mb-4">
                     <h3>Навигация</h3>
@@ -612,7 +590,6 @@
                         <h3>Фильтры</h3>
                     </div>
                     
-                    <!-- Фильтры заметок в боковой панели -->
                     <div class="form-check mb-2">
                         <input class="form-check-input sidebar-filter" type="radio" name="sidebarFilter" id="filter-all" checked>
                         <label class="form-check-label" for="filter-all">
@@ -644,9 +621,8 @@
                         <h3>Папки</h3>
                     </div>
                     
-                    <!-- Список папок будет добавлен здесь через JavaScript -->
                     <div id="folders-list">
-                        <!-- Папки будут добавлены здесь динамически -->
+
                     </div>
                     
                     <button class="add-folder-btn" id="add-folder-btn">
@@ -679,9 +655,7 @@
                 </div>
             </div>
             
-            <!-- Основной контент -->
             <div class="col-md-9">
-                <!-- Поиск -->
                 <div id="search-container">
                     <div class="input-group mb-3">
                         <span class="input-group-text"><i class="fas fa-search"></i></span>
@@ -714,7 +688,6 @@
                     </div>
                 </div>
                 
-                <!-- Информация о количестве заметок (бейджи) -->
                 <div class="note-counters mb-3">
                     <div class="d-flex flex-wrap gap-2">
                         <span class="badge rounded-pill text-bg-primary" id="counter-all">
@@ -732,12 +705,10 @@
                     </div>
                 </div>
 
-                <!-- Список заметок -->
                 <div class="notes-container">
-                    <!-- Здесь будут заметки -->
+
                 </div>
 
-                <!-- Пустое состояние -->
                 <div class="empty-container text-center py-5 d-none">
                     <div class="empty-icon">
                         <i class="fas fa-trash-alt"></i>
@@ -749,7 +720,6 @@
         </div>
     </div>
 
-    <!-- Подключаем скрипты -->
     <script src="/js/note-update-handler.js"></script>
     <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
@@ -767,7 +737,6 @@
     <script src="/js/accessibility-fix.js"></script>
     <script src="/js/sidebar-counters.js"></script>
     
-    <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -777,7 +746,7 @@
                 </div>
                 <div class="modal-body">
                     <div id="viewNoteContent">
-                        <!-- Содержимое заметки будет загружено сюда через JavaScript -->
+
                     </div>
                 </div>
                 <div class="modal-footer">

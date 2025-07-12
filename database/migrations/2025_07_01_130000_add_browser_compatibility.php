@@ -7,23 +7,17 @@ use Illuminate\Support\Facades\Schema;
 class AddBrowserCompatibility extends Migration
 {
     /**
-     * Run the migrations.
-     *
      * @return void
      */
     public function up()
     {
         Schema::table('notes', function (Blueprint $table) {
-            // Добавляем поле для хранения простого текста (для браузеров, не поддерживающих HTML)
             $table->text('plain_description')->nullable()->after('description');
             
-            // Добавляем поле для хранения настроек совместимости
             $table->json('compatibility_settings')->nullable()->after('view_mode');
             
-            // Добавляем поле для хранения истории версий заметки
             $table->json('version_history')->nullable()->after('compatibility_settings');
             
-            // Индексы для улучшения производительности поиска
             $table->index('name');
             $table->index('tags');
             $table->index('folder');
@@ -33,8 +27,6 @@ class AddBrowserCompatibility extends Migration
     }
 
     /**
-     * Reverse the migrations.
-     *
      * @return void
      */
     public function down()

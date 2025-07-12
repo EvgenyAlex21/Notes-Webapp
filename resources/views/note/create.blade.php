@@ -615,6 +615,30 @@
             $('#create-note-form').submit(function() {
                 var htmlContent = quill.root.innerHTML;
                 $('#description').val(htmlContent);
+                // Преобразуем дату напоминания из локального времени в UTC перед отправкой
+                var reminderVal = $('#reminder-date').val();
+                if (reminderVal) {
+                    var localDate = new Date(reminderVal);
+                    var utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+                    var isoString = utcDate.toISOString().slice(0, 19).replace('T', ' ');
+                    // Кладём в скрытое поле reminder_at
+                    if ($('#reminder_at').length === 0) {
+                        $('<input>').attr({type: 'hidden', id: 'reminder_at', name: 'reminder_at'}).appendTo('#create-note-form');
+                    }
+                    $('#reminder_at').val(isoString);
+                    console.log('Добавлено напоминание (UTC, reminder_at):', isoString);
+                } else {
+                    // Если напоминание не установлено, явно очищаем его
+                    if ($('#reminder_at').length === 0) {
+                        $('<input>').attr({type: 'hidden', id: 'reminder_at', name: 'reminder_at'}).appendTo('#create-note-form');
+                    }
+                    $('#reminder_at').val('');
+                    console.log('Напоминание очищено (reminder_at)');
+                }
+                // Для отладки: логируем все значения формы
+                var formDataLog = {};
+                $('#create-note-form').serializeArray().forEach(function(item) { formDataLog[item.name] = item.value; });
+                console.log('Отправляемые данные формы:', formDataLog);
             });
             
             // При нажатии на кнопку "Сохранить"
@@ -677,7 +701,7 @@
                 const selectedType = $(this).val();
                 const dateTimeContainer = $('#reminder-datetime-container');
                 const reminderActions = $('#reminder-actions');
-                
+
                 switch (selectedType) {
                     case 'none':
                         dateTimeContainer.hide();
@@ -690,17 +714,17 @@
                         break;
                     case 'today':
                         setQuickDate(0); // сегодня
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
                         break;
                     case 'tomorrow':
                         setQuickDate(1); // завтра
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
                         break;
                     case 'next-week':
                         setQuickDate(7); // через неделю
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени и дату
                         reminderActions.show();
                         break;
                 }
@@ -724,9 +748,22 @@
             
             // Удаление напоминания
             $('#remove-reminder').off('click').on('click', function() {
-                $('#reminder-type').val('none').trigger('change');
-                $('#reminder-date').val('');
-                $('#reminder-actions').hide();
+                createConfirmationModal({
+                    title: 'Удалить напоминание?',
+                    message: 'Вы уверены, что хотите удалить напоминание?',
+                    confirmButtonText: 'Удалить',
+                    cancelButtonText: 'Отмена',
+                    confirmButtonClass: 'btn-danger',
+                    icon: 'fa-bell-slash',
+                    onConfirm: function() {
+                        $('#reminder-type').val('none').trigger('change');
+                        $('#reminder-date').val('');
+                        $('#reminder-actions').hide();
+                        if ($('#reminder-status').length) {
+                            $('#reminder-status').text('Без напоминания');
+                        }
+                    }
+                });
             });
             
             // Глобальный массив для хранения загруженных файлов

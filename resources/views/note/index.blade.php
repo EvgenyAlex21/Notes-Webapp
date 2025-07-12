@@ -8,14 +8,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Список заметок' }}</title>
-    
-    <!-- Favicon с версионированием для обхода кэша -->
     <link rel="icon" href="/favicon.ico?v=1">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
     <link rel="shortcut icon" href="/favicon.ico?v=1">
     <link rel="apple-touch-icon" href="/images/logo.png?v=1">
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
@@ -34,20 +31,13 @@
     <script src="{{ asset('js/view-buttons.js') }}"></script>
     <script src="{{ asset('js/note-buttons-fix.js') }}"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
-    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
-        // Сохраняем оригинальную функцию console.warn
         const originalWarn = console.warn;
-        
-        // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
         console.warn = function() {
-            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted
             if (arguments[0] && typeof arguments[0] === 'string' && 
                 arguments[0].includes('DOMNodeInserted')) {
-                // Игнорируем это предупреждение
                 return;
             }
-            // Для всех остальных предупреждений используем оригинальную функцию
             originalWarn.apply(console, arguments);
         };
     </script>
@@ -78,7 +68,7 @@
             transition: all 0.2s ease-in-out;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             background-color: #fff;
-            border-left: 5px solid #6c757d; /* Цвет по умолчанию */
+            border-left: 5px solid #6c757d;
             position: relative;
             border-top: none;
         }
@@ -104,7 +94,6 @@
             transform: scale(1.05);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        /* Индикатор приоритета (цветная полоска слева) */
         .note-item.default { border-left-color: #6c757d; }
         .note-item.red { border-left-color: #dc3545; }
         .note-item.green { border-left-color: #28a745; }
@@ -119,40 +108,31 @@
         .note-item.brown { border-left-color: #8b4513; }
         .note-item.black { border-left-color: #000000; }
         .note-item.navy { border-left-color: #000080; }
-
-        /* Стили для выбранных цветов в фильтрации */
         .color-option.selected {
             transform: scale(1.3);
             box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
         }
-        
-        /* Режим выбора заметок для перемещения в папку */
         .selectable-note {
             position: relative;
         }
-        
         .note-selection-checkbox {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 10;
         }
-        
         .note-selection-badge {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 10;
         }
-        
         .already-in-folder .note-item {
             opacity: 0.7;
         }
-        
         .notes-selection-active {
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        
         .color-picker {
             display: inline-flex;
             margin-right: 10px;
@@ -183,7 +163,6 @@
         .color-brown { background-color: #8b4513; }
         .color-black { background-color: #000000; }
         .color-navy { background-color: #000080; }
-        
         .note-actions {
             margin-top: 15px;
         }
@@ -277,16 +256,12 @@
         .search-clear:hover {
             opacity: 1;
         }
-        
-        /* Счетчики заметок */
         .note-stats {
             display: flex;
             flex-wrap: wrap;
             gap: 5px;
             margin-bottom: 1rem;
         }
-        
-        /* Темная тема */
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
@@ -327,8 +302,6 @@
         .dark-theme .search-result-item .description {
             color: #adb5bd;
         }
-        
-        /* Архивные заметки */
         .note-item.archived {
             opacity: 0.7;
             border-left-color: #6c757d;
@@ -337,7 +310,6 @@
         .dark-theme .note-item.archived {
             background-color: #2c3034;
         }
-        
         .theme-switch {
             cursor: pointer;
             padding: 10px;
@@ -351,7 +323,6 @@
         .dark-theme .theme-switch {
             background-color: #495057;
         }
-        
         .sidebar-link {
             display: block;
             padding: 10px 15px;
@@ -371,8 +342,6 @@
         .sidebar-link i {
             margin-right: 10px;
         }
-        
-        /* Стили для папок - точно такие же как у sidebar-link */
         .folder-link {
             display: block;
             padding: 8px 12px;
@@ -566,8 +535,6 @@
             border: none;
             border-radius: 8px;
         }
-        
-        /* Дополнительные стили для исправления контрастности в темной теме */
         .dark-theme .text-muted {
             color: #c2c7d0 !important;
         }
@@ -618,8 +585,6 @@
         .dark-theme .form-check-label {
             color: #f1f3f5;
         }
-        
-        /* Стили для выпадающих меню */
         .dropdown-menu-end {
             right: 0;
             left: auto !important;
@@ -629,7 +594,6 @@
             max-width: 250px;
             z-index: 1050;
         }
-        /* Предотвращаем переполнение текста в меню */
         .folder-item {
             position: relative;
         }
@@ -640,8 +604,6 @@
             overflow: hidden;
             display: inline-block;
         }
-        
-        /* Улучшенное позиционирование выпадающего меню */
         .dropdown {
             position: relative;
         }
@@ -654,7 +616,6 @@
             right: 0 !important;
             left: auto !important;
         }
-        /* Исправление наложения выпадающих меню */
         .note-item .dropdown-menu,
         .folder-item .dropdown-menu {
             position: fixed;
@@ -663,13 +624,10 @@
             max-width: 250px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.2);
         }
-        /* Предотвращение переполнения и обрезки выпадающих меню */
         .dropdown-menu.show {
             overflow: visible;
             display: block;
         }
-        
-        /* Стили для просмотра заметки */
         .tags-section .tag {
             font-size: 0.85rem;
             padding: 0.25rem 0.75rem;
@@ -713,10 +671,8 @@
             </div>
         </div>
     </div>
-    
     <div class="container">
         <div class="row">
-            <!-- Боковая панель -->
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
@@ -736,18 +692,14 @@
                         <div><i class="fas fa-calendar"></i> Календарь</div>
                         <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
                     </a>
-                    
                     <hr>
-                    
                     <div class="theme-switch" id="theme-switch">
                         <span><i class="fas fa-sun"></i> Тема</span>
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="theme-toggle">
                         </div>
                     </div>
-                    
                     <hr>
-                    
                     <h5 class="mb-3">Фильтры</h5>
                     <div class="form-check mb-2">
                         <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-all" value="all" checked>
@@ -773,19 +725,14 @@
                             <i class="fas fa-thumbtack"></i> Только закрепленные
                         </label>
                     </div>
-                    
                     <hr>
-                    
                     <h5 class="mb-3">Папки</h5>
                     <div id="folders-list">
-                        <!-- Здесь будут отображаться папки, загруженные из базы данных -->
                     </div>
                     <button class="btn btn-sm btn-outline-secondary w-100" id="add-folder-btn">
                         <i class="fas fa-plus"></i> Добавить папку
                     </button>
-                    
                     <hr>
-                    
                     <h5 class="mb-3">Приоритет заметки</h5>
                     <div class="color-picker d-flex flex-wrap gap-2 mb-3">
                         <div class="color-option color-default" data-color="default" title="Без приоритета"></div>
@@ -805,8 +752,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Основное содержимое -->
             <div class="col-md-9">
                 <div class="search-container mb-4">
                     <div class="input-group">
@@ -816,7 +761,6 @@
                     </div>
                     <div class="search-results" id="search-results"></div>
                 </div>
-                
                 <div class="filters d-flex justify-content-between align-items-center mb-4">
                     <div class="btn-group">
                         <button class="btn btn-secondary filter-btn" data-filter="all">Все</button>
@@ -824,7 +768,6 @@
                         <button class="btn btn-outline-secondary filter-btn" data-filter="completed">Выполненные</button>
                         <button class="btn btn-outline-secondary filter-btn" data-filter="pinned">Закрепленные</button>
                     </div>
-                    
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-sort"></i> Сортировка
@@ -839,18 +782,14 @@
                         </ul>
                     </div>
                 </div>
-                
                 <div class="note-stats mb-3">
                     <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
                     <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
                     <span class="badge bg-warning me-2" id="active-notes">Активно: 0</span>
                     <span class="badge bg-info me-2" id="pinned-notes">Закреплено: 0</span>
                 </div>
-                
                 <div class="notes-container">
-                    <!-- Сюда будут добавлены заметки с помощью JavaScript -->
                 </div>
-                
                 <div class="empty-container d-none">
                     <div class="empty-icon">
                         <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : (isset($archiveMode) && $archiveMode ? 'fas fa-archive' : 'fas fa-sticky-note') }}"></i>
@@ -882,8 +821,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Инициализация данных страницы -->
     <script>
         var pageData = {
             trashMode: {{ isset($trashMode) && $trashMode ? 'true' : 'false' }},
@@ -893,7 +830,6 @@
         };
         console.log('Инициализированы данные страницы:', pageData);
     </script>
-
     <script src="/js/note-colors.js"></script>
     <script src="/js/note-counter.js"></script>
     <script src="/js/sidebar-active.js"></script>
@@ -911,9 +847,7 @@
     <script src="/js/folder-remove.js"></script>
     <script src="/js/accessibility-fix.js"></script>
     <script src="/js/sidebar-counters.js"></script>
-    
     <script>
-        // Инициализация просмотрщика файлов после загрузки всех скриптов
         $(document).ready(function() {
             if (typeof initFileViewer === 'function') {
                 initFileViewer();
@@ -923,8 +857,6 @@
             }
         });
     </script>
-    
-    <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" aria-labelledby="viewNoteModalLabel">
         <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
@@ -934,7 +866,6 @@
                 </div>
                 <div class="modal-body">
                     <div id="viewNoteContent">
-                        <!-- Содержимое заметки будет загружено сюда через JavaScript -->
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -944,10 +875,7 @@
             </div>
         </div>
     </div>
-    
     <script src="/js/notifications.js"></script>
-    
-    <!-- Модальное окно для просмотра файлов -->
     <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
@@ -957,10 +885,7 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="file-viewer-container d-flex align-items-center justify-content-center position-relative">
-                        <!-- Содержимое будет добавлено динамически -->
                         <div id="file-viewer-content" class="w-100"></div>
-                        
-                        <!-- Элементы управления навигацией для галереи изображений -->
                         <button class="btn btn-light position-absolute start-0 top-50 translate-middle-y rounded-circle ms-2 file-nav-btn" id="prev-file-btn" style="display:none">
                             <i class="fas fa-chevron-left"></i>
                         </button>

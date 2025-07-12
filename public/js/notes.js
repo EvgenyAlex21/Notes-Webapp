@@ -231,12 +231,18 @@ $(document).ready(function() {
         applySorting(sortType);
     });
     
-    // Обработчик для добавления папки
+    // Обработчик для добавления папки (красивое модальное окно)
     $('#add-folder-btn').on('click', function() {
-        const folderName = prompt('Введите название папки:');
-        if (folderName) {
-            addFolder(folderName);
-        }
+        showFolderInputModal({
+            title: 'Создание новой папки',
+            placeholder: 'Введите название папки',
+            confirmText: 'Создать',
+            onConfirm: function(folderName) {
+                if (folderName) {
+                    addFolder(folderName);
+                }
+            }
+        });
     });
     
     // Обработчик для кнопки "Отметить как выполненное/активное"
@@ -988,14 +994,16 @@ function loadNote(id) {
             
             // Устанавливаем дату напоминания, если она есть
             if (note.reminder_at) {
-                // Форматируем дату напоминания для input datetime-local
-                const reminderDate = new Date(note.reminder_at);
-                const year = reminderDate.getFullYear();
-                const month = String(reminderDate.getMonth() + 1).padStart(2, '0');
-                const day = String(reminderDate.getDate()).padStart(2, '0');
-                const hours = String(reminderDate.getHours()).padStart(2, '0');
-                const minutes = String(reminderDate.getMinutes()).padStart(2, '0');
-                
+                // Преобразуем UTC-дату из БД в локальное время для input type="datetime-local"
+                const utcDate = new Date(note.reminder_at);
+                // Получаем локальное смещение
+                const tzOffset = utcDate.getTimezoneOffset();
+                const localDate = new Date(utcDate.getTime() - tzOffset * 60000);
+                const year = localDate.getFullYear();
+                const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                const day = String(localDate.getDate()).padStart(2, '0');
+                const hours = String(localDate.getHours()).padStart(2, '0');
+                const minutes = String(localDate.getMinutes()).padStart(2, '0');
                 $('#reminder-date').val(`${year}-${month}-${day}T${hours}:${minutes}`);
                 $('#reminder-actions').show();
             } else {
@@ -1015,6 +1023,7 @@ function loadNote(id) {
                         success: function(response) {
                             $('#reminder-date').val('');
                             $('#reminder-actions').hide();
+                            $('#reminder-status').text('Без напоминания');
                             showNotification('Напоминание удалено', 'info');
                         },
                         error: function(xhr, status, error) {
@@ -1130,28 +1139,108 @@ function loadNote(id) {
                             preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
                         }
                         
-                        filesHtml += `
-                            <div class="col-md-3 col-sm-4 col-6 mb-3">
-                                <div class="card h-100">
-                                    ${preview}
-                                    <div class="card-body p-2 text-center">
-                                        <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
-                                        <button type="button" 
-                                            class="btn btn-sm btn-outline-primary file-preview-item" 
-                                            data-url="${fileUrl}" 
-                                            data-name="${file.name || ''}" 
-                                            data-size="${file.size || ''}" 
-                                            data-type="${file.type || ''}"
-                                            data-index="${index}">
-                                            Открыть
-                                        </button>
+                        // Проверяем, если мы на странице редактирования
+                        const isEditPage = window.location.pathname.includes('/notes/') && window.location.pathname.includes('/edit');
+                        
+                        if (isEditPage) {
+                            // Для страницы редактирования - кнопки "глаз" и "корзина" в том же стиле что и на странице создания
+                            filesHtml += `
+                                <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                    <div class="card h-100">
+                                        ${preview}
+                                        <div class="card-body p-2 text-center">
+                                            <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                            <div class="btn-group btn-group-sm w-100">
+                                                <button type="button" class="btn btn-outline-primary file-preview-item" 
+                                                        data-url="${fileUrl}" 
+                                                        data-name="${file.name || ''}" 
+                                                        data-size="${file.size || ''}" 
+                                                        data-type="${file.type || ''}"
+                                                        data-index="${index}" 
+                                                        title="Открыть файл">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger remove-file" data-file-path="${file.path}" data-file-name="${file.name}" title="Удалить файл">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        `;
+                            `;
+                        } else {
+                            // Для страницы просмотра - кнопка "Открыть"
+                            filesHtml += `
+                                <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                    <div class="card h-100">
+                                        ${preview}
+                                        <div class="card-body p-2 text-center">
+                                            <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                            <button type="button" 
+                                                class="btn btn-sm btn-outline-primary file-preview-item" 
+                                                data-url="${fileUrl}" 
+                                                data-name="${file.name || ''}" 
+                                                data-size="${file.size || ''}" 
+                                                data-type="${file.type || ''}"
+                                                data-index="${index}">
+                                                Открыть
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
                     });
                     
+                    // Привязываем обработчики событий
                     existingFilesContainer.find('.files-container').html(filesHtml);
+                    
+                    // Если мы на странице редактирования, добавляем обработчики для кнопок управления файлами
+                    if (window.location.pathname.includes('/notes/') && window.location.pathname.includes('/edit')) {
+                        setTimeout(function() {
+                            // Обработчик для кнопки удаления файла
+                            $('.remove-file').off('click').on('click', function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                
+                                const filePath = $(this).data('file-path');
+                                const fileCard = $(this).closest('.col-md-3');
+                                const fileName = $(this).data('file-name') || 'файл';
+                                
+                                console.log('Кнопка удаления нажата для файла:', fileName);
+                                
+                                // Создаем модальное окно для подтверждения удаления
+                                try {
+                                    createConfirmationModal({
+                                        title: 'Удаление файла',
+                                        message: `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                                        confirmButtonText: 'Удалить',
+                                        cancelButtonText: 'Отмена',
+                                        confirmButtonClass: 'btn-danger',
+                                        icon: 'fa-trash',
+                                        onConfirm: function() {
+                                            console.log('Подтверждено удаление файла:', fileName);
+                                            
+                                            // Удаляем файл из массива currentNoteFiles
+                                            window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
+                                            
+                                            // Удаляем карточку файла из DOM
+                                            fileCard.remove();
+                                            
+                                            // Если это был последний файл, скрываем контейнер
+                                            if (window.currentNoteFiles.length === 0) {
+                                                $('#existing-files').hide();
+                                            }
+                                            
+                                            showNotification(`Файл "${fileName}" успешно удален`, 'success');
+                                        }
+                                    });
+                                } catch (e) {
+                                    console.error('Ошибка создания модального окна:', e);
+                                }
+                            });
+                        }, 100); // Небольшая задержка для уверенности, что DOM обновился
+                    }
                 } else {
                     console.log('Нет валидных файлов для отображения');
                 }
@@ -1251,7 +1340,13 @@ function createNote() {
     
     // Добавляем дату напоминания, если она указана
     if ($('#reminder-date').val()) {
-        formData.append('reminder_at', $('#reminder-date').val());
+        // Преобразуем локальное время в UTC перед отправкой
+        const localValue = $('#reminder-date').val();
+        const localDate = new Date(localValue);
+        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+        // Форматируем в ISO без секунд и миллисекунд
+        const isoString = utcDate.toISOString().slice(0, 16);
+        formData.append('reminder_at', isoString);
     }
     formData.append('color', noteColor || 'default');
     
@@ -1739,9 +1834,24 @@ function updateNote(id) {
     formData.append('name', $('#name').val());
     formData.append('description', $('#description').val());
     
-    // Добавляем дату напоминания, если она указана
-    if ($('#reminder-date').val()) {
-        formData.append('reminder_at', $('#reminder-date').val());
+    // Добавляем дату напоминания
+    if ($('#reminder_at').length && $('#reminder_at').val()) {
+        // Используем значение из скрытого поля
+        formData.append('reminder_at', $('#reminder_at').val());
+        console.log('Использовано значение из скрытого поля reminder_at:', $('#reminder_at').val());
+    } 
+    else if ($('#reminder-date').val() && $('#reminder-type').val() !== 'none') {
+        // Преобразуем локальное время в UTC
+        const localValue = $('#reminder-date').val();
+        const localDate = new Date(localValue);
+        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+        const isoString = utcDate.toISOString();
+        formData.append('reminder_at', isoString);
+        console.log('Создано значение reminder_at из поля даты:', isoString);
+    } else {
+        // Если нет напоминания - передаем пустую строку
+        formData.append('reminder_at', '');
+        console.log('Передано пустое значение для reminder_at');
     }
     // Явно передаем булево значение как строку "1" или "0"
     formData.append('done', $('#done').is(':checked') ? '1' : '0');
@@ -2848,26 +2958,114 @@ function addFolderToSidebar(folderName, count, customId = null) {
 
 // Инициализация обработчиков для папок
 function initFolderEventHandlers() {
-    // Обработчик для переименования папки
+    // Обработчик для переименования папки (красивое модальное окно)
     $('.rename-folder').off('click').on('click', function(e) {
         e.preventDefault();
         const oldFolderName = $(this).data('folder');
-        const newFolderName = prompt('Введите новое название папки:', oldFolderName);
-        
-        if (newFolderName && newFolderName !== oldFolderName) {
-            renameFolder(oldFolderName, newFolderName);
+        showFolderInputModal({
+            title: 'Переименование папки',
+            placeholder: 'Введите новое название папки',
+            value: oldFolderName,
+            confirmText: 'Переименовать',
+            onConfirm: function(newFolderName) {
+                if (newFolderName && newFolderName !== oldFolderName) {
+                    renameFolder(oldFolderName, newFolderName);
+                }
+            }
+        });
+    });
+// Универсальное модальное окно для ввода названия папки
+function showFolderInputModal({ title, placeholder, value = '', confirmText = 'OK', onConfirm }) {
+    // Удаляем старое окно, если оно есть
+    $('#folderInputModal').remove();
+    const modalHtml = `
+        <div class="modal fade" id="folderInputModal" tabindex="-1" aria-labelledby="folderInputModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title" id="folderInputModalLabel">
+                            <i class="fas fa-edit me-2"></i>${title}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group mb-0">
+                            <input type="text" class="form-control" id="folder-input-field" placeholder="${placeholder}" value="${value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}" autofocus>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>Отмена
+                        </button>
+                        <button type="button" class="btn btn-primary" id="folder-input-confirm">
+                            <i class="fas fa-check me-1"></i>${confirmText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('folderInputModal'));
+    modal.show();
+    setTimeout(() => { $('#folder-input-field').focus(); }, 300);
+    $('#folder-input-confirm').off('click').on('click', function() {
+        const val = $('#folder-input-field').val().trim();
+        modal.hide();
+        if (onConfirm) onConfirm(val);
+    });
+    $('#folder-input-field').off('keydown').on('keydown', function(e) {
+        if (e.key === 'Enter') {
+            $('#folder-input-confirm').click();
         }
     });
+}
     
-    // Обработчик для удаления папки
+    // Обработчик для удаления папки (красивое модальное окно)
     $('.delete-folder').off('click').on('click', function(e) {
         e.preventDefault();
         const folderName = $(this).data('folder');
-        
-        if (confirm(`Вы уверены, что хотите удалить папку "${folderName}"? Заметки внутри папки НЕ будут удалены.`)) {
-            deleteFolder(folderName);
-        }
+        showConfirmModal({
+            title: `<span class='text-danger'><i class='fas fa-trash-alt me-2'></i>Удаление папки</span>`,
+            message: `Вы уверены, что хотите удалить папку <strong>${folderName}</strong>?<br><span class='d-block mt-3 mb-2 text-muted'><i class='fas fa-info-circle me-1'></i>Заметки в папке не будут удалены, но будут перемещены в общий список.</span>`,
+            confirmText: '<i class="fas fa-trash me-1"></i>Удалить',
+            confirmClass: 'btn-danger',
+            cancelText: '<span style="font-weight:500">× Отмена</span>',
+            onConfirm: function() {
+                deleteFolder(folderName);
+            }
+        });
     });
+// Универсальное модальное окно подтверждения действия
+function showConfirmModal({ title, message, confirmText = 'OK', confirmClass = 'btn-primary', cancelText = '× Отмена', onConfirm }) {
+    $('#confirmActionModal').remove();
+    const modalHtml = `
+        <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title w-100 d-flex align-items-center gap-2" id="confirmActionModalLabel">${title}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div>${message}</div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${cancelText}</button>
+                        <button type="button" class="btn ${confirmClass}" id="confirm-action-btn">${confirmText}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    $('body').append(modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('confirmActionModal'));
+    modal.show();
+    $('#confirm-action-btn').off('click').on('click', function() {
+        modal.hide();
+        if (onConfirm) onConfirm();
+    });
+}
 }
 
 // Применение сортировки

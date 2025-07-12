@@ -1,4 +1,3 @@
-/* Обязательное отображение кнопок действий на заметках */
 .note-actions {
     display: block !important;
     visibility: visible !important;
@@ -17,7 +16,6 @@
     opacity: 1 !important;
 }
 
-/* Исправляем положение кнопок в заметках */
 .note-wrapper {
     position: relative;
 }

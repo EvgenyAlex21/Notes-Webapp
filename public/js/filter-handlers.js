@@ -1,11 +1,7 @@
-// Обработчик для переключения фильтров (радиокнопки вместо чекбоксов)
 $(document).ready(function() {
     $('.filter-radio').on('change', function() {
-        // Когда выбрана новая радиокнопка, обновляем соответствующий фильтр
-        // Это автоматически вызовет applyFilters() через существующие обработчики
         const filterId = $(this).attr('id');
         
-        // Обновляем визуальное состояние кнопок вверху
         $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
         
         if (filterId === 'filter-pinned') {

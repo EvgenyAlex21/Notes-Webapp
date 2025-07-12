@@ -658,6 +658,7 @@
                                 </div>
                                 <div id="reminder-datetime-container" style="display: none;">
                                     <input type="datetime-local" class="form-control" id="reminder-date">
+                                    <input type="hidden" id="reminder_at" name="reminder_at">
                                 </div>
                                 <div class="mt-2" id="reminder-actions" style="display: none;">
                                     <button type="button" class="btn btn-outline-danger btn-sm" id="remove-reminder">
@@ -912,21 +913,28 @@
             });
             
             // При нажатии на кнопку "Сохранить изменения"
-            $('#update-button').on('click', function(e) {
+            $('#update-button').off('click').on('click', function(e) {
                 e.preventDefault();
                 updateHiddenField();
+                
+                // Подготовка файлов для загрузки (вызов функции, которая заменила второй обработчик)
+                if (typeof prepareFilesForUpload === 'function') {
+                    prepareFilesForUpload();
+                }
+                
                 const id = $('#note-id').val();
                 
-                // Проверяем общее количество файлов перед отправкой
+                // Получаем файлы из глобальной переменной или DOM
+                const uploadInput = document.getElementById('upload-files');
+                const newFilesCount = (uploadInput && uploadInput.files) ? uploadInput.files.length : 0;
                 const existingFilesCount = (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) ? window.currentNoteFiles.length : 0;
-                const newFilesCount = uploadedFiles ? uploadedFiles.length : 0;
                 const totalFilesCount = existingFilesCount + newFilesCount;
-                
+                // Гарантируем, что maxFiles определён
+                const maxFiles = 10;
                 console.log(`Проверка файлов перед сохранением:`);
                 console.log(`- Существующих файлов: ${existingFilesCount}`);
                 console.log(`- Новых файлов: ${newFilesCount}`);
                 console.log(`- Общее количество: ${totalFilesCount}`);
-                
                 if (totalFilesCount > maxFiles) {
                     showErrorMessage(`Превышен лимит файлов! Максимум ${maxFiles} файлов, а у вас ${totalFilesCount}. Удалите ${totalFilesCount - maxFiles} файл(ов) перед сохранением.`);
                     return;
@@ -994,17 +1002,26 @@
     <script>
         // Обработка выбора типа напоминания
         $(document).ready(function() {
+            // Флаг для предотвращения автоматического сброса
+            let reminderInitialized = false;
+            
             // Обработчик изменения типа напоминания
             $('#reminder-type').on('change', function() {
+                // Пропускаем автоматические изменения во время инициализации
+                if (!reminderInitialized) {
+                    return;
+                }
+                
                 const selectedType = $(this).val();
                 const dateTimeContainer = $('#reminder-datetime-container');
                 const reminderActions = $('#reminder-actions');
-                
+
                 switch (selectedType) {
                     case 'none':
                         dateTimeContainer.hide();
                         reminderActions.hide();
                         $('#reminder-date').val('');
+                        $('#reminder_at').val(''); // Очищаем скрытое поле
                         break;
                     case 'datetime':
                         dateTimeContainer.show();
@@ -1012,21 +1029,27 @@
                         break;
                     case 'today':
                         setQuickDate(0); // сегодня
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
                         break;
                     case 'tomorrow':
                         setQuickDate(1); // завтра
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
                         break;
                     case 'next-week':
                         setQuickDate(7); // через неделю
-                        dateTimeContainer.hide();
+                        dateTimeContainer.show(); // Показываем поле времени и дату
                         reminderActions.show();
                         break;
                 }
             });
+            
+            // Устанавливаем флаг после загрузки страницы
+            setTimeout(function() {
+                reminderInitialized = true;
+                console.log('Инициализация напоминаний завершена');
+            }, 1000);
             
             // Функция для быстрой установки даты (через указанный период времени)
             function setQuickDate(daysToAdd) {
@@ -1042,13 +1065,49 @@
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 
                 $('#reminder-date').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+                
+                // Обновляем скрытое поле для отправки формы
+                updateReminderHiddenField();
             }
+            
+            // Функция для обновления скрытого поля напоминания
+            function updateReminderHiddenField() {
+                if ($('#reminder-type').val() !== 'none' && $('#reminder-date').val()) {
+                    const localDate = new Date($('#reminder-date').val());
+                    const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
+                    const isoString = utcDate.toISOString();
+                    $('#reminder_at').val(isoString);
+                    console.log('Обновлено скрытое поле напоминания:', isoString);
+                } else {
+                    $('#reminder_at').val('');
+                    console.log('Очищено скрытое поле напоминания');
+                }
+            }
+            
+            // Обработчик изменения даты напоминания
+            $('#reminder-date').on('change', function() {
+                updateReminderHiddenField();
+            });
             
             // Удаление напоминания
             $('#remove-reminder').off('click').on('click', function() {
-                $('#reminder-type').val('none').trigger('change');
-                $('#reminder-date').val('');
-                $('#reminder-actions').hide();
+                createConfirmationModal({
+                    title: 'Удалить напоминание?',
+                    message: 'Вы уверены, что хотите удалить напоминание?',
+                    confirmButtonText: 'Удалить',
+                    cancelButtonText: 'Отмена',
+                    confirmButtonClass: 'btn-danger',
+                    icon: 'fa-bell-slash',
+                    onConfirm: function() {
+                        $('#reminder-type').val('none').trigger('change');
+                        $('#reminder-date').val('');
+                        $('#reminder_at').val(''); // Очищаем скрытое поле
+                        $('#reminder-actions').hide();
+                        if ($('#reminder-status').length) {
+                            $('#reminder-status').text('Без напоминания');
+                        }
+                    }
+                });
             });
         });
     </script>
@@ -1208,6 +1267,48 @@
                             });
                         }
                         
+                        // Загружаем напоминание если оно есть
+                        // НЕ снимаем обработчики change, просто устанавливаем значения
+                        if (note.reminder_at) {
+                            console.log('Загружаем напоминание:', note.reminder_at);
+                            let utcDate = new Date(note.reminder_at);
+                            if (isNaN(utcDate.getTime()) && typeof note.reminder_at === 'string') {
+                                utcDate = new Date(note.reminder_at + 'Z'); // Предполагаем UTC, если нет часового пояса
+                            }
+                            if (!isNaN(utcDate.getTime())) {
+                                const tzOffset = utcDate.getTimezoneOffset();
+                                const localDate = new Date(utcDate.getTime() - tzOffset * 60000);
+                                const year = localDate.getFullYear();
+                                const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                                const day = String(localDate.getDate()).padStart(2, '0');
+                                const hours = String(localDate.getHours()).padStart(2, '0');
+                                const minutes = String(localDate.getMinutes()).padStart(2, '0');
+                                const datetimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
+                                console.log('Дата напоминания в формате datetime-local:', datetimeLocal);
+
+                                // Устанавливаем значения без вызова обработчиков
+                                $('#reminder-type').val('datetime');
+                                $('#reminder-date').val(datetimeLocal);
+                                $('#reminder_at').val(note.reminder_at);
+                                $('#reminder-datetime-container').show();
+                                $('#reminder-actions').show();
+                            } else {
+                                console.warn('Некорректная дата напоминания, устанавливаем "none":', note.reminder_at);
+                                $('#reminder-type').val('none');
+                                $('#reminder-date').val('');
+                                $('#reminder-datetime-container').hide();
+                                $('#reminder-actions').hide();
+                            }
+                        } else {
+                            console.log('У заметки нет напоминания');
+                            // НЕ сбрасываем напоминание на 'none', если оно уже установлено
+                            if ($('#reminder-type').val() === '') {
+                                $('#reminder-type').val('none');
+                                $('#reminder-datetime-container').hide();
+                                $('#reminder-actions').hide();
+                            }
+                        }
+                        
                         // Загружаем файлы, если они есть
                         if (note.files) {
                             console.log('Загружаем файлы заметки:', note.files);
@@ -1283,182 +1384,178 @@
                                     return file;
                                 });
                             
-                            console.log('Файлы сохранены в currentNoteFiles:', window.currentNoteFiles);
+                            // Показываем существующие файлы в превью
                             displayExistingFiles(window.currentNoteFiles);
-                        } else {
-                            console.log('У заметки нет файлов или они в неправильном формате');
-                            window.currentNoteFiles = [];
+
+                            // Восстанавливаем кнопку сохранения
+                            $('#update-button').html('<i class="fas fa-save"></i> Сохранить изменения');
+                            $('#update-button').attr('disabled', false);
                         }
+                    },
+                    error: function(xhr) {
+                        console.error('Ошибка при загрузке заметки:', xhr.responseText);
+                        $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка загрузки');
                         
-                        // Восстанавливаем кнопку сохранения
-                        $('#update-button').html('<i class="fas fa-save"></i> Сохранить изменения');
-                        $('#update-button').attr('disabled', false);
+                        // Отображаем сообщение об ошибке
+                        showErrorModal('Ошибка загрузки', 'Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
                     }
-                },
-                error: function(xhr) {
-                    console.error('Ошибка при загрузке заметки:', xhr.responseText);
-                    $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка загрузки');
-                    
-                    // Отображаем сообщение об ошибке
-                    showErrorModal('Ошибка загрузки', 'Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
-                }
-            });
-        }
-        
-        // Функция для форматирования даты
-        function formatDate(date) {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            
-            return `${day}.${month}.${year}, ${hours}:${minutes}`;
-        }
-        
-        // Функция для добавления тега
-        function addTag(tagText) {
-            // Проверяем, что такой тег еще не добавлен
-            if (!currentTags.includes(tagText)) {
-                currentTags.push(tagText);
-                
-                // Создаем элемент тега
-                const tagElement = $(`
-                    <div class="tag" data-tag="${tagText}">
-                        ${tagText}
-                        <span class="remove-tag ms-1">&times;</span>
-                    </div>
-                `);
-                
-                // Добавляем перед input
-                $('#tag-input').before(tagElement);
-                
-                // Обработчик для удаления тега
-                tagElement.find('.remove-tag').on('click', function() {
-                    const tag = $(this).parent().data('tag');
-                    // Удаляем из массива
-                    const index = currentTags.indexOf(tag);
-                    if (index !== -1) {
-                        currentTags.splice(index, 1);
-                    }
-                    // Удаляем элемент из DOM
-                    $(this).parent().remove();
                 });
             }
-        }
-        
-        // Загружаем данные заметки при загрузке страницы
-        $(document).ready(function() {
-            // Инициализируем глобальный массив тегов
-            window.currentTags = [];
             
-            // Загружаем данные заметки
-            loadNoteData();
+            // Функция для форматирования даты
+            function formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                
+                return `${day}.${month}.${year}, ${hours}:${minutes}`;
+            }
             
-            // Обработчик для кнопки закрепления
-            $('#toggle-pin-button').on('click', function() {
-                // Если кнопка уже заблокирована, игнорируем повторные клики
-                if ($(this).prop('disabled')) {
-                    console.log('Кнопка заблокирована, игнорируем клик');
-                    return;
-                }
-                
-                const noteId = $('#note-id').val();
-                
-                // Блокируем кнопку на время выполнения запроса
-                $(this).prop('disabled', true);
-                
-                if (window.togglePin && typeof window.togglePin === 'function') {
-                    console.log('Вызов API для закрепления заметки...');
-                    window.togglePin(noteId);
-                } else {
-                    console.log('API-функция не найдена, используем локальную...');
-                    togglePinLocal();
+            // Функция для добавления тега
+            function addTag(tagText) {
+                // Проверяем, что такой тег еще не добавлен
+                if (!currentTags.includes(tagText)) {
+                    currentTags.push(tagText);
                     
-                    // Разблокируем кнопку через 1 секунду, если используется локальная функция
-                    setTimeout(() => {
-                        $(this).prop('disabled', false);
-                    }, 1000);
-                }
-            });
-            
-            // Обработчик для кнопки удаления
-            $('#delete-button').on('click', function() {
-                const noteId = $('#note-id').val();
-                
-                // Используем красивое модальное окно вместо стандартного confirm
-                createConfirmationModal({
-                    title: 'Подтвердите удаление',
-                    message: `
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-trash-alt text-danger fs-2 me-3"></i>
-                            <div>
-                                <p class="fw-bold mb-1">Вы уверены, что хотите удалить эту заметку?</p>
-                                <p class="mb-0 text-muted">Это действие нельзя будет отменить.</p>
-                            </div>
+                    // Создаем элемент тега
+                    const tagElement = $(`
+                        <div class="tag" data-tag="${tagText}">
+                            ${tagText}
+                            <span class="remove-tag ms-1">&times;</span>
                         </div>
-                    `,
-                    confirmButtonText: 'Удалить',
-                    cancelButtonText: 'Отмена',
-                    confirmButtonClass: 'btn-danger',
-                    icon: 'fa-trash-alt',
-                    onConfirm: function() {
-                        // Устанавливаем флаг обработки
-                        $('#delete-button').data('processing', true);
+                    `);
+                    
+                    // Добавляем перед input
+                    $('#tag-input').before(tagElement);
+                    
+                    // Обработчик для удаления тега
+                    tagElement.find('.remove-tag').on('click', function() {
+                        const tag = $(this).parent().data('tag');
+                        // Удаляем из массива
+                        const index = currentTags.indexOf(tag);
+                        if (index !== -1) {
+                            currentTags.splice(index, 1);
+                        }
+                        // Удаляем элемент из DOM
+                        $(this).parent().remove();
+                    });
+                }
+            }
+            
+            // Загружаем данные заметки при загрузке страницы
+            $(document).ready(function() {
+                // Инициализируем глобальный массив тегов
+                window.currentTags = [];
+                
+                // Загружаем данные заметки
+                loadNoteData();
+                
+                // Обработчик для кнопки закрепления
+                $('#toggle-pin-button').on('click', function() {
+                    // Если кнопка уже заблокирована, игнорируем повторные клики
+                    if ($(this).prop('disabled')) {
+                        console.log('Кнопка заблокирована, игнорируем клик');
+                        return;
+                    }
+                    
+                    const noteId = $('#note-id').val();
+                    
+                    // Блокируем кнопку на время выполнения запроса
+                    $(this).prop('disabled', true);
+                    
+                    if (window.togglePin && typeof window.togglePin === 'function') {
+                        console.log('Вызов API для закрепления заметки...');
+                        window.togglePin(noteId);
+                    } else {
+                        console.log('API-функция не найдена, используем локальную...');
+                        togglePinLocal();
                         
-                        // Отключаем проверку несохраненных изменений перед удалением
-                        window.removeEventListener('beforeunload', beforeUnloadHandler);
-                        deleteNote(noteId);
+                        // Разблокируем кнопку через 1 секунду, если используется локальная функция
+                        setTimeout(() => {
+                            $(this).prop('disabled', false);
+                        }, 1000);
                     }
                 });
-            });
-            
-            // Обработчик ввода тегов
-            $('#tag-input').on('keydown', function(e) {
-                if (e.key === 'Enter' && $(this).val().trim() !== '') {
-                    e.preventDefault();
-                    const tagText = $(this).val().trim();
-                    addTag(tagText);
-                    $(this).val('');
-                }
-            });
-            
-            // Обработчик для выбора цвета
-            $('.color-option').on('click', function() {
-                $('.color-option').removeClass('selected');
-                $(this).addClass('selected');
-            });
-            
-            // Обработчик кнопки архивации
-            $('#archive-button').on('click', function() {
-                const noteId = $('#note-id').val();
                 
-                // Создаем красивое модальное окно подтверждения
-                createConfirmationModal({
-                    title: 'Архивировать заметку?',
-                    message: 'Вы уверены, что хотите переместить эту заметку в архив?',
-                    confirmButtonText: 'Архивировать',
-                    cancelButtonText: 'Отмена',
-                    confirmButtonClass: 'btn-warning',
-                    icon: 'fa-archive',
-                    onConfirm: function() {
-                        // Отключаем проверку несохраненных изменений перед архивацией
-                        window.removeEventListener('beforeunload', beforeUnloadHandler);
-                        
-                        // Устанавливаем флаг обработки, чтобы предотвратить дубликаты запросов
-                        $('#archive-button').data('processing', true);
-                        
-                        // Показываем индикатор загрузки
-                        $('#archive-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-                        
-                        console.log('Отправляем запрос архивации для заметки:', noteId);
-                        
-                        $.ajax({
-                            url: `/notes/${noteId}/archive`,
-                            method: 'POST',
-                            dataType: 'json',
-                            headers: {
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                // Обработчик для кнопки удаления
+                $('#delete-button').on('click', function() {
+                    const noteId = $('#note-id').val();
+                    
+                    // Используем красивое модальное окно вместо стандартного confirm
+                    createConfirmationModal({
+                        title: 'Подтвердите удаление',
+                        message: `
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-trash-alt text-danger fs-2 me-3"></i>
+                                <div>
+                                    <p class="fw-bold mb-1">Вы уверены, что хотите удалить эту заметку?</p>
+                                    <p class="mb-0 text-muted">Это действие нельзя будет отменить.</p>
+                            </div>
+                        </div>
+                        `,
+                        confirmButtonText: 'Удалить',
+                        cancelButtonText: 'Отмена',
+                        confirmButtonClass: 'btn-danger',
+                        icon: 'fa-trash-alt',
+                        onConfirm: function() {
+                            // Устанавливаем флаг обработки
+                            $('#delete-button').data('processing', true);
+                            
+                            // Отключаем проверку несохраненных изменений перед удалением
+                            window.removeEventListener('beforeunload', beforeUnloadHandler);
+                            deleteNote(noteId);
+                        }
+                    });
+                });
+                
+                // Обработчик ввода тегов
+                $('#tag-input').on('keydown', function(e) {
+                    if (e.key === 'Enter' && $(this).val().trim() !== '') {
+                        e.preventDefault();
+                        const tagText = $(this).val().trim();
+                        addTag(tagText);
+                        $(this).val('');
+                    }
+                });
+                
+                // Обработчик для выбора цвета
+                $('.color-option').on('click', function() {
+                    $('.color-option').removeClass('selected');
+                    $(this).addClass('selected');
+                });
+                
+                // Обработчик кнопки архивации
+                $('#archive-button').on('click', function() {
+                    const noteId = $('#note-id').val();
+                    
+                    // Создаем красивое модальное окно подтверждения
+                    createConfirmationModal({
+                        title: 'Архивировать заметку?',
+                        message: 'Вы уверены, что хотите переместить эту заметку в архив?',
+                        confirmButtonText: 'Архивировать',
+                        cancelButtonText: 'Отмена',
+                        confirmButtonClass: 'btn-warning',
+                        icon: 'fa-archive',
+                        onConfirm: function() {
+                            // Отключаем проверку несохраненных изменений перед архивацией
+                            window.removeEventListener('beforeunload', beforeUnloadHandler);
+                            
+                            // Устанавливаем флаг обработки, чтобы предотвратить дубликаты запросов
+                            $('#archive-button').data('processing', true);
+                            
+                            // Показываем индикатор загрузки
+                            $('#archive-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                            
+                            console.log('Отправляем запрос архивации для заметки:', noteId);
+                            
+                            $.ajax({
+                                url: `/notes/${noteId}/archive`,
+                                method: 'POST',
+                                dataType: 'json',
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                             },
                             success: function(response) {
                                 console.log('Заметка успешно архивирована:', response);
@@ -1529,9 +1626,36 @@
             formData.append('tags', tags);
             
             // Добавляем дату напоминания, если она есть
-            if ($('#reminder-type').val() !== 'none' && $('#reminder-date').val()) {
-                formData.append('reminder_date', $('#reminder-date').val());
+            if ($('#reminder_at').length && $('#reminder_at').val()) {
+                // Используем значение из скрытого поля
+                formData.append('reminder_at', $('#reminder_at').val());
+                console.log('Использовано значение из скрытого поля reminder_at:', $('#reminder_at').val());
+            } 
+            else if ($('#reminder-type').val() !== 'none' && $('#reminder-date').val()) {
+                // Преобразуем локальное время в UTC перед отправкой (строго!)
+                const localValue = $('#reminder-date').val();
+                const localDate = new Date(localValue);
+                // ВАЖНО: всегда используем UTC, чтобы сервер сравнивал корректно
+                const utcYear = localDate.getUTCFullYear();
+                const utcMonth = String(localDate.getUTCMonth() + 1).padStart(2, '0');
+                const utcDay = String(localDate.getUTCDate()).padStart(2, '0');
+                const utcHours = String(localDate.getUTCHours()).padStart(2, '0');
+                const utcMinutes = String(localDate.getUTCMinutes()).padStart(2, '0');
+                const utcSeconds = String(localDate.getUTCSeconds()).padStart(2, '0');
+                const isoString = `${utcYear}-${utcMonth}-${utcDay}T${utcHours}:${utcMinutes}:${utcSeconds}`;
+                formData.append('reminder_at', isoString);
+                console.log('Создано значение reminder_at из поля даты:', isoString);
+            } else {
+                // Если напоминание не установлено, явно очищаем его
+                formData.append('reminder_at', '');
+                console.log('Напоминание очищено (reminder_at)');
             }
+            // Для отладки: логируем все значения formData
+            let formDataLog = {};
+            for (let [key, value] of formData.entries()) {
+                formDataLog[key] = value;
+            }
+            console.log('Отправляемые данные formData:', formDataLog);
             
             // Добавляем метод PUT, так как FormData не поддерживает его напрямую
             formData.append('_method', 'PUT');
@@ -1607,7 +1731,11 @@
                     console.log('Заметка успешно обновлена:', response);
                     // Восстанавливаем кнопку
                     $('#update-button').html('<i class="fas fa-save"></i> Сохранено!');
-                    
+                    // Показываем уведомление только один раз
+                    if (!window._noteSaveNotified) {
+                        showNotification('Изменения сохранены', 'success');
+                        window._noteSaveNotified = true;
+                    }
                     // Перенаправляем на страницу заметки
                     setTimeout(() => {
                         window.location.href = '/notes';
@@ -1663,16 +1791,13 @@
                                 <h5 class="modal-title">
                                     <i class="fas fa-exclamation-triangle me-2"></i>${title}
                                 </h5>
+                                <button type="button" class
+                                </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
                             <div class="modal-body p-4">
                                 <p class="mb-0">${message}</p>
-                                ${details ? `<div class="mt-3"><details><summary class="text-muted">Подробности</summary><pre class="mt-2 text-sm">${details}</pre></details></div>` : ''}
-                            </div>
-                            <div class="modal-footer bg-light border-top-0">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                                    <i class="fas fa-times me-1"></i>Закрыть
-                                </button>
+                                ${details ? `<div class="mt-3"><details><summary class="text-muted">Подробности</summary><
                             </div>
                         </div>
                     </div>
@@ -2116,111 +2241,115 @@
                 const preview = $('#file-preview');
                 preview.empty();
                 
-                uploadedFiles.forEach(file => {
+                uploadedFiles.forEach((file, index) => {
                     const fileType = getFileType(file.type);
                     const fileSize = (file.size / (1024 * 1024)).toFixed(1);
                     const fileId = file.id;
+                    const fileUrl = URL.createObjectURL(file);
                     
-                    let filePreview;
-                    
+                    // Создаем превью в едином стиле с существующими файлами
+                    let previewContent = '';
                     if (fileType === 'image') {
-                        // Создаем превью для изображений
-                        filePreview = $(`
-                            <div class="col-md-3 mb-3" id="file-item-${fileId}">
-                                <div class="card file-preview-card">
-                                    <div class="image-preview-container">
-                                        <img class="preview-image" src="${URL.createObjectURL(file)}" alt="${file.name}" data-file-id="${fileId}">
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div class="file-name text-truncate" style="max-width: 150px;">${file.name}</div>
-                                                <small class="text-muted">${fileSize} МБ</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="file-remove" data-file-id="${fileId}">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
+                        previewContent = `<img src="${fileUrl}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}">`;
+                    } else if (fileType === 'video') {
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-film fa-2x text-danger"></i></div>`;
+                    } else if (fileType === 'audio') {
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-music fa-2x text-info"></i></div>`;
                     } else {
-                        // Создаем превью для других файлов
-                        filePreview = $(`
-                            <div class="col-md-3 mb-3" id="file-item-${fileId}">
-                                <div class="card file-preview-card">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-${
-                                                fileType === 'video' ? 'video' : 
-                                                fileType === 'audio' ? 'music' :
-                                                fileType === 'document' ? 'file-alt' : 'file'
-                                            } me-3 fa-2x text-${
-                                                fileType === 'video' ? 'danger' : 
-                                                fileType === 'audio' ? 'success' :
-                                                fileType === 'document' ? 'primary' : 'secondary'
-                                            }"></i>
-                                            <div>
-                                                <div class="file-name text-truncate" style="max-width: 150px;">${file.name}</div>
-                                                <small class="text-muted">${fileSize} МБ</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="file-remove" data-file-id="${fileId}">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
+                        // Документы и прочее
+                        let iconClass = 'fa-file';
+                        if (file.name) {
+                            const ext = file.name.split('.').pop().toLowerCase();
+                            if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                            else if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                            else if (['xls', 'xlsx'].includes(ext)) iconClass = 'fa-file-excel';
+                            else if (['ppt', 'pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                            else if (['zip', 'rar', 'tar', 'gz'].includes(ext)) iconClass = 'fa-file-archive';
+                            else if (['txt', 'rtf'].includes(ext)) iconClass = 'fa-file-alt';
+                            else if (['exe'].includes(ext)) iconClass = 'fa-cog';
+                        }
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
                     }
                     
-                    preview.append(filePreview);
+                    const fileElement = `
+                        <div class="col-md-3 col-sm-4 col-6 mb-2" id="file-item-${fileId}">
+                            <div class="card h-100">
+                                ${previewContent}
+                                <div class="card-body p-2 text-center">
+                                    <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <button type="button" class="btn btn-outline-primary new-file-preview" 
+                                                data-url="${fileUrl}" 
+                                                data-name="${file.name}" 
+                                                data-size="${file.size}" 
+                                                data-type="${fileType}" 
+                                                data-index="${index}" 
+                                                title="Открыть файл">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger file-remove" data-file-id="${fileId}" title="Удалить файл">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    preview.append(fileElement);
                 });
                 
                 // Привязываем обработчики событий к новым элементам
                 attachFileEventHandlers();
+                
+                // Обновляем глобальный массив для галереи
+                updateGlobalFilesArray();
             }
             
             // Привязывает обработчики событий к превью файлов
             function attachFileEventHandlers() {
                 // Обработчик для удаления файлов
-                $('.file-remove').on('click', function(e) {
+                $('.file-remove').off('click').on('click', function(e) {
                     e.stopPropagation();
                     const fileId = $(this).data('file-id');
+                    const fileName = uploadedFiles.find(file => file.id === fileId)?.name || 'файл';
                     
-                    // Удаляем файл из массива
-                    uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-                    
-                    // Удаляем превью из DOM
-                    $(`#file-item-${fileId}`).fadeOut(300, function() {
-                        $(this).remove();
-                    });
+                    // Используем модальное окно подтверждения вместо confirm
+                    createConfirmationModal(
+                        'Удалить файл?',
+                        `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                        'Удалить',
+                        'Отмена',
+                        function() {
+                            // Удаляем файл из массива
+                            uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                            
+                            // Удаляем превью из DOM
+                            $(`#file-item-${fileId}`).fadeOut(300, function() {
+                                $(this).remove();
+                                // Обновляем глобальный массив для галереи
+                                updateGlobalFilesArray();
+                            });
+                        }
+                    );
                 });
                 
-                // Обработчик для открытия изображений в модальном окне
-                $('.preview-image').on('click', function() {
-                    const fileId = $(this).data('file-id');
-                    const fileIndex = uploadedFiles.findIndex(file => file.id === fileId);
-                    const file = uploadedFiles[fileIndex];
-                    
-                    if (file) {
-                        // Собираем информацию о всех новых файлах для галереи и сохраняем в глобальные переменные file-viewer.js
-                        window.filesList = uploadedFiles.map(file => ({
-                            url: URL.createObjectURL(file),
-                            name: file.name,
-                            size: file.size,
-                            type: getFileType(file.type)
-                        }));
-                        
-                        // Устанавливаем текущий индекс и показываем файл
-                        window.currentFileIndex = fileIndex;
-                        const imageUrl = URL.createObjectURL(file);
-                        showFileInViewer(imageUrl, file.name, file.size, getFileType(file.type));
-                        
-                        console.log('Открытие нового файла в просмотрщике:', file.name, 'из', window.filesList.length, 'файлов');
-                    }
-                });
+                // Обработчик кнопок просмотра файлов уже настроен в file-viewer.js как '.new-file-preview'
+                console.log('Привязаны обработчики для', $('.file-remove').length, 'кнопок удаления и', $('.new-file-preview').length, 'кнопок просмотра');
+            }
+            
+            // Обновляет глобальный массив файлов для галереи
+            function updateGlobalFilesArray() {
+                // Обновляем глобальный массив для галереи в file-viewer.js
+                if (typeof window !== 'undefined') {
+                    window.filesList = uploadedFiles.map(file => ({
+                        url: URL.createObjectURL(file),
+                        name: file.name,
+                        size: file.size,
+                        type: getFileType(file.type)
+                    }));
+                    console.log('Обновлен глобальный массив файлов для галереи:', window.filesList.length, 'файлов');
+                }
             }
             
             // Открывает модальное окно с предпросмотром изображения
@@ -2302,7 +2431,9 @@
             }
             
             // При отправке формы сохраняем выбранные файлы в форму
-            $('#update-button').on('click', function() {
+            // Этот обработчик отключен, чтобы избежать дублирования с обработчиком выше
+            // (второй обработчик кнопки update-button вызывает дублирование уведомлений)
+            function prepareFilesForUpload() {
                 // Перенаправляем файлы из uploadedFiles в input type="file"
                 if (uploadedFiles.length > 0) {
                     const dt = new DataTransfer();
@@ -2318,7 +2449,7 @@
                         console.log('Добавлено', dt.files.length, 'файлов к форме');
                     }
                 }
-            });
+            }
         });
     </script>
     <script>
