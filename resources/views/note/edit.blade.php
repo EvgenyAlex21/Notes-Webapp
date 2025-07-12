@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Редактирование заметки</title>
+    
+    <!-- Favicon с версионированием для обхода кэша -->
+    <link rel="icon" href="/favicon.ico?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
+    <link rel="shortcut icon" href="/favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="/images/logo.png?v=1">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -20,10 +31,11 @@
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли и другие ошибки Quill -->
     <script>
-        // Сохраняем оригинальную функцию console.warn
+        // Сохраняем оригинальные функции консоли
         const originalWarn = console.warn;
+        const originalError = console.error;
         
-        // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
+        // Переопределяем console.warn для подавления предупреждений
         console.warn = function() {
             // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted или другие проблемы с Quill
             if (arguments[0] && typeof arguments[0] === 'string' && 
@@ -35,6 +47,18 @@
             }
             // Для всех остальных предупреждений используем оригинальную функцию
             originalWarn.apply(console, arguments);
+        };
+        
+        // Переопределяем console.error для фильтрации известных ошибок
+        console.error = function() {
+            // Проверяем, относится ли ошибка к известным проблемам
+            if (arguments[0] && typeof arguments[0] === 'string' &&
+                (arguments[0].includes('Элемент модального окна просмотрщика не найден'))) {
+                // Игнорируем эти ошибки или понижаем уровень до warn
+                return console.log('[Игнорируемая ошибка]', ...arguments);
+            }
+            // Для всех остальных ошибок используем оригинальную функцию
+            originalError.apply(console, arguments);
         };
     </script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -236,6 +260,47 @@
         }
         .sidebar-link i {
             margin-right: 10px;
+        }
+        
+        /* Стили для папок в боковой панели */
+        .folder-item {
+            padding: 10px 15px;
+            border-radius: 0.375rem;
+            transition: background-color 0.15s ease-in-out;
+            position: relative;
+        }
+        
+        .folder-link {
+            max-width: 180px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            display: inline-block;
+        }
+        
+        .folder-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .folder-item.active-folder {
+            background-color: #e9ecef;
+        }
+        
+        .folder-item.active-folder .folder-link {
+            font-weight: bold;
+            color: #212529 !important;
+        }
+        
+        .dark-theme .folder-item:hover {
+            background-color: #4a4f55;
+        }
+        
+        .dark-theme .folder-item.active-folder {
+            background-color: #4a4f55;
+        }
+        
+        .dark-theme .folder-item.active-folder .folder-link {
+            color: #ffffff !important;
         }
         .theme-switch {
             cursor: pointer;
@@ -492,11 +557,14 @@
                             <input type="hidden" id="note-id" value="{{ $id }}">
                             <input type="hidden" name="_method" value="PUT">
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" id="done" name="done" value="0">
+                            <input type="hidden" id="is_pinned" name="is_pinned" value="0">
                             
                             <div class="edit-header mb-4">
                                 <div>
                                     <div class="note-info">
                                         <span id="note-date"></span>
+                                        <span id="note-updated" class="ms-2"></span>
                                     </div>
                                 </div>
                                 <div class="action-buttons">
@@ -640,11 +708,96 @@
     </div>
 </div>
 
+    <!-- Глобальная функция для отображения уведомлений в едином стиле -->
+    <script>
+        // Функция для отображения уведомлений
+        function showNotification(message, type = 'info', duration = 3000) {
+            // Проверяем, есть ли на странице контейнер для уведомлений
+            if (!$('#app-notifications').length) {
+                $('body').append('<div id="app-notifications" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; width: 300px;"></div>');
+            }
+            
+            // Определяем цвет фона, бордера и иконку в зависимости от типа
+            let bgClass = 'bg-info';
+            let textClass = 'text-dark';
+            let icon = 'fas fa-info-circle';
+            
+            switch(type) {
+                case 'success':
+                    bgClass = 'bg-success';
+                    textClass = 'text-white';
+                    icon = 'fas fa-check-circle';
+                    break;
+                case 'error':
+                case 'danger':
+                    bgClass = 'bg-danger';
+                    textClass = 'text-white';
+                    icon = 'fas fa-exclamation-triangle';
+                    break;
+                case 'warning':
+                    bgClass = 'bg-warning';
+                    textClass = 'text-dark';
+                    icon = 'fas fa-exclamation-circle';
+                    break;
+                case 'info':
+                    bgClass = 'bg-info';
+                    textClass = 'text-white';
+                    icon = 'fas fa-info-circle';
+                    break;
+            }
+            
+            // Создаем и отображаем уведомление в стиле как на фото 3
+            const notificationId = 'notification-' + Date.now();
+            
+            const notification = `
+                <div id="${notificationId}" class="alert ${bgClass} ${textClass} d-flex align-items-center fade show mb-2" role="alert" 
+                     style="border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative;">
+                    <i class="${icon} me-2" style="font-size: 1.2rem;"></i>
+                    <div class="flex-grow-1" style="font-size: 0.9rem;">${message}</div>
+                    <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.8rem;"></button>
+                </div>
+            `;
+            
+            $('#app-notifications').append(notification);
+            
+            // Автоматически скрываем уведомление через указанное время
+            setTimeout(function() {
+                $(`#${notificationId}`).fadeOut(300, function() {
+                    $(this).remove();
+                });
+            }, duration);
+        }
+    </script>
     <script src="/js/note-colors.js"></script>
+    <script src="/js/notifications.js"></script>
     <script src="/js/notes.js"></script>
+    <script>
+        // Проверка доступности функции togglePin после загрузки notes.js
+        console.log('Функция togglePin после загрузки notes.js:', typeof window.togglePin);
+        // Сохраняем глобальную ссылку на функцию, если она существует
+        if (typeof togglePin === 'function') {
+            // Перезаписываем функцию togglePin, чтобы она учитывала состояние на странице редактирования
+            const originalTogglePin = togglePin;
+            window.togglePin = function(id) {
+                console.log('Вызов модифицированной функции togglePin для заметки ID:', id);
+                
+                // Блокируем кнопку на время запроса
+                const $button = $('#toggle-pin-button');
+                $button.prop('disabled', true);
+                
+                // Вызываем оригинальную функцию
+                originalTogglePin(id);
+                
+                // Через 1 секунду разблокируем кнопку
+                setTimeout(function() {
+                    $button.prop('disabled', false);
+                }, 1000);
+            };
+            console.log('Функция togglePin сохранена глобально с дополнительной логикой');
+        }
+    </script>
     <script src="/js/tags-form-improvements.js"></script>
     <script src="/js/note-done-button.js"></script>
-    <script src="/js/notifications.js"></script>
     <script src="/js/sidebar-counters.js"></script>
     <script>
         $(document).ready(function() {
@@ -998,8 +1151,24 @@
                         // Отображаем дату создания/обновления
                         const createdAt = new Date(note.created_at);
                         const updatedAt = new Date(note.updated_at);
-                        const dateString = formatDate(createdAt);
-                        $('#note-date').text(`Создано: ${dateString}`);
+                        const createdDateString = formatDate(createdAt);
+                        const updatedDateString = formatDate(updatedAt);
+                        $('#note-date').text(`Создано: ${createdDateString}`);
+                        
+                        // Отображаем дату обновления, только если она отличается от даты создания
+                        if (updatedAt.getTime() > createdAt.getTime()) {
+                            $('#note-updated').text(`Обновлено: ${updatedDateString}`);
+                        }
+                        
+                        // Сохраняем начальное состояние заметки для отслеживания изменений
+                        window.initialNoteData = {
+                            name: note.name,
+                            description: note.description,
+                            color: note.color,
+                            done: note.done ? '1' : '0',
+                            is_pinned: note.is_pinned ? '1' : '0',
+                            tags: note.tags ? note.tags.split(',').map(tag => tag.trim()) : []
+                        };
                         
                         // Если заметка завершена, отмечаем состояние кнопки и скрытого поля
                         if (note.done) {
@@ -1016,10 +1185,20 @@
                         
                         // Если заметка закреплена, обновляем кнопку
                         if (note.is_pinned) {
-                            $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i>');
+                            isPinned = true;
+                            $('#is_pinned').val('1');
+                            $('#toggle-pin-button').removeClass('btn-outline-warning').addClass('btn-warning');
+                            console.log('Заметка закреплена, активируем кнопку');
                         } else {
-                            $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i>');
+                            isPinned = false;
+                            $('#is_pinned').val('0');
+                            $('#toggle-pin-button').removeClass('btn-warning').addClass('btn-outline-warning');
+                            console.log('Заметка не закреплена, деактивируем кнопку');
                         }
+                        
+                        // Устанавливаем только иконку
+                        $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
+                        updatePinButtonText();
                         
                         // Загружаем теги если они есть
                         if (note.tags) {
@@ -1033,6 +1212,11 @@
                         if (note.files) {
                             console.log('Загружаем файлы заметки:', note.files);
                             // Убедимся, что файлы в формате массива
+                            
+                        // Обновляем счетчики в боковой панели
+                        if (typeof loadSidebarStats === 'function') {
+                            setTimeout(loadSidebarStats, 200);
+                        }
                             let filesArray = note.files;
                             if (typeof filesArray === 'string') {
                                 try {
@@ -1116,7 +1300,7 @@
                     $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка загрузки');
                     
                     // Отображаем сообщение об ошибке
-                    alert('Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
+                    showErrorModal('Ошибка загрузки', 'Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
                 }
             });
         }
@@ -1173,17 +1357,60 @@
             
             // Обработчик для кнопки закрепления
             $('#toggle-pin-button').on('click', function() {
+                // Если кнопка уже заблокирована, игнорируем повторные клики
+                if ($(this).prop('disabled')) {
+                    console.log('Кнопка заблокирована, игнорируем клик');
+                    return;
+                }
+                
                 const noteId = $('#note-id').val();
-                togglePin(noteId);
+                
+                // Блокируем кнопку на время выполнения запроса
+                $(this).prop('disabled', true);
+                
+                if (window.togglePin && typeof window.togglePin === 'function') {
+                    console.log('Вызов API для закрепления заметки...');
+                    window.togglePin(noteId);
+                } else {
+                    console.log('API-функция не найдена, используем локальную...');
+                    togglePinLocal();
+                    
+                    // Разблокируем кнопку через 1 секунду, если используется локальная функция
+                    setTimeout(() => {
+                        $(this).prop('disabled', false);
+                    }, 1000);
+                }
             });
             
             // Обработчик для кнопки удаления
             $('#delete-button').on('click', function() {
                 const noteId = $('#note-id').val();
                 
-                if (confirm('Вы уверены, что хотите удалить эту заметку?')) {
-                    deleteNote(noteId);
-                }
+                // Используем красивое модальное окно вместо стандартного confirm
+                createConfirmationModal({
+                    title: 'Подтвердите удаление',
+                    message: `
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-trash-alt text-danger fs-2 me-3"></i>
+                            <div>
+                                <p class="fw-bold mb-1">Вы уверены, что хотите удалить эту заметку?</p>
+                                <p class="mb-0 text-muted">Это действие нельзя будет отменить.</p>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonText: 'Удалить',
+                    cancelButtonText: 'Отмена',
+                    confirmButtonClass: 'btn-danger',
+                    icon: 'fa-trash-alt',
+                    onConfirm: function() {
+                        // Устанавливаем флаг обработки
+                        $('#delete-button').data('processing', true);
+                        
+                        // Отключаем проверку несохраненных изменений перед удалением
+                        window.removeEventListener('beforeunload', beforeUnloadHandler);
+                        deleteNote(noteId);
+                    }
+                });
             });
             
             // Обработчик ввода тегов
@@ -1206,30 +1433,69 @@
             $('#archive-button').on('click', function() {
                 const noteId = $('#note-id').val();
                 
-                if (confirm('Вы уверены, что хотите архивировать заметку?')) {
-                    // Показываем индикатор загрузки
-                    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-                    
-                    $.ajax({
-                        url: `/notes/${noteId}/archive`,
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        success: function(response) {
-                            showNotification('Заметка перемещена в архив');
-                            // Перенаправляем на список заметок
-                            setTimeout(function() {
+                // Создаем красивое модальное окно подтверждения
+                createConfirmationModal({
+                    title: 'Архивировать заметку?',
+                    message: 'Вы уверены, что хотите переместить эту заметку в архив?',
+                    confirmButtonText: 'Архивировать',
+                    cancelButtonText: 'Отмена',
+                    confirmButtonClass: 'btn-warning',
+                    icon: 'fa-archive',
+                    onConfirm: function() {
+                        // Отключаем проверку несохраненных изменений перед архивацией
+                        window.removeEventListener('beforeunload', beforeUnloadHandler);
+                        
+                        // Устанавливаем флаг обработки, чтобы предотвратить дубликаты запросов
+                        $('#archive-button').data('processing', true);
+                        
+                        // Показываем индикатор загрузки
+                        $('#archive-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                        
+                        console.log('Отправляем запрос архивации для заметки:', noteId);
+                        
+                        $.ajax({
+                            url: `/notes/${noteId}/archive`,
+                            method: 'POST',
+                            dataType: 'json',
+                            headers: {
+                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function(response) {
+                                console.log('Заметка успешно архивирована:', response);
+                                showNotification('Заметка перемещена в архив', 'success');
+                                // Сразу перенаправляем на список заметок без задержки
                                 window.location.href = '/notes';
-                            }, 1000);
-                        },
-                        error: function(error) {
-                            console.error('Ошибка при архивации заметки:', error);
-                            $('#archive-button').prop('disabled', false).html('<i class="fas fa-archive"></i> Архивировать');
-                            showNotification('Не удалось архивировать заметку', 'error');
-                        }
-                    });
-                }
+                            },
+                            error: function(error) {
+                                console.error('Ошибка при архивации заметки:', error);
+                                console.log('Текст ошибки:', error.responseText);
+                                console.log('Статус:', error.status, error.statusText);
+                                
+                                $('#archive-button').prop('disabled', false)
+                                    .html('<i class="fas fa-archive"></i>')
+                                    .data('processing', false);
+                                
+                                // Проверяем, может быть запрос прошел успешно, но ответ не является JSON
+                                try {
+                                    if (error.status === 200) {
+                                        showNotification('Заметка перемещена в архив');
+                                        setTimeout(function() {
+                                            window.location.href = '/notes';
+                                        }, 1000);
+                                        return;
+                                    }
+                                } catch(e) {
+                                    console.error('Ошибка при обработке ответа:', e);
+                                }
+                                
+                                showNotification('Не удалось архивировать заметку: ' + error.statusText, 'error');
+                                
+                                // Восстанавливаем обработчик
+                                window.addEventListener('beforeunload', beforeUnloadHandler);
+                            }
+                        });
+                    }
+                });
             });
         });
         
@@ -1244,7 +1510,7 @@
             
             // Проверка обязательных полей
             if (!name) {
-                alert('Пожалуйста, введите название заметки');
+                showErrorModal('Ошибка валидации', 'Пожалуйста, введите название заметки');
                 return;
             }
             
@@ -1386,51 +1652,315 @@
         }
         
         // Функция для переключения закрепления заметки
-        // Функция для работы с закреплением заметки
-        function togglePin(id) {
-            const isPinned = $('#toggle-pin-button').hasClass('active');
-            const newStatus = !isPinned;
+        // Функция для отображения красивых модальных окон ошибок
+        function showErrorModal(title, message, details = '') {
+            const modalId = 'errorModal' + Date.now();
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-danger text-white border-bottom-0">
+                                <h5 class="modal-title">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>${title}
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <p class="mb-0">${message}</p>
+                                ${details ? `<div class="mt-3"><details><summary class="text-muted">Подробности</summary><pre class="mt-2 text-sm">${details}</pre></details></div>` : ''}
+                            </div>
+                            <div class="modal-footer bg-light border-top-0">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>Закрыть
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
             
-            // Отображаем индикатор загрузки
-            $('#toggle-pin-button').html('<i class="fas fa-spinner fa-spin"></i>');
+            $('body').append(modalHTML);
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
             
-            $.ajax({
-                url: `/api/notes/${id}/pin`,
-                method: 'PUT',
-                data: { is_pinned: newStatus },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function() {
-                    if (newStatus) {
-                        $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i>');
-                    } else {
-                        $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i>');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Ошибка при изменении статуса закрепления:', xhr.responseText);
-                    $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
-                    alert('Произошла ошибка при изменении статуса закрепления');
+            // Удаляем модальное окно после закрытия
+            document.getElementById(modalId).addEventListener('hidden.bs.modal', function() {
+                $(this).remove();
+            });
+        }
+
+        // Переменная для отслеживания изменений закрепления
+        let isPinModified = false;
+        let hasFormChanges = false;
+        
+        // Функция для проверки изменений формы
+        function checkFormChanges() {
+            // Только если были внесены фактические изменения пользователем, 
+            // а не автоматические действия архивирования или удаления
+            if ($('#delete-button').data('processing') || $('#archive-button').data('processing')) {
+                return false;
+            }
+            
+            const nameChanged = initialNoteData && initialNoteData.name !== $('#name').val();
+            const descriptionChanged = initialNoteData && initialNoteData.description !== quill.root.innerHTML;
+            const colorChanged = initialNoteData && initialNoteData.color !== color;
+            const tagsChanged = initialNoteData && JSON.stringify(initialNoteData.tags.sort()) !== JSON.stringify(getTags().sort());
+            const pinChanged = initialNoteData && initialNoteData.is_pinned !== isPinned;
+            
+            return nameChanged || descriptionChanged || colorChanged || tagsChanged || 
+                   isPinModified || pinChanged || (typeof isStatusModified !== 'undefined' && isStatusModified);
+        }
+        
+        // Функция для показа диалога подтверждения закрытия
+        function showCloseConfirmationDialog(callback) {
+            const modalId = 'leavePageModal_' + Date.now();
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-body p-4 bg-dark text-white">
+                                <h5 class="mb-3">Уверены, что хотите закрыть эту страницу?</h5>
+                                <p class="mb-4">Введённые вами данные могут не сохраниться.</p>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-light px-4" id="${modalId}Confirm">Да, закрыть</button>
+                                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(modalHTML);
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+            
+            // Обработчик для кнопки подтверждения
+            $(`#${modalId}Confirm`).on('click', function() {
+                modal.hide();
+                
+                // Временно отключаем обработчик beforeunload
+                window.removeEventListener('beforeunload', beforeUnloadHandler);
+                
+                // Выполняем переход по ссылке или другое действие
+                if (typeof callback === 'function') {
+                    callback();
                 }
+                
+                // Восстанавливаем обработчик через небольшую задержку
+                setTimeout(() => {
+                    window.addEventListener('beforeunload', beforeUnloadHandler);
+                }, 500);
+            });
+            
+            // Удаляем модальное окно после закрытия
+            document.getElementById(modalId).addEventListener('hidden.bs.modal', function() {
+                $(this).remove();
             });
         }
         
-        // Функция для удаления заметки
+        // Функция для показа диалога подтверждения обновления страницы
+        function showRefreshConfirmationDialog() {
+            const modalId = 'refreshPageModal_' + Date.now();
+            const modalHTML = `
+                <div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-body p-4 bg-dark text-white">
+                                <h5 class="mb-3">Обновить страницу</h5>
+                                <p class="mb-4">Вы уверены, что хотите обновить эту страницу?</p>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-light px-4" id="${modalId}Confirm">Да, обновить</button>
+                                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Отмена</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('body').append(modalHTML);
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+            
+            // Обработчик для кнопки подтверждения
+            $(`#${modalId}Confirm`).on('click', function() {
+                modal.hide();
+                
+                // Перезагружаем страницу
+                window.location.reload();
+            });
+            
+            // Удаляем модальное окно после закрытия
+            document.getElementById(modalId).addEventListener('hidden.bs.modal', function() {
+                $(this).remove();
+            });
+        }
+        
+        // Обработчик события beforeunload
+        function beforeUnloadHandler(e) {
+            // Проверяем, было ли уже начато действие архивирования или удаления
+            const isActionInProgress = $('#delete-button').data('processing') || 
+                                      $('#archive-button').data('processing');
+                                     
+            // Проверяем только если не выполняются специальные действия с заметкой
+            if (!isActionInProgress && checkFormChanges()) {
+                // Отменяем действие по умолчанию для большинства браузеров
+                e.preventDefault();
+                // Chrome требует возврата строки
+                e.returnValue = 'Внесенные изменения могут быть не сохранены. Вы уверены, что хотите покинуть страницу?';
+                return e.returnValue;
+            }
+        }
+        
+        // Добавляем проверку на несохраненные изменения
+        window.addEventListener('beforeunload', beforeUnloadHandler);
+        
+        // Перехватываем клики по ссылкам, чтобы показать диалог подтверждения
+        $(document).on('click', 'a:not([data-no-confirm])', function(e) {
+            if (checkFormChanges()) {
+                e.preventDefault();
+                const href = $(this).attr('href');
+                
+                showCloseConfirmationDialog(function() {
+                    window.location.href = href;
+                });
+            }
+        });
+        
+        // Перехватываем клавишу F5 и Ctrl+R для предотвращения обновления страницы без диалога
+        $(document).on('keydown', function(e) {
+            // F5 или Ctrl+R
+            if (e.keyCode === 116 || (e.ctrlKey && e.keyCode === 82)) {
+                if (checkFormChanges()) {
+                    e.preventDefault();
+                    showRefreshConfirmationDialog();
+                    return false;
+                }
+            }
+        });
+        
+        // Сбрасываем флаги после сохранения формы
+        $('#edit-note-form').submit(function() {
+            isPinModified = false;
+            if (typeof isStatusModified !== 'undefined') {
+                isStatusModified = false;
+            }
+        });
+        
+        // Функция для работы с закреплением заметки
+        // Используем ранее объявленную переменную isPinModified
+        let isPinned = false;
+        
+        // Функция для локального переключения статуса закрепления
+        function togglePinLocal() {
+            // Проверяем, не заблокирована ли кнопка (значит идет API-запрос)
+            if ($('#toggle-pin-button').prop('disabled')) {
+                console.log('Кнопка заблокирована, пропускаем локальное переключение');
+                return;
+            }
+            
+            isPinned = !isPinned;
+            
+            console.log('Локальное переключение закрепления:', !isPinned, '->', isPinned);
+            
+            // Отмечаем, что состояние закрепления изменено
+            isPinModified = true;
+            
+            // Визуально обновляем внешний вид кнопки
+            if (isPinned) {
+                $('#toggle-pin-button').removeClass('btn-outline-warning').addClass('btn-warning');
+            } else {
+                $('#toggle-pin-button').removeClass('btn-warning').addClass('btn-outline-warning');
+            }
+            $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
+            
+            // Обновляем скрытое поле для сохранения состояния при отправке формы
+            $('#is_pinned').val(isPinned ? '1' : '0');
+            
+            // Показываем уведомление
+            updatePinButtonText(true);
+        }
+        
+        // Функция для обновления внешнего вида кнопки закрепления
+        function updatePinButtonAppearance() {
+            const $button = $('#toggle-pin-button');
+            
+            console.log('Обновление внешнего вида кнопки закрепления, текущий статус isPinned:', isPinned);
+            
+            if (isPinned) {
+                // Делаем кнопку активной
+                $button.removeClass('btn-outline-warning');
+                $button.addClass('btn-warning');
+                $button.html('<i class="fas fa-thumbtack"></i>'); // Только иконка без текста
+            } else {
+                // Делаем кнопку неактивной
+                $button.removeClass('btn-warning');
+                $button.addClass('btn-outline-warning');
+                $button.html('<i class="fas fa-thumbtack"></i>'); // Только иконка без текста
+            }
+        }
+        
+        // Функция для обновления текста кнопки и показа уведомления
+        function updatePinButtonText(showAlert = false) {
+            const buttonText = isPinned ? 'Открепить' : 'Закрепить';
+            $('#toggle-pin-button').attr('title', buttonText);
+            
+            if (showAlert) {
+                // Показываем уведомление о смене статуса
+                const notificationMessage = isPinned ? 
+                    'Заметка будет закреплена после сохранения' : 
+                    'Заметка будет откреплена после сохранения';
+                    
+                if (typeof showNotification === 'function') {
+                    showNotification(notificationMessage, isPinned ? 'warning' : 'info');
+                } else {
+                    // Если функция showNotification недоступна, используем стандартные уведомления
+                    alert(notificationMessage);
+                }
+            }
+        }
+        
+        // Сбрасываем флаг изменения закрепления после успешного сохранения формы
+        $('#edit-note-form').submit(function() {
+            isPinModified = false;
+        });
+        
+        // Функция для перемещения заметки в корзину
         function deleteNote(id) {
+            // Показываем индикатор загрузки на кнопке
+            $('#delete-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
             $.ajax({
-                url: `/api/notes/${id}`,
-                method: 'DELETE',
+                url: `/notes/${id}/trash`,
+                method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                success: function() {
+                success: function(response) {
+                    console.log('Заметка успешно перемещена в корзину:', response);
+                    
+                    // Показываем уведомление в соответствии с фото 2
+                    if (typeof showNotification === 'function') {
+                        showNotification('Заметка помещена в корзину', 'info');
+                    } else {
+                        alert('Заметка помещена в корзину');
+                    }
+                    
                     // Перенаправляем на главную страницу
-                    window.location.href = '/notes';
+                    setTimeout(function() {
+                        window.location.href = '/notes';
+                    }, 1000);
                 },
                 error: function(xhr) {
-                    console.error('Ошибка при удалении заметки:', xhr.responseText);
-                    alert('Произошла ошибка при удалении заметки');
+                    // Восстанавливаем кнопку
+                    $('#delete-button').prop('disabled', false).html('<i class="fas fa-trash"></i>');
+                    
+                    console.error('Ошибка при перемещении заметки в корзину:', xhr.responseText);
+                    showErrorModal('Ошибка', 'Произошла ошибка при перемещении заметки в корзину', xhr.responseText);
+                    
+                    // Восстанавливаем обработчик
+                    window.addEventListener('beforeunload', beforeUnloadHandler);
                 }
             });
         }
@@ -1908,8 +2438,38 @@
                         });
                     } catch (error) {
                         console.error('Ошибка при вызове createConfirmationModal:', error);
-                        if (confirm(`Удалить файл "${fileName}"?`)) {
-                            // Fallback - используем стандартный confirm
+                        
+                        // Создаем и показываем модальное окно через Bootstrap API напрямую
+                        const modalId = 'deleteFileModal_' + Date.now();
+                        const modalHTML = `
+                            <div class="modal fade" id="${modalId}" tabindex="-1" aria-labelledby="${modalId}Label" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning">
+                                            <h5 class="modal-title" id="${modalId}Label">Подтвердите удаление</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Вы уверены, что хотите удалить файл "${fileName}"?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                            <button type="button" class="btn btn-danger" id="${modalId}Confirm">Удалить</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        $('body').append(modalHTML);
+                        const modal = new bootstrap.Modal(document.getElementById(modalId));
+                        modal.show();
+                        
+                        // Обработчик для кнопки подтверждения
+                        $(`#${modalId}Confirm`).on('click', function() {
+                            modal.hide();
+                            
+                            // Удаляем файл
                             window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
                             fileCard.fadeOut(300, function() {
                                 $(this).remove();
@@ -1917,7 +2477,7 @@
                                     $('#existing-files').hide();
                                 }
                             });
-                        }
+                        });
                     }
                 });
                 
@@ -1950,8 +2510,12 @@
                             const normalizedName = folderName.toLowerCase().trim();
                             const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
                             
+                            // Проверяем, активна ли папка (соответствует ли текущему URL)
+                            const isActive = window.location.pathname.includes(`/notes/folder/${encodeURIComponent(folderName)}`);
+                            const activeClass = isActive ? 'active-folder' : '';
+
                             foldersContainer.append(`
-                                <div class="d-flex justify-content-between align-items-center mb-2 folder-item" 
+                                <div class="folder-item d-flex align-items-center mb-2 ${activeClass}" 
                                      id="${folderId}" 
                                      data-folder-name="${normalizedName}" 
                                      data-folder-original="${folderName}">
@@ -1960,8 +2524,8 @@
                                        data-folder="${folderName}">
                                         <i class="fas fa-folder me-1"></i> ${folderName}
                                     </a>
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-secondary me-2">${count}</span>
+                                    <div class="ms-auto">
+                                        <span class="badge bg-secondary">${count}</span>
                                     </div>
                                 </div>
                             `);

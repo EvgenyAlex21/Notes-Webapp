@@ -44,6 +44,7 @@ Route::prefix('api')->group(function () {
     Route::delete('/notes', [NoteController::class, 'clearAll']);
     
     // Дополнительные маршруты для расширенной функциональности
+    Route::post('/notes/{note}/trash', [NoteController::class, 'destroy']); // Перемещение в корзину
     Route::post('/notes/{note}/restore', [NoteController::class, 'restore']);
     Route::delete('/notes/{note}/force', [NoteController::class, 'forceDelete']);
     Route::put('/notes/{note}/color', [NoteController::class, 'updateColor']);

@@ -363,18 +363,15 @@ function showNotification(message, type = 'info', duration = 3000) {
         initNotificationsSystem();
     }
     
-    // Создаем элемент уведомления
+    // Создаем элемент уведомления (стиль как на фото 3)
     const notification = document.createElement('div');
     notification.id = notificationId;
-    notification.className = `notification notification-${type}`;
+    notification.className = `notification alert bg-${type === 'info' ? 'info' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} ${type === 'warning' ? 'text-dark' : 'text-white'} d-flex align-items-center fade show mb-2`;
+    notification.style.cssText = 'border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; width: 300px;';
     notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas ${icon} notification-icon"></i>
-            <div class="notification-message">${message}</div>
-            <button class="notification-close-btn">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+        <i class="fas ${icon} me-2" style="font-size: 1.2rem;"></i>
+        <div class="flex-grow-1" style="font-size: 0.9rem;">${message}</div>
+        <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.8rem;"></button>
         <div class="notification-progress-bar"></div>
     `;
     

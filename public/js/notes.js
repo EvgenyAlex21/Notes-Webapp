@@ -1191,7 +1191,7 @@ function updatePinButtonState(isPinned) {
             .removeClass('btn-outline-warning')
             .addClass('btn-warning')
             .attr('title', 'Открепить')
-            .html('<i class="fas fa-thumbtack"></i> Закреплено');
+            .html('<i class="fas fa-thumbtack"></i>'); // Только иконка без текста
     } else {
         $('#toggle-pin-button')
             .removeClass('btn-warning')
@@ -1355,6 +1355,13 @@ function createNote() {
             
             // Обновляем кнопку
             $('#save-button').html('<i class="fas fa-check"></i> Сохранено!');
+            
+            // Обновляем счетчики в боковой панели
+            if (typeof updateSidebarCounters === 'function') {
+                updateSidebarCounters();
+            } else if (typeof loadSidebarStats === 'function') {
+                loadSidebarStats();
+            }
             
             // Небольшая задержка перед перенаправлением
             setTimeout(() => {
@@ -1943,6 +1950,13 @@ function executeDeleteNote(id) {
                     // Обновляем статистику
                     loadStats();
                 }
+                
+                // Обновляем счетчики в боковой панели
+                if (typeof updateSidebarCounters === 'function') {
+                    setTimeout(updateSidebarCounters, 500);
+                } else if (typeof loadSidebarStats === 'function') {
+                    setTimeout(loadSidebarStats, 500);
+                }
             }
         },
         error: function(error) {
@@ -2087,6 +2101,13 @@ function executeForceDeleteNote(id) {
             
             // Обновляем статистику
             loadStats();
+            
+            // Обновляем счетчики в боковой панели
+            if (typeof updateSidebarCounters === 'function') {
+                setTimeout(updateSidebarCounters, 500);
+            } else if (typeof loadSidebarStats === 'function') {
+                setTimeout(loadSidebarStats, 500);
+            }
         },
         error: function(error) {
             console.error('Ошибка при удалении заметки:', error);
@@ -2265,8 +2286,12 @@ function togglePin(id) {
         return;
     }
     
+    // Определяем текущее состояние до запроса
+    const $pinButton = $('#toggle-pin-button');
+    const isPinnedBefore = $pinButton.hasClass('btn-warning');
+    
     $.ajax({
-        url: `/api/notes/${id}/toggle-pin`,
+        url: `/notes/${id}/toggle-pin`,
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken
@@ -2277,8 +2302,14 @@ function togglePin(id) {
             
             // Если мы на странице редактирования
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
-                updatePinButtonState(note.is_pinned);
-                showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
+                // Проверяем, действительно ли изменилось состояние
+                if (isPinnedBefore !== note.is_pinned) {
+                    updatePinButtonState(note.is_pinned);
+                    showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
+                    console.log('Состояние закрепления изменилось с', isPinnedBefore, 'на', note.is_pinned);
+                } else {
+                    console.warn('Состояние закрепления не изменилось:', note.is_pinned);
+                }
             } 
             // Если мы на странице списка
             else {
@@ -2558,6 +2589,13 @@ function archiveNote(id) {
                 // Обновляем статистику
                 loadStats();
             }
+            
+            // Обновляем счетчики в боковой панели
+            if (typeof updateSidebarCounters === 'function') {
+                setTimeout(updateSidebarCounters, 500);
+            } else if (typeof loadSidebarStats === 'function') {
+                setTimeout(loadSidebarStats, 500);
+            }
         },
         error: function(error) {
             console.error('Ошибка при архивации заметки:', error);
@@ -2604,6 +2642,13 @@ function unarchiveNote(id) {
                 if (window.location.pathname === '/notes') {
                     loadAllNotes(false);
                 }
+            }
+            
+            // Обновляем счетчики в боковой панели
+            if (typeof updateSidebarCounters === 'function') {
+                setTimeout(updateSidebarCounters, 500);
+            } else if (typeof loadSidebarStats === 'function') {
+                setTimeout(loadSidebarStats, 500);
             }
         },
         error: function(error) {
@@ -3195,6 +3240,13 @@ function toggleDone(id, event) {
             
             // Обновляем счетчики на боковой панели
             loadStats();
+            
+            // Обновляем счетчики в боковой панели
+            if (typeof updateSidebarCounters === 'function') {
+                setTimeout(updateSidebarCounters, 500);
+            } else if (typeof loadSidebarStats === 'function') {
+                setTimeout(loadSidebarStats, 500);
+            }
         },
         error: function(xhr, status, error) {        // В случае ошибки восстанавливаем предыдущее состояние
         if (currentDoneState) {

@@ -205,7 +205,18 @@ $(document).ready(function() {
 /**
  * Загружает статистику для боковой панели
  */
+// Флаг для предотвращения одновременных вызовов loadSidebarStats
+let isLoadingSidebarStats = false;
+
 function loadSidebarStats() {
+    // Предотвращаем одновременные вызовы
+    if (isLoadingSidebarStats) {
+        console.log("Загрузка статистики уже выполняется, пропускаем вызов");
+        return;
+    }
+    
+    isLoadingSidebarStats = true;
+    
     // Если доступна глобальная функция загрузки статистики и данные, используем их
     if (typeof window.loadStats === 'function') {
         try {
@@ -213,6 +224,7 @@ function loadSidebarStats() {
             if (window.statsData && Object.keys(window.statsData).length > 0) {
                 sidebarStatsData = window.statsData;
                 updateSidebarCounters();
+                isLoadingSidebarStats = false;
                 return;
             }
         } catch (e) {
@@ -233,8 +245,27 @@ function loadSidebarStats() {
                 // Обновляем счетчики с учетом текущей страницы
                 const currentPath = window.location.pathname;
                 
+                // Проверяем, находимся ли мы на странице редактирования
+                const isEditPage = currentPath.includes('/notes/') && (
+                    currentPath.includes('/edit') || 
+                    currentPath.includes('/create') ||
+                    currentPath.match(/\/notes\/\d+$/)
+                );
+                
+                if (isEditPage) {
+                    console.log("На странице редактирования - устанавливаем точные счетчики из API");
+                    // Рассчитываем правильное значение для "Все заметки" (без архивных и удаленных)
+                    const totalActive = sidebarStatsData.total - sidebarStatsData.archived - sidebarStatsData.trashed;
+                    $('#all-notes-count').text(totalActive);
+                    $('#archive-notes-count').text(sidebarStatsData.archived);
+                    $('#trash-notes-count').text(sidebarStatsData.trashed);
+                    $('#calendar-notes-count').text(sidebarStatsData.with_reminders);
+                    
+                    // Также обновляем счетчики папок
+                    updateFolderCountersFromAPI();
+                }
                 // Для главной страницы и папок используем фактическое количество заметок на странице
-                if (currentPath === '/notes' || currentPath === '/notes/' || currentPath.includes('/notes/folder')) {
+                else if (currentPath === '/notes' || currentPath === '/notes/' || currentPath.includes('/notes/folder')) {
                     // Вызываем функцию обновления счетчика главной страницы
                     updateMainPageCounter();
                 } else {
@@ -248,6 +279,13 @@ function loadSidebarStats() {
         error: function() {
             // Используем счетчики из DOM, если они доступны
             countRealNotesOnPage();
+            isLoadingSidebarStats = false;
+        },
+        complete: function() {
+            // Гарантированно сбрасываем флаг загрузки
+            setTimeout(() => {
+                isLoadingSidebarStats = false;
+            }, 200);
         }
     });
 }
@@ -282,6 +320,12 @@ function updateSidebarCounters() {
     } else if (currentPath.includes('/notes/folder')) {
         // В папке показываем количество заметок в этой конкретной папке
         updateFolderPageCounter();
+    } else if (currentPath.includes('/notes/') && currentPath.includes('/edit')) {
+        // На странице редактирования используем API данные
+        $('#all-notes-count').text(statsSource.total || 0);
+        $('#archive-notes-count').text(statsSource.archived || 0);
+        $('#trash-notes-count').text(statsSource.trashed || 0);
+        $('#calendar-notes-count').text(statsSource.with_reminders || 0);
     } else {
         // Для других страниц (архив, корзина, календарь) вызываем стандартную обработку
         countRealNotesOnPage();
@@ -323,6 +367,29 @@ function updateSidebarCounters() {
  * Обновляет счетчики из API для разделов, которые не отображаются на текущей странице
  */
 function updateCountersFromAPI(statsSource, currentPath) {
+    // Если мы находимся на странице редактирования или создания, устанавливаем все счетчики из API
+    const isEditPage = currentPath.includes('/notes/') && (
+        currentPath.includes('/edit') || 
+        currentPath.includes('/create') ||
+        currentPath.match(/\/notes\/\d+$/)
+    );
+    
+    if (isEditPage) {
+        // На странице редактирования берем данные напрямую из API
+        // Счетчик "Все заметки" должен показывать только активные заметки (не архивные, не в корзине)
+        const totalNotesCount = (statsSource.total || 0) - (statsSource.archived || 0) - (statsSource.trashed || 0);
+        $('#all-notes-count').text(totalNotesCount);
+        $('#archive-notes-count').text(statsSource.archived || 0);
+        $('#trash-notes-count').text(statsSource.trashed || 0);
+        $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+        
+        // Также обновляем счетчики для папок
+        updateFolderCountersFromAPI();
+        
+        console.log('Обновлены все счетчики из API на странице редактирования');
+        return;
+    }
+    
     // Обновляем счетчики только для тех разделов, которые НЕ отображаются на текущей странице
     if (!currentPath.includes('/notes/archive')) {
         const archivedNotesCount = statsSource.archived || 0;
@@ -624,8 +691,13 @@ function updateMainPageCounter() {
  * Обрабатывает изменения в боковом меню и сохраняет выбранную папку
  */
 function handleSidebarChanges() {
-    // Установка активной папки при загрузке страницы
-    setActiveFolderFromUrl();
+    // Проверяем, определена ли функция setActiveFolderFromUrl
+    if (typeof setActiveFolderFromUrl === 'function') {
+        // Установка активной папки при загрузке страницы
+        setActiveFolderFromUrl();
+    } else {
+        console.warn('Функция setActiveFolderFromUrl не определена, пропускаем вызов');
+    }
     
     // Установка обработчиков событий на ссылки папок для сохранения состояния
     $(document).on('click', '.folder-link', function() {
@@ -664,3 +736,34 @@ handleSidebarChanges();
 
 // Экспортируем функцию для использования в других скриптах
 window.updateSidebarCounters = updateSidebarCounters;
+
+/**
+ * Обновляет счетчики папок из API
+ */
+function updateFolderCountersFromAPI() {
+    // Запрашиваем данные о папках из API
+    $.ajax({
+        url: '/api/folders',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response && response.success && response.data) {
+                // Обновляем счетчики для каждой папки
+                response.data.forEach(function(folder) {
+                    const folderName = folder.name;
+                    const count = folder.count || 0;
+                    const normalizedName = folderName.toLowerCase().trim();
+                    const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+                    
+                    // Находим счетчик для этой папки и обновляем его
+                    $(`#${folderId} .badge`).text(count);
+                });
+                
+                console.log('Счетчики папок обновлены из API');
+            }
+        },
+        error: function() {
+            console.error('Ошибка при получении данных о папках из API');
+        }
+    });
+}

@@ -53,14 +53,24 @@ function removeFromFolder(id) {
                     $('.notes-container').hide();
                     $('.empty-container').removeClass('d-none');
                 }
-            });                // Обновляем статистику
+            });
+            
+            // Обновляем статистику
+            if (typeof loadStats === 'function') {
                 loadStats();
-                
-                // Если мы удалили последнюю заметку из папки, показываем пустое состояние
-                if ($('.note-wrapper:visible').length === 0) {
-                    $('.notes-container').hide();
-                    $('.empty-container').removeClass('d-none');
+            }
+            
+            // Специально обновляем счетчики в боковой панели
+            setTimeout(function() {
+                if (typeof loadSidebarStats === 'function') {
+                    loadSidebarStats();
                 }
+                
+                // Дополнительно обновляем счетчик папки в боковом меню
+                if (typeof updateFolderCountersFromAPI === 'function') {
+                    updateFolderCountersFromAPI();
+                }
+            }, 300);
         },
         error: function(error) {
             console.error('Ошибка при перемещении заметки во "Все заметки":', error);

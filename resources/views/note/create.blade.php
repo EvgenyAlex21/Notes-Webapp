@@ -4,7 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Создание заметки</title>
+    
+    <!-- Favicon с версионированием для обхода кэша -->
+    <link rel="icon" href="/favicon.ico?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
+    <link rel="shortcut icon" href="/favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="/images/logo.png?v=1">
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -120,6 +131,44 @@
             border: none;
             outline: none;
             padding: 5px;
+        }
+        
+        /* Стили для папок - точно такие же как у sidebar-link */
+        .folder-item {
+            padding: 10px 15px;
+            border-radius: 0.375rem;
+            transition: background-color 0.15s ease-in-out;
+            position: relative;
+        }
+        
+        .folder-link {
+            max-width: 180px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            display: inline-block;
+            color: #495057;
+        }
+        
+        .folder-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .folder-item.active-folder {
+            background-color: #e9ecef;
+        }
+        
+        .folder-item.active-folder .folder-link {
+            font-weight: bold;
+            color: #212529 !important;
+        }
+        
+        .dark-theme .folder-item:hover {
+            background-color: #4a4f55;
+        }
+        
+        .dark-theme .folder-item.active-folder {
+            background-color: #4a4f55;
         }
         
         /* Стили для загрузки файлов */
@@ -954,17 +1003,17 @@
                                 const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
                                 
                                 foldersContainer.append(`
-                                    <div class="d-flex justify-content-between align-items-center mb-2 folder-item" 
+                                    <div class="folder-item" 
                                          id="${folderId}" 
                                          data-folder-name="${normalizedName}" 
                                          data-folder-original="${folderName}">
-                                        <a href="/notes/folder/${encodeURIComponent(folderName)}" 
-                                           class="text-decoration-none text-dark folder-link" 
-                                           data-folder="${folderName}">
-                                            <i class="fas fa-folder me-1"></i> ${folderName}
-                                        </a>
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge bg-secondary me-2">${count}</span>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <a href="/notes/folder/${encodeURIComponent(folderName)}" 
+                                               class="text-decoration-none text-dark folder-link" 
+                                               data-folder="${folderName}">
+                                                <i class="fas fa-folder me-1"></i> ${folderName}
+                                            </a>
+                                            <span class="badge bg-secondary">${count}</span>
                                         </div>
                                     </div>
                                 `);
