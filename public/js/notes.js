@@ -100,14 +100,20 @@ $(document).ready(function() {
     });
     
     // Получение списка всех заметок
-    if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath === '/notes/archive' || currentPath.match(/\/notes\/folder\//)) {
+    if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath === '/notes/archive' || currentPath.match(/\/notes\/folder\//) || currentPath.match(/\/notes\/\d+$/)) {
         console.log('Инициализация загрузки заметок для страницы:', currentPath);
         
         // Проверяем, находимся ли мы в режиме папки
         const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
+        const noteMatch = currentPath.match(/\/notes\/(\d+)$/);
+        
         if (folderMatch) {
             console.log('Загружаем заметки для папки из URL:', folderMatch[1]);
             // В этом случае loadAllNotes сам определит папку из URL
+            loadAllNotes(trashMode);
+        } else if (noteMatch) {
+            console.log('Загружаем заметки для просмотра конкретной заметки:', noteMatch[1]);
+            // Загружаем все заметки как обычно, модальное окно откроется через showNoteId
             loadAllNotes(trashMode);
         } else if (currentPath === '/notes/archive') {
             console.log('Загружаем архивные заметки');

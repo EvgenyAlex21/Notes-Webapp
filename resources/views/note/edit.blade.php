@@ -1002,17 +1002,22 @@
     <script>
         // Обработка выбора типа напоминания
         $(document).ready(function() {
-            // Флаг для предотвращения автоматического сброса
-            let reminderInitialized = false;
+            // Флаг для предотвращения автоматического сброса только при загрузке данных
+            let dataLoadingInProgress = true;
             
             // Обработчик изменения типа напоминания
             $('#reminder-type').on('change', function() {
-                // Пропускаем автоматические изменения во время инициализации
-                if (!reminderInitialized) {
+                const selectedType = $(this).val();
+                console.log('Изменение типа напоминания на:', selectedType, 'во время загрузки:', dataLoadingInProgress);
+                
+                // Если это изменение происходит во время загрузки данных и тип "none", то пропускаем
+                if (dataLoadingInProgress && selectedType === 'none') {
+                    console.log('Пропускаем автоматический сброс на "none" во время загрузки');
                     return;
                 }
                 
-                const selectedType = $(this).val();
+                console.log('Обрабатываем изменение типа напоминания на:', selectedType);
+                
                 const dateTimeContainer = $('#reminder-datetime-container');
                 const reminderActions = $('#reminder-actions');
 
@@ -1022,34 +1027,40 @@
                         reminderActions.hide();
                         $('#reminder-date').val('');
                         $('#reminder_at').val(''); // Очищаем скрытое поле
+                        console.log('Скрыты поля напоминания для типа "none"');
                         break;
                     case 'datetime':
                         dateTimeContainer.show();
                         reminderActions.hide();
+                        console.log('Показаны поля даты/времени для типа "datetime"');
                         break;
                     case 'today':
                         setQuickDate(0); // сегодня
                         dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
+                        console.log('Установлен тип "сегодня"');
                         break;
                     case 'tomorrow':
                         setQuickDate(1); // завтра
                         dateTimeContainer.show(); // Показываем поле времени
                         reminderActions.show();
+                        console.log('Установлен тип "завтра"');
                         break;
                     case 'next-week':
                         setQuickDate(7); // через неделю
                         dateTimeContainer.show(); // Показываем поле времени и дату
                         reminderActions.show();
+                        console.log('Установлен тип "через неделю"');
                         break;
                 }
             });
             
-            // Устанавливаем флаг после загрузки страницы
-            setTimeout(function() {
-                reminderInitialized = true;
-                console.log('Инициализация напоминаний завершена');
-            }, 1000);
+            // Устанавливаем флаг после загрузки данных заметки
+            // Это произойдет в функции loadNoteData()
+            window.setReminderInitialized = function() {
+                dataLoadingInProgress = false;
+                console.log('Инициализация напоминаний завершена, все обработчики активированы');
+            };
             
             // Функция для быстрой установки даты (через указанный период времени)
             function setQuickDate(daysToAdd) {
@@ -1167,6 +1178,8 @@
                 success: function(response) {
                     if (response && response.data) {
                         const note = response.data;
+                        console.log('Получены данные заметки:', note);
+                        console.log('Поле reminder_at:', note.reminder_at);
                         
                         // Заполняем поля формы
                         $('#name').val(note.name);
@@ -1269,7 +1282,8 @@
                         
                         // Загружаем напоминание если оно есть
                         // НЕ снимаем обработчики change, просто устанавливаем значения
-                        if (note.reminder_at) {
+                        console.log('Проверяем напоминание. note.reminder_at =', note.reminder_at, 'тип:', typeof note.reminder_at);
+                        if (note.reminder_at && note.reminder_at !== null && note.reminder_at !== '') {
                             console.log('Загружаем напоминание:', note.reminder_at);
                             let utcDate = new Date(note.reminder_at);
                             if (isNaN(utcDate.getTime()) && typeof note.reminder_at === 'string') {
@@ -1286,8 +1300,27 @@
                                 const datetimeLocal = `${year}-${month}-${day}T${hours}:${minutes}`;
                                 console.log('Дата напоминания в формате datetime-local:', datetimeLocal);
 
+                                // Определяем тип напоминания на основе даты
+                                const now = new Date();
+                                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                                const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+                                const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                                const reminderDate = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+                                
+                                let reminderType = 'datetime'; // по умолчанию
+                                
+                                if (reminderDate.getTime() === today.getTime()) {
+                                    reminderType = 'today';
+                                } else if (reminderDate.getTime() === tomorrow.getTime()) {
+                                    reminderType = 'tomorrow';
+                                } else if (reminderDate.getTime() === nextWeek.getTime()) {
+                                    reminderType = 'week';
+                                }
+                                
+                                console.log('Определен тип напоминания:', reminderType);
+
                                 // Устанавливаем значения без вызова обработчиков
-                                $('#reminder-type').val('datetime');
+                                $('#reminder-type').val(reminderType);
                                 $('#reminder-date').val(datetimeLocal);
                                 $('#reminder_at').val(note.reminder_at);
                                 $('#reminder-datetime-container').show();
@@ -1300,13 +1333,14 @@
                                 $('#reminder-actions').hide();
                             }
                         } else {
-                            console.log('У заметки нет напоминания');
-                            // НЕ сбрасываем напоминание на 'none', если оно уже установлено
-                            if ($('#reminder-type').val() === '') {
-                                $('#reminder-type').val('none');
-                                $('#reminder-datetime-container').hide();
-                                $('#reminder-actions').hide();
-                            }
+                            console.log('У заметки нет напоминания, устанавливаем none');
+                            // Принудительно устанавливаем 'none' если у заметки нет напоминания
+                            $('#reminder-type').val('none');
+                            $('#reminder-date').val('');
+                            $('#reminder_at').val('');
+                            $('#reminder-datetime-container').hide();
+                            $('#reminder-actions').hide();
+                            console.log('Установлен тип "none" и скрыты поля');
                         }
                         
                         // Загружаем файлы, если они есть
@@ -1390,11 +1424,41 @@
                             // Восстанавливаем кнопку сохранения
                             $('#update-button').html('<i class="fas fa-save"></i> Сохранить изменения');
                             $('#update-button').attr('disabled', false);
+                            
+                            // Завершаем загрузку данных - теперь пользователь может изменять напоминание
+                            dataLoadingInProgress = false;
+                            console.log('Загрузка данных заметки завершена, dataLoadingInProgress = false');
+                            
+                            // Принудительно обновляем видимость полей напоминания после загрузки
+                            const currentReminderType = $('#reminder-type').val();
+                            console.log('Текущий тип напоминания после загрузки:', currentReminderType);
+                            if (currentReminderType === 'none') {
+                                $('#reminder-datetime-container').hide();
+                                $('#reminder-actions').hide();
+                                console.log('Принудительно скрыты поля для типа "none"');
+                            } else {
+                                $('#reminder-datetime-container').show();
+                                if (currentReminderType !== 'datetime') {
+                                    $('#reminder-actions').show();
+                                }
+                                console.log('Показаны поля для типа:', currentReminderType);
+                            }
+                            
+                            // Активируем обработчики напоминаний после полной загрузки данных
+                            if (typeof window.setReminderInitialized === 'function') {
+                                setTimeout(window.setReminderInitialized, 500);
+                            }
                         }
-                    },
+                    }
+                },
+                // Обработчик ошибок AJAX
                     error: function(xhr) {
                         console.error('Ошибка при загрузке заметки:', xhr.responseText);
                         $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка загрузки');
+                        
+                        // Завершаем загрузку данных даже при ошибке
+                        dataLoadingInProgress = false;
+                        console.log('Ошибка загрузки, dataLoadingInProgress = false');
                         
                         // Отображаем сообщение об ошибке
                         showErrorModal('Ошибка загрузки', 'Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
@@ -1791,13 +1855,11 @@
                                 <h5 class="modal-title">
                                     <i class="fas fa-exclamation-triangle me-2"></i>${title}
                                 </h5>
-                                <button type="button" class
-                                </h5>
                                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                             </div>
                             <div class="modal-body p-4">
                                 <p class="mb-0">${message}</p>
-                                ${details ? `<div class="mt-3"><details><summary class="text-muted">Подробности</summary><
+                                ${details ? `<div class="mt-3"><details><summary class="text-muted">Подробности</summary><pre class="text-small">${details}</pre></details></div>` : ''}
                             </div>
                         </div>
                     </div>
@@ -2315,12 +2377,14 @@
                     const fileName = uploadedFiles.find(file => file.id === fileId)?.name || 'файл';
                     
                     // Используем модальное окно подтверждения вместо confirm
-                    createConfirmationModal(
-                        'Удалить файл?',
-                        `Вы уверены, что хотите удалить файл "${fileName}"?`,
-                        'Удалить',
-                        'Отмена',
-                        function() {
+                    createConfirmationModal({
+                        title: 'Удалить файл?',
+                        message: `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                        confirmButtonText: 'Удалить',
+                        cancelButtonText: 'Отмена',
+                        confirmButtonClass: 'btn-danger',
+                        icon: 'fa-trash',
+                        onConfirm: function() {
                             // Удаляем файл из массива
                             uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
                             
@@ -2331,7 +2395,7 @@
                                 updateGlobalFilesArray();
                             });
                         }
-                    );
+                    });
                 });
                 
                 // Обработчик кнопок просмотра файлов уже настроен в file-viewer.js как '.new-file-preview'

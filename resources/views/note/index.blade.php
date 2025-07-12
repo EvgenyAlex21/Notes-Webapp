@@ -855,6 +855,18 @@
             } else {
                 console.warn('Функция initFileViewer не найдена');
             }
+            
+            // Автоматическое открытие модального окна с заметкой, если передан showNoteId
+            @if(isset($showNoteId))
+                console.log('Автоматическое открытие заметки с ID: {{ $showNoteId }}');
+                setTimeout(function() {
+                    if (typeof viewNote === 'function') {
+                        viewNote({{ $showNoteId }});
+                    } else {
+                        console.error('Функция viewNote не найдена');
+                    }
+                }, 1000); // Увеличиваем задержку для загрузки заметок
+            @endif
         });
     </script>
     <div class="modal fade" id="viewNoteModal" aria-labelledby="viewNoteModalLabel">

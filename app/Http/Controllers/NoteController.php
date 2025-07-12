@@ -571,8 +571,13 @@ class NoteController extends Controller
             }
         }
         
+        \Log::info('Данные для обновления заметки ' . $note->id . ': ' . json_encode($data));
+        \Log::info('Напоминание в данных: ' . (isset($data['reminder_at']) ? $data['reminder_at'] : 'НЕ УСТАНОВЛЕНО'));
+        
         $note->update($data);
         $note = Note::find($note->id);
+        
+        \Log::info('Заметка после обновления - напоминание: ' . ($note->reminder_at ? $note->reminder_at->format('Y-m-d\TH:i:s') : 'отсутствует'));
         
         if ($note->files === null) {
             $note->update(['files' => []]);

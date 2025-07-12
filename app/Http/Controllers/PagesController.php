@@ -55,4 +55,14 @@ class PagesController extends Controller
     {
         return view('note.edit', compact('id'));
     }
+
+    public function show($id)
+    {
+        // Возвращаем главную страницу с заметками и передаем ID для автоматического открытия модального окна
+        return view('note.index', [
+            'trashMode' => false, 
+            'archiveMode' => false,
+            'showNoteId' => $id  // Передаем ID заметки для автоматического открытия модального окна
+        ]);
+    }
 }
