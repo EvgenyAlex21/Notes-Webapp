@@ -855,14 +855,15 @@
     <script src="/js/color-filter.js"></script>
     <script src="/js/folder-operations.js"></script>
     <script src="/js/folder-remove.js"></script>
+    <script src="/js/accessibility-fix.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
-    <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <div class="modal fade" id="viewNoteModal" aria-labelledby="viewNoteModalLabel">
+        <div class="modal-dialog modal-lg" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="viewNoteModalLabel">Просмотр заметки</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" autofocus></button>
                 </div>
                 <div class="modal-body">
                     <div id="viewNoteContent">

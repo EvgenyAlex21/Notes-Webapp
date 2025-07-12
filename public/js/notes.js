@@ -11,7 +11,20 @@ $(document).ready(function() {
     const viewNoteModalElement = document.getElementById('viewNoteModal');
     if (viewNoteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         try {
-            viewNoteModal = new bootstrap.Modal(viewNoteModalElement);
+            // Удаляем tabindex="-1" для предотвращения проблем с ARIA
+            viewNoteModalElement.removeAttribute('tabindex');
+            
+            // Настраиваем опции модального окна для улучшения доступности
+            viewNoteModal = new bootstrap.Modal(viewNoteModalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            
+            // Исправление для aria-hidden
+            $(viewNoteModalElement).on('shown.bs.modal', function() {
+                $(this).attr('aria-hidden', 'false');
+            });
         } catch (e) {
             console.warn('Ошибка инициализации модального окна:', e);
         }
@@ -476,14 +489,22 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 });
             }
             
-            $('.notes-container').empty();
+            // Очищаем контейнеры заметок, учитывая как обычный, так и контейнер для корзины
+            $('.notes-container, .trash-notes-container').empty();
             
             // Сразу проверяем, есть ли заметки в массиве response
             if (notes.length === 0) {
                 console.log('Пустой массив заметок для режима: ' + 
                     (archiveMode ? 'архива' : trashMode ? 'корзины' : 'основной'));
-                $('.notes-container').hide();
-                $('.empty-container').removeClass('d-none');
+                
+                // Скрываем контейнеры заметок, учитывая разные классы
+                if (trashMode) {
+                    $('.notes-container, .trash-notes-container').hide();
+                    $('.empty-container, .empty-trash-container').removeClass('d-none');
+                } else {
+                    $('.notes-container').hide();
+                    $('.empty-container').removeClass('d-none');
+                }
                 
                 // Принудительно устанавливаем правильное сообщение для пустого состояния
                 if (archiveMode) {
@@ -603,8 +624,14 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 return;
             }
             
-            $('.notes-container').show();
-            $('.empty-container').addClass('d-none');
+            // Показываем контейнер для заметок и скрываем сообщение о пустой корзине/списке
+            if (trashMode) {
+                $('.notes-container, .trash-notes-container').show();
+                $('.empty-container, .empty-trash-container').addClass('d-none');
+            } else {
+                $('.notes-container').show();
+                $('.empty-container').addClass('d-none');
+            }
             
             // Сначала добавляем закрепленные заметки
             const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
@@ -795,14 +822,17 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 `;
             };
             
+            // Определяем контейнер для заметок с учетом режима корзины
+            const notesContainer = trashMode ? $('.trash-notes-container, .notes-container') : $('.notes-container');
+            
             // Добавляем закрепленные заметки
             pinnedNotes.forEach(note => {
-                $('.notes-container').append(generateNoteHTML(note, true));
+                notesContainer.append(generateNoteHTML(note, true));
             });
             
             // Затем добавляем обычные заметки
             regularNotes.forEach(note => {
-                $('.notes-container').append(generateNoteHTML(note, false));
+                notesContainer.append(generateNoteHTML(note, false));
             });
             
             // Инициализация обработчиков для просмотра заметок
@@ -1810,19 +1840,39 @@ function restoreNote(id) {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        success: function() {
-            showNotification('Заметка восстановлена', 'success');
+        success: function(response) {
+            showNotification('Заметка восстановлена', 'success');                // Используем универсальную функцию обновления интерфейса
+                if (typeof updateNoteInterface === 'function') {
+                    // Явно указываем, что заметка должна быть удалена из интерфейса корзины
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Проверим, остались ли ещё заметки
+                        if ($('.note-wrapper:visible').length === 0) {
+                            $('.trash-notes-container, .notes-container').hide();
+                            $('.empty-trash-container, .empty-container').removeClass('d-none');
+                        }
+                    });
+                    
+                    // Вызываем событие для обработки в trash-handler.js
+                    $(document).trigger('note:restored', [id]);
+                    
+                    updateNoteInterface('restore', id);
+                } else {
+                // Запасной вариант, если универсальная функция недоступна
+                $(`.note-wrapper#note-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Проверим, остались ли ещё заметки
+                    if ($('.note-wrapper:visible').length === 0) {
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
+            }
             
-            // Удаляем элемент из списка
-            $(`.note-wrapper#${id}`).fadeOut(300, function() {
-                $(this).remove();
-                
-                // Проверим, остались ли ещё заметки
-                if ($('.note-wrapper:visible').length === 0) {
-                    $('.notes-container').hide();
-                    $('.empty-container').removeClass('d-none');
-                }
-            });
+            // Обновляем статистику
+            loadStats();
         },
         error: function(error) {
             console.error('Ошибка при восстановлении заметки:', error);
@@ -1863,22 +1913,39 @@ function executeForceDeleteNote(id) {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        success: function() {
-            showNotification('Заметка окончательно удалена', 'warning');
+        success: function(response) {
+            showNotification('Заметка окончательно удалена', 'warning');                // Используем универсальную функцию обновления интерфейса
+                if (typeof updateNoteInterface === 'function') {
+                    // Явно удаляем заметку из DOM в корзине
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Проверим, остались ли ещё заметки
+                        if ($('.note-wrapper:visible').length === 0) {
+                            $('.trash-notes-container, .notes-container').hide();
+                            $('.empty-trash-container, .empty-container').removeClass('d-none');
+                        }
+                    });
+                    
+                    // Вызываем событие для обработки в trash-handler.js
+                    $(document).trigger('note:forceDeleted', [id]);
+                    
+                    updateNoteInterface('force_delete', id);
+                } else {
+                // Запасной вариант, если универсальная функция недоступна
+                $(`.note-wrapper#note-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Проверим, остались ли ещё заметки
+                    if ($('.note-wrapper:visible').length === 0) {
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
+            }
             
-            // Удаляем элемент из списка
-            $(`.note-wrapper#${id}`).fadeOut(300, function() {
-                $(this).remove();
-                
-                // Проверим, остались ли ещё заметки
-                if ($('.note-wrapper:visible').length === 0) {
-                    $('.notes-container').hide();
-                    $('.empty-container').removeClass('d-none');
-                }
-                
-                // Обновляем статистику
-                loadStats();
-            });
+            // Обновляем статистику
+            loadStats();
         },
         error: function(error) {
             console.error('Ошибка при удалении заметки:', error);

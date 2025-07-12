@@ -730,13 +730,16 @@
     </div>
 
     <!-- Подключаем скрипты -->
+    <script src="/js/note-update-handler.js"></script>
     <script src="/js/notes.js"></script>
+    <script src="/js/trash-handler.js"></script>
     <script src="/js/sidebar-active.js"></script>
     <script src="/js/debug-search.js"></script>
     <script src="/js/robust-search.js"></script>
     <script src="/js/color-filter.js"></script>
     <script src="/js/folder-operations.js"></script>
     <script src="/js/folder-remove.js"></script>
+    <script src="/js/accessibility-fix.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">

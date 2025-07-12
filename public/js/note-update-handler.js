@@ -26,7 +26,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы не в архиве, скрываем заархивированные заметки
             if (!isArchiveMode) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -41,7 +41,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы в архиве, скрываем разархивированные заметки
             if (isArchiveMode) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -56,7 +56,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы не в корзине, скрываем удаленные заметки
             if (!isTrashMode) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -71,7 +71,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы в корзине, скрываем восстановленные заметки
             if (isTrashMode) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -89,7 +89,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы не в целевой папке, скрываем перемещенные заметки
             if (!isCurrentTargetFolder) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -109,7 +109,7 @@ function updateNoteInterface(operation, noteIds, options = {}) {
             // Если мы в папке, скрываем заметки, убранные из папки
             if (isFolderMode) {
                 noteIds.forEach(id => {
-                    $(`#${id}, .note-wrapper#${id}`).fadeOut(300, function() {
+                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         checkEmptyState();
                     });
@@ -124,6 +124,16 @@ function updateNoteInterface(operation, noteIds, options = {}) {
                 reloadCurrentView();
             }
             break;
+            
+        case 'force_delete':
+            // При окончательном удалении заметки просто удаляем элемент из DOM
+            noteIds.forEach(id => {
+                $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    checkEmptyState();
+                });
+            });
+            break;
     }
     
     // Всегда обновляем статистику
@@ -134,10 +144,19 @@ function updateNoteInterface(operation, noteIds, options = {}) {
     // Проверяем, нужно ли показать сообщение "Нет заметок"
     function checkEmptyState() {
         if ($('.note-wrapper:visible').length === 0) {
-            $('.notes-container').hide();
-            $('.empty-container').removeClass('d-none');
+            // Проверяем, находимся ли мы в корзине
+            if (window.location.pathname === '/notes/trash') {
+                $('.trash-notes-container, .notes-container').hide();
+                $('.empty-trash-container, .empty-container').removeClass('d-none');
+            } else {
+                $('.notes-container').hide();
+                $('.empty-container').removeClass('d-none');
+            }
         }
     }
+    
+    // Экспортируем функцию checkEmptyState глобально
+    window.checkEmptyState = checkEmptyState;
     
     // Функция для полного обновления текущего представления
     function reloadCurrentView() {
