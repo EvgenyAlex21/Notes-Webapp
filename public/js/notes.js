@@ -1,6 +1,9 @@
 // Глобальные переменные для всего файла
 let selectedColor = 'default';
 let currentTags = [];
+let currentSort = 'date-new';
+let currentTheme = localStorage.getItem('theme') || 'light';
+let statsData = {};
 
 $(document).ready(function() {
     // Текущий URL
@@ -8,6 +11,10 @@ $(document).ready(function() {
     
     // Инициализация локальных переменных
     let trashMode = currentPath === '/notes/trash';
+    let archiveMode = currentPath === '/notes/archive';
+    
+    // Инициализация темы
+    initTheme();
     
     // Инициализация цветового выбора
     $('.color-option').on('click', function() {
@@ -126,6 +133,48 @@ $(document).ready(function() {
         const id = $('#note-id').val();
         togglePin(id);
     });
+    
+    // Инициализация темы
+    initTheme();
+    
+    // Обработка переключения темы
+    $('#theme-toggle').on('change', function() {
+        toggleTheme();
+    });
+    
+    // Обработчик для поля поиска
+    $('#search-notes').on('input', function() {
+        const query = $(this).val().trim();
+        performSearch(query);
+        applyFilters();
+    });
+    
+    // Обработчик для очистки поиска
+    $('#search-clear').on('click', function() {
+        $('#search-notes').val('');
+        $('#search-results').empty().hide();
+        applyFilters();
+    });
+    
+    // Обработчик для сортировки
+    $('.sort-option').on('click', function(e) {
+        e.preventDefault();
+        const sortType = $(this).data('sort');
+        applySorting(sortType);
+    });
+    
+    // Обработчик для добавления папки
+    $('#add-folder-btn').on('click', function() {
+        const folderName = prompt('Введите название папки:');
+        if (folderName) {
+            addFolder(folderName);
+        }
+    });
+    
+    // Если мы находимся на странице календаря
+    if (currentPath === '/notes/calendar') {
+        initCalendar();
+    }
 });
 
 // Загрузка всех заметок
@@ -134,6 +183,9 @@ function loadAllNotes(trashMode = false) {
     if (trashMode) {
         url += '?trash=true';
     }
+    
+    // Обновляем статистику
+    loadStats();
     
     $.ajax({
         url: url,
@@ -807,4 +859,341 @@ function applyFilters() {
             });
         }
     }, 350);
+}
+
+// Функция загрузки статистики
+function loadStats() {
+    $.ajax({
+        url: '/api/stats',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            statsData = response.data;
+            updateStatsDisplay();
+        },
+        error: function(error) {
+            console.error('Ошибка при загрузке статистики:', error);
+        }
+    });
+}
+
+// Обновление отображения статистики
+function updateStatsDisplay() {
+    if (statsData) {
+        $('#total-notes').text(`Всего: ${statsData.total || 0}`);
+        $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
+        $('#active-notes').text(`Активно: ${statsData.active || 0}`);
+        $('#pinned-notes').text(`Закреплено: ${statsData.pinned || 0}`);
+    }
+}
+
+// Инициализация темы
+function initTheme() {
+    if (currentTheme === 'dark') {
+        $('body').addClass('dark-theme');
+        $('#theme-toggle').prop('checked', true);
+    } else {
+        $('body').removeClass('dark-theme');
+        $('#theme-toggle').prop('checked', false);
+    }
+}
+
+// Переключение темы
+function toggleTheme() {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', currentTheme);
+    initTheme();
+}
+
+// Архивация заметки
+function archiveNote(id) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/archive`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        success: function() {
+            showNotification('Заметка архивирована', 'info');
+            
+            // Обновляем список заметок
+            loadAllNotes(window.location.pathname === '/notes/trash');
+        },
+        error: function(error) {
+            console.error('Ошибка при архивации заметки:', error);
+            showNotification('Ошибка при архивации заметки', 'danger');
+        }
+    });
+}
+
+// Восстановление из архива
+function unarchiveNote(id) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/unarchive`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        success: function() {
+            showNotification('Заметка извлечена из архива', 'info');
+            
+            // Обновляем список заметок
+            loadAllNotes(window.location.pathname === '/notes/trash');
+        },
+        error: function(error) {
+            console.error('Ошибка при извлечении заметки из архива:', error);
+            showNotification('Ошибка при извлечении заметки из архива', 'danger');
+        }
+    });
+}
+
+// Установка напоминания
+function setReminder(id, dateTime) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/reminder`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        data: JSON.stringify({ reminder_at: dateTime }),
+        success: function() {
+            showNotification('Напоминание установлено', 'success');
+            
+            // Если мы на странице редактирования, показываем дату напоминания
+            if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
+                $('#reminder-date').text(`Напоминание: ${formatDate(new Date(dateTime))}`);
+                $('#reminder-container').removeClass('d-none');
+            }
+        },
+        error: function(error) {
+            console.error('Ошибка при установке напоминания:', error);
+            showNotification('Ошибка при установке напоминания', 'danger');
+        }
+    });
+}
+
+// Удаление напоминания
+function removeReminder(id) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    $.ajax({
+        url: `/api/notes/${id}/reminder`,
+        method: 'DELETE',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        success: function() {
+            showNotification('Напоминание удалено', 'info');
+            
+            // Если мы на странице редактирования, скрываем информацию о напоминании
+            if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
+                $('#reminder-container').addClass('d-none');
+            }
+        },
+        error: function(error) {
+            console.error('Ошибка при удалении напоминания:', error);
+            showNotification('Ошибка при удалении напоминания', 'danger');
+        }
+    });
+}
+
+// Добавление новой папки
+function addFolder(folderName) {
+    if (!folderName || folderName.trim() === '') return;
+    
+    // Получаем существующие папки
+    $.ajax({
+        url: '/api/folders',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            const folders = response.data;
+            
+            // Проверяем, существует ли такая папка
+            if (folders.includes(folderName)) {
+                showNotification('Папка с таким именем уже существует', 'warning');
+                return;
+            }
+            
+            // Добавляем папку в интерфейс
+            $('#folders-list').append(`
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span><i class="fas fa-folder"></i> ${folderName}</span>
+                    <span class="badge bg-secondary">0</span>
+                </div>
+            `);
+            
+            showNotification('Папка добавлена', 'success');
+        },
+        error: function(error) {
+            console.error('Ошибка при получении списка папок:', error);
+            showNotification('Ошибка при добавлении папки', 'danger');
+        }
+    });
+}
+
+// Применение сортировки
+function applySorting(sortType) {
+    currentSort = sortType;
+    
+    const notes = $('.note-wrapper');
+    const notesContainer = $('.notes-container');
+    
+    // Копируем в массив для сортировки
+    const notesArray = Array.from(notes);
+    
+    // Сортируем в зависимости от выбранного типа
+    switch (sortType) {
+        case 'date-new':
+            notesArray.sort((a, b) => {
+                const dateA = new Date($(a).data('updated-at') || 0);
+                const dateB = new Date($(b).data('updated-at') || 0);
+                return dateB - dateA; // Сначала новые
+            });
+            break;
+        case 'date-old':
+            notesArray.sort((a, b) => {
+                const dateA = new Date($(a).data('updated-at') || 0);
+                const dateB = new Date($(b).data('updated-at') || 0);
+                return dateA - dateB; // Сначала старые
+            });
+            break;
+        case 'alpha-asc':
+            notesArray.sort((a, b) => {
+                const titleA = $(a).find('h4').text().toLowerCase();
+                const titleB = $(b).find('h4').text().toLowerCase();
+                return titleA.localeCompare(titleB); // А-Я
+            });
+            break;
+        case 'alpha-desc':
+            notesArray.sort((a, b) => {
+                const titleA = $(a).find('h4').text().toLowerCase();
+                const titleB = $(b).find('h4').text().toLowerCase();
+                return titleB.localeCompare(titleA); // Я-А
+            });
+            break;
+        case 'color':
+            notesArray.sort((a, b) => {
+                const colorA = $(a).data('color') || 'default';
+                const colorB = $(b).data('color') || 'default';
+                return colorA.localeCompare(colorB);
+            });
+            break;
+    }
+    
+    // Очищаем контейнер и добавляем отсортированные элементы
+    notesContainer.empty();
+    
+    // Сначала добавляем закрепленные заметки
+    const pinnedNotes = notesArray.filter(note => $(note).data('pinned') === true);
+    const regularNotes = notesArray.filter(note => $(note).data('pinned') !== true);
+    
+    // Добавляем закрепленные заметки
+    pinnedNotes.forEach(note => {
+        notesContainer.append(note);
+    });
+    
+    // Затем добавляем обычные заметки
+    regularNotes.forEach(note => {
+        notesContainer.append(note);
+    });
+    
+    // Анимация для обновленного списка
+    $('.note-wrapper').hide().fadeIn(300);
+}
+
+// Глобальный поиск с мгновенными результатами
+function performSearch(query) {
+    if (!query || query.trim() === '') {
+        $('#search-results').empty().hide();
+        return;
+    }
+    
+    // Показываем прелоадер
+    $('#search-results').html('<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i> Поиск...</div>').show();
+    
+    // Ищем среди заметок
+    const notes = $('.note-wrapper');
+    const results = [];
+    
+    notes.each(function() {
+        const title = $(this).find('h4').text().toLowerCase();
+        const description = $(this).find('.note-description').text().toLowerCase();
+        const tags = $(this).data('tags') || '';
+        const id = $(this).attr('id');
+        
+        if (title.includes(query.toLowerCase()) || 
+            description.includes(query.toLowerCase()) || 
+            tags.includes(query.toLowerCase())) {
+            
+            results.push({
+                id: id,
+                title: title,
+                description: description,
+                color: $(this).data('color')
+            });
+        }
+    });
+    
+    // Отображаем результаты
+    if (results.length > 0) {
+        $('#search-results').empty();
+        
+        results.forEach(result => {
+            const highlightedTitle = highlightText(result.title, query);
+            const highlightedDesc = highlightText(result.description, query);
+            
+            $('#search-results').append(`
+                <div class="search-result-item" data-id="${result.id}">
+                    <div class="title">${highlightedTitle}</div>
+                    <div class="description">${highlightedDesc}</div>
+                </div>
+            `);
+        });
+        
+        // Добавляем обработчик клика на результаты поиска
+        $('.search-result-item').on('click', function() {
+            const noteId = $(this).data('id');
+            
+            // Прокручиваем к заметке и подсвечиваем ее
+            const noteElement = $(`#${noteId}`);
+            if (noteElement.length) {
+                // Скрываем результаты поиска
+                $('#search-results').hide();
+                
+                // Анимированная прокрутка к заметке
+                $('html, body').animate({
+                    scrollTop: noteElement.offset().top - 100
+                }, 500);
+                
+                // Подсветка заметки
+                noteElement.addClass('highlight-note');
+                setTimeout(() => {
+                    noteElement.removeClass('highlight-note');
+                }, 3000);
+            }
+        });
+    } else {
+        $('#search-results').html('<div class="p-3 text-center">Ничего не найдено</div>');
+    }
+}
+
+// Функция для подсветки текста
+function highlightText(text, query) {
+    if (!query) return text;
+    
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<span class="highlight">$1</span>');
 }
