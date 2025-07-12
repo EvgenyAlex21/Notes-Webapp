@@ -678,8 +678,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                          data-raw-tags="${note.tags || ''}" data-folder="${note.folder || ''}"
                          data-updated-at="${note.updated_at}"
                          style="position: relative;">
-                         
-                        ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
                         
                         <div class="row">
                             <div class="col-12">
@@ -697,6 +695,9 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                               onclick="toggleDone(${note.id}, event)" style="cursor: pointer;">
                                             ${note.done ? 'Выполнено' : 'Активно'}
                                         </span>
+                                        ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
+                                        ${window.location.pathname.includes('/archive') ? '<span class="badge bg-info">Архивирован</span>' : ''}
+                                        ${(window.location.pathname.includes('/trash') || window.location.pathname.includes('/new-trash')) ? '<span class="badge bg-danger">В корзине</span>' : ''}
                                     </div>
                                 </div>
                                 
@@ -752,35 +753,13 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                         
                                         return `
                                             <div class="note-files mt-3">
-                                                <div class="small text-muted mb-2">Прикрепленные файлы (${validFiles.length}):</div>
-                                                <div class="d-flex flex-wrap gap-2">
-                                                    ${validFiles.map((file, index) => {
-                                                        // Если нет url, но есть path - генерируем url
-                                                        let fileUrl = file.url || '';
-                                                        if (!fileUrl && file.path) {
-                                                            fileUrl = `/storage/${file.path}`;
-                                                        }
-                                                        
-                                                        // Если нет ни url, ни path, используем заглушку
-                                                        if (!fileUrl) {
-                                                            fileUrl = '#';
-                                                        }
-                                                        
-                                                        return `
-                                                        <a href="#" 
-                                                           class="file-link file-preview-item badge bg-light text-dark d-flex align-items-center"
-                                                           data-url="${fileUrl}"
-                                                           data-name="${file.name || ''}"
-                                                           data-size="${file.size || ''}"
-                                                           data-type="${file.type || ''}"
-                                                           data-index="${index}">
-                                                            <i class="fas fa-${file.type === 'image' ? 'image' : 
-                                                                               file.type === 'video' ? 'video' : 
-                                                                               file.type === 'document' ? 'file-alt' : 'file'} me-1"></i>
-                                                            ${file.name || 'Файл без имени'}
-                                                        </a>
-                                                        `;
-                                                    }).join('')}
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-paperclip me-2 text-secondary"></i>
+                                                    <a href="#" 
+                                                       class="view-note-btn text-decoration-none"
+                                                       data-id="${note.id}">
+                                                       Прикрепленные файлы (${validFiles.length} шт.)
+                                                    </a>
                                                 </div>
                                             </div>
                                         `;
@@ -910,7 +889,27 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     console.log('Клик на кнопке "Просмотр", ID заметки:', noteId);
-                    viewNote(noteId);
+                    
+                    // Определяем источник вызова по URL
+                    const currentPath = window.location.pathname;
+                    let source = null;
+                    
+                    if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
+                        source = 'trash';
+                        console.log('[NOTES.JS] Это заметка из корзины! ID=' + noteId + ', URL=' + currentPath);
+                    } else if (currentPath.includes('/archive')) {
+                        source = 'archive';
+                        console.log('[NOTES.JS] Это заметка из архива! ID=' + noteId + ', URL=' + currentPath);
+                    } else {
+                        console.log('[NOTES.JS] Это обычная заметка, не из корзины и не из архива. URL=' + currentPath);
+                    }
+                    
+                    if (typeof viewNote === 'function') {
+                        console.log('[NOTES.JS] Вызываем viewNote с параметрами: ID=' + noteId + ', source=' + source);
+                        viewNote(noteId, source);
+                    } else {
+                        console.error('Функция viewNote не найдена. Убедитесь, что подключен файл note-view.js');
+                    }
                 });
             }
             

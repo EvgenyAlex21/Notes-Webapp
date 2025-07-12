@@ -10,10 +10,14 @@
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
         // Сохраняем оригинальную функцию console.warn
@@ -478,7 +482,10 @@
     <script src="/js/note-update-handler.js"></script>
     <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
+    <script src="/js/note-view.js"></script>
+    <script src="/js/file-viewer.js"></script>
     <script src="/js/accessibility-fix.js"></script>
     <script src="/js/modal-fix.js"></script>
+    <script src="/js/modal-view-fixes.js"></script>
 </body>
 </html>

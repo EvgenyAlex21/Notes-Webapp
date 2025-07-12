@@ -10,9 +10,13 @@
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/notifications.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
     <style>
         .note-item {
             border-radius: 5px;
@@ -57,10 +61,16 @@
                 </nav>
                 
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h1>Корзина</h1>
-                    <button id="empty-trash" class="btn btn-outline-danger">
-                        <i class="fas fa-trash"></i> Очистить корзину
-                    </button>
+                    <h2>Корзина</h2>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check form-switch me-3">
+                            <input class="form-check-input" type="checkbox" id="theme-toggle">
+                            <label class="form-check-label" for="theme-toggle">Темная тема</label>
+                        </div>
+                        <button class="btn btn-danger btn-sm empty-trash-btn">
+                            <i class="fas fa-trash"></i> Очистить корзину
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="trash-notes-container">
@@ -83,7 +93,10 @@
     <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/trash-handler.js"></script>
+    <script src="/js/note-view.js"></script>
+    <script src="/js/file-viewer.js"></script>
     <script src="/js/accessibility-fix.js"></script>
     <script src="/js/modal-fix.js"></script>
+    <script src="/js/modal-view-fixes.js"></script>
 </body>
 </html>

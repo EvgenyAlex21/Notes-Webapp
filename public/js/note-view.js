@@ -8,18 +8,50 @@ function initViewNoteHandlers() {
     $('.view-note-btn').off('click').on('click', function(e) {
         e.preventDefault();
         const noteId = $(this).data('id');
-        viewNote(noteId);
+        
+        // Определяем источник вызова по URL
+        const currentPath = window.location.pathname;
+        let source = null;
+        
+        if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
+            source = 'trash';
+        } else if (currentPath.includes('/archive')) {
+            source = 'archive';
+        }
+        
+        viewNote(noteId, source);
     });
 }
+
+// Инициализация обработчиков при загрузке документа
+$(document).ready(function() {
+    console.log('Инициализация обработчиков для просмотра заметок');
+    initViewNoteHandlers();
+});
 
 /**
  * Показать заметку в модальном окне
  * @param {number} id - ID заметки
+ * @param {string} [source] - Источник вызова (trash, archive и т.д.)
  */
-function viewNote(id) {
+function viewNote(id, source) {
     // Получаем числовой ID заметки (если передан с префиксом note-)
     const noteId = id.toString().replace('note-', '');
-    console.log(`Запрос на просмотр заметки: получен ID=${id}, преобразован в noteId=${noteId}`);
+    console.log(`Запрос на просмотр заметки: получен ID=${id}, преобразован в noteId=${noteId}, источник=${source || 'не указан'}`);
+    
+    // Определяем текущую страницу, если источник не указан явно
+    if (!source) {
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
+            source = 'trash';
+            console.log('Определен источник по URL: заметка из корзины');
+        } else if (currentPath.includes('/archive')) {
+            source = 'archive';
+            console.log('Определен источник по URL: заметка из архива');
+        } else {
+            console.log('URL не содержит признаков источника: просто просмотр заметки');
+        }
+    }
     
     // Получаем заметку по ID
     $.ajax({
@@ -29,9 +61,10 @@ function viewNote(id) {
         success: function(response) {
             if (response && response.data) {
                 const note = response.data;
-                console.log('Данные заметки для просмотра:', note);
-                console.log('Файлы заметки для просмотра:', note.files);
-                renderNoteInModal(note);
+                console.log('[NOTE-VIEW.JS] Данные заметки для просмотра:', note);
+                console.log('[NOTE-VIEW.JS] Файлы заметки для просмотра:', note.files);
+                console.log('[NOTE-VIEW.JS] Источник вызова перед рендерингом модального окна:', source);
+                renderNoteInModal(note, source);
                 // Открываем модальное окно
                 viewNoteModal.show();
             }
@@ -46,8 +79,35 @@ function viewNote(id) {
 /**
  * Отображение заметки в модальном окне
  * @param {Object} note - Данные заметки
+ * @param {string} [source] - Источник вызова (trash, archive и т.д.)
  */
-function renderNoteInModal(note) {
+function renderNoteInModal(note, source) {
+    // Проверяем параметр source и устанавливаем его значение, если оно не определено
+    if (!source) {
+        // Сначала попробуем определить по URL
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
+            source = 'trash';
+            console.log('[renderNoteInModal] Определен источник по URL: заметка из корзины');
+        } else if (currentPath.includes('/archive')) {
+            source = 'archive';
+            console.log('[renderNoteInModal] Определен источник по URL: заметка из архива');
+        }
+        
+        // Если не удалось определить по URL, проверим данные самой заметки
+        if (!source && note) {
+            if (note.is_deleted) {
+                source = 'trash';
+                console.log('[renderNoteInModal] Определен источник по данным заметки: заметка из корзины (is_deleted=true)');
+            } else if (note.is_archived) {
+                source = 'archive';
+                console.log('[renderNoteInModal] Определен источник по данным заметки: заметка из архива (is_archived=true)');
+            }
+        }
+    }
+    
+    console.log('[renderNoteInModal] Рендеринг заметки ' + note.id + ' из источника: ' + (source || 'не определен'));
+    
     // Получаем массив тегов, если они есть
     const tagsArray = note.tags ? note.tags.split(',') : [];
     const tagsHTML = tagsArray.length > 0 ? 
@@ -206,16 +266,27 @@ function renderNoteInModal(note) {
         }
     }
     
-    // Устанавливаем содержимое модального окна
+    // Определим, нужны ли дополнительные плашки статуса
+    const isTrash = source === 'trash';
+    const isArchive = source === 'archive';
+    
+    // Переопределим размер шрифта для бейджей в заголовке для лучшей видимости
+    const badgeStyle = "font-size: 0.7em; font-weight: 600;";
+    
+    // Устанавливаем содержимое модального окна с более заметными статусами
     $('#viewNoteModalLabel').html(`
         <span class="me-2" style="color: ${getNoteColorHex(note.color)};">●</span>
         ${note.name}
-        <span class="ms-2 badge ${note.done ? 'bg-success' : 'bg-warning'}" style="font-size: 0.6em;">
-            ${note.done ? 'Выполнено' : 'Активно'}
-        </span>
-        <span class="ms-2 badge" style="font-size: 0.6em; background-color: ${getNoteColorHex(note.color)};">
-            ${getPriorityName(note.color)}
-        </span>
+        <div class="mt-1">
+            <span class="badge ${note.done ? 'bg-success' : 'bg-warning'}" style="${badgeStyle}">
+                ${note.done ? 'Выполнено' : 'Активно'}
+            </span>
+            <span class="badge ms-1" style="${badgeStyle} background-color: ${getNoteColorHex(note.color)};">
+                ${getPriorityName(note.color)}
+            </span>
+            ${isArchive ? `<span class="badge bg-info ms-1" style="${badgeStyle}">Архивирован</span>` : ''}
+            ${isTrash ? `<span class="badge bg-danger ms-1" style="${badgeStyle}">В корзине</span>` : ''}
+        </div>
     `);
     
     $('#viewNoteContent').html(`
@@ -239,7 +310,44 @@ function renderNoteInModal(note) {
     `);
     
     // Устанавливаем ссылку на редактирование
-    $('#viewNoteEditBtn').attr('href', `/notes/${note.id}/edit`);
+    const editButton = $('#viewNoteEditBtn');
+    editButton.attr('href', `/notes/${note.id}/edit`);
+    
+    // Выведем отладочную информацию
+    console.log(`Управление кнопкой редактирования для заметки: источник=${source}, ID=${note.id}`);
+    
+    // Управляем видимостью и доступностью кнопки редактирования в зависимости от источника
+    console.log('[КНОПКА] Состояние source перед обработкой кнопки редактирования:', source);
+    
+    if (source === 'trash') {
+        // ПОЛНОСТЬЮ УДАЛЯЕМ КНОПКУ "РЕДАКТИРОВАТЬ" для заметок в корзине
+        editButton.closest('.modal-footer').find('#viewNoteEditBtn').remove();
+        console.log('[КНОПКА] 🔴 Кнопка редактирования УДАЛЕНА, так как заметка из корзины');
+        
+        // Добавим сообщение вместо кнопки
+        editButton.closest('.modal-footer').append('<span class="text-danger ms-2">Редактирование недоступно для заметок в корзине</span>');
+    } else {
+        // Показываем кнопку для других источников
+        editButton.show();
+        editButton.removeClass('disabled btn-secondary').addClass('btn-primary');
+        editButton.removeAttr('aria-disabled');
+        editButton.removeAttr('data-bs-toggle');
+        editButton.removeAttr('data-bs-placement');
+        editButton.removeAttr('title');
+        console.log('[КНОПКА] ✅ Кнопка редактирования доступна');
+    }
+    
+    // Дополнительно выводим плашки статусов прямо в тело модального окна для большей видимости
+    if (source === 'trash' || source === 'archive') {
+        const statusBadge = `
+            <div class="alert ${source === 'trash' ? 'alert-danger' : 'alert-info'} mb-3">
+                <i class="fas ${source === 'trash' ? 'fa-trash-alt' : 'fa-archive'} me-2"></i>
+                <strong>Внимание!</strong> Эта заметка находится в ${source === 'trash' ? 'корзине' : 'архиве'}.
+                ${source === 'trash' ? 'Редактирование недоступно.' : ''}
+            </div>
+        `;
+        $('#viewNoteContent').prepend(statusBadge);
+    }
 }
 
 

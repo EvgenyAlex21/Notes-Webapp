@@ -1,0 +1,509 @@
+/**
+ * Общие стили для темной темы
+ * Обеспечивает единое отображение темной темы на всех страницах приложения
+ */
+
+/* Основные цвета для темной темы */
+:root {
+    --dark-bg-primary: #121417;       /* Обновлено: немного темнее */
+    --dark-bg-secondary: #1e2227;     /* Обновлено: немного темнее */
+    --dark-bg-tertiary: #2a2f36;      /* Обновлено: немного темнее */
+    --dark-text-primary: #ffffff;     /* Обновлено: ярче для лучшей контрастности */
+    --dark-text-secondary: #e0e0e0;   /* Обновлено: ярче для лучшей контрастности */
+    --dark-text-muted: #b0b8c4;       /* Обновлено: ярче для лучшей контрастности */
+    --dark-border-color: #495057;
+    --dark-border-light: #5a606b;
+    --dark-highlight: #4a5568;
+}
+
+/* Основное оформление */
+body.dark-theme {
+    background-color: var(--dark-bg-primary);
+    color: var(--dark-text-primary);
+}
+
+/* Заголовки и основные компоненты */
+.dark-theme h1, 
+.dark-theme h2, 
+.dark-theme h3, 
+.dark-theme h4, 
+.dark-theme h5, 
+.dark-theme h6 {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .card,
+.dark-theme .modal-content {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .modal-header,
+.dark-theme .modal-footer {
+    border-color: var(--dark-border-color);
+}
+
+/* Элементы ввода */
+.dark-theme .form-control,
+.dark-theme .form-select,
+.dark-theme .input-group-text {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .form-control:focus,
+.dark-theme .form-select:focus {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary);
+    border-color: #0d6efd;
+}
+
+/* Заметки */
+.dark-theme .note-item {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .note-item h4 {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Исправляем отображение текста в карточке заметки */
+.dark-theme .note-content,
+.dark-theme .note-content p,
+.dark-theme .note-content div,
+.dark-theme .note-content span,
+.dark-theme .note-content h1,
+.dark-theme .note-content h2,
+.dark-theme .note-content h3,
+.dark-theme .note-content h4,
+.dark-theme .note-content h5,
+.dark-theme .note-content h6,
+.dark-theme .note-content strong,
+.dark-theme .note-content em,
+.dark-theme .note-content li {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Исправляем отображение заголовка заметки */
+.dark-theme .note-item h4,
+.dark-theme .note-header h4 {
+    color: var(--dark-text-primary) !important;
+    font-weight: 600;
+}
+
+/* Панель навигации */
+.dark-theme .sidebar {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .sidebar-link,
+.dark-theme .folder-link {
+    color: var(--dark-text-primary) !important;
+}
+
+.dark-theme .sidebar-link:hover,
+.dark-theme .folder-link:hover {
+    background-color: var(--dark-highlight);
+}
+
+.dark-theme .sidebar-link.active,
+.dark-theme .active-folder .folder-link {
+    background-color: var(--dark-highlight);
+    color: #ffffff !important;
+}
+
+/* Теги */
+.dark-theme .tag {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary) !important;
+    border: 1px solid var(--dark-border-light);
+}
+
+/* Значок закрепления */
+.dark-theme .pin-badge {
+    background-color: #ffac33;
+    color: #212529;
+    font-weight: bold;
+}
+
+/* Поиск */
+.dark-theme .search-results {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .search-result-item {
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .search-result-item:hover {
+    background-color: var(--dark-highlight);
+}
+
+/* Кнопки */
+.dark-theme .btn-light {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .btn-outline-secondary {
+    color: var(--dark-text-secondary);
+    border-color: var(--dark-border-light);
+}
+
+.dark-theme .btn-outline-secondary:hover {
+    background-color: var(--dark-highlight);
+    color: var(--dark-text-primary);
+}
+
+/* Утилиты */
+.dark-theme .text-muted {
+    color: var(--dark-text-muted) !important;
+}
+
+.dark-theme .dropdown-menu {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .dropdown-item {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .dropdown-item:hover {
+    background-color: var(--dark-highlight);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .dropdown-divider {
+    border-top-color: var(--dark-border-color);
+}
+
+/* Файлы */
+.dark-theme .file-preview-card {
+    background-color: var(--dark-bg-tertiary);
+}
+
+.dark-theme .file-viewer-container {
+    background-color: var(--dark-bg-primary);
+}
+
+/* Модальные окна */
+.dark-theme #viewNoteModal .modal-content,
+.dark-theme #fileViewerModal .modal-content {
+    background-color: var(--dark-bg-secondary);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme #viewNoteModal .note-meta,
+.dark-theme #fileViewerModal .file-info {
+    border-color: var(--dark-border-color);
+}
+
+/* Стили для календаря */
+.dark-theme .calendar-container,
+.dark-theme .fc-theme-standard td, 
+.dark-theme .fc-theme-standard th {
+    background-color: var(--dark-bg-secondary);
+    color: var(--dark-text-primary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .fc-theme-standard .fc-scrollgrid,
+.dark-theme .fc-theme-standard .fc-list,
+.dark-theme .fc-col-header,
+.dark-theme .fc-daygrid-body,
+.dark-theme .fc-scrollgrid-sync-inner {
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .fc-day-today {
+    background-color: var(--dark-bg-tertiary) !important;
+}
+
+.dark-theme .fc-event {
+    background-color: #0d6efd;
+    border-color: #0a58ca;
+}
+
+.dark-theme .fc-button-primary {
+    background-color: #0d6efd;
+    border-color: #0a58ca;
+}
+
+.dark-theme .fc-button-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.dark-theme .fc-button-primary:not(:disabled).fc-button-active, 
+.dark-theme .fc-button-primary:not(:disabled):active {
+    background-color: #0a58ca;
+    border-color: #0a58ca;
+}
+
+.dark-theme .fc-daygrid-day-number,
+.dark-theme .fc-col-header-cell-cushion {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .fc-list-day-cushion {
+    background-color: var(--dark-bg-tertiary);
+}
+
+/* Стили для списка файлов */
+.dark-theme .existing-files-container,
+.dark-theme .files-container {
+    background-color: var(--dark-bg-tertiary);
+    border: 1px solid var(--dark-border-color);
+}
+
+.dark-theme .file-item {
+    background-color: var(--dark-bg-secondary);
+    border: 1px solid var(--dark-border-color);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .file-preview-container {
+    background-color: var(--dark-bg-tertiary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .file-item .file-actions .btn {
+    color: var(--dark-text-secondary);
+    background-color: transparent;
+    border-color: var(--dark-border-light);
+}
+
+.dark-theme .file-item .file-actions .btn:hover {
+    background-color: var(--dark-highlight);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .file-upload-area {
+    border: 2px dashed var(--dark-border-color);
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-secondary);
+}
+
+.dark-theme .file-upload-area:hover {
+    border-color: var(--dark-border-light);
+    background-color: var(--dark-bg-secondary);
+}
+
+/* Quill Editor в темной теме */
+.dark-theme .ql-toolbar.ql-snow,
+.dark-theme .ql-container.ql-snow {
+    border-color: var(--dark-border-color) !important;
+}
+
+.dark-theme .ql-toolbar.ql-snow {
+    background-color: var(--dark-bg-tertiary);
+}
+
+.dark-theme .ql-snow .ql-stroke {
+    stroke: var(--dark-text-secondary) !important;
+}
+
+.dark-theme .ql-snow .ql-fill {
+    fill: var(--dark-text-secondary) !important;
+}
+
+.dark-theme .ql-snow .ql-picker {
+    color: var(--dark-text-secondary) !important;
+}
+
+.dark-theme .ql-editor {
+    background-color: var(--dark-bg-secondary);
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .ql-snow.ql-toolbar button:hover,
+.dark-theme .ql-snow .ql-toolbar button:hover {
+    color: var(--dark-text-primary) !important;
+}
+
+.dark-theme .ql-snow.ql-toolbar button:hover .ql-stroke,
+.dark-theme .ql-snow .ql-toolbar button:hover .ql-stroke {
+    stroke: var(--dark-text-primary) !important;
+}
+
+.dark-theme .ql-snow.ql-toolbar button:hover .ql-fill,
+.dark-theme .ql-snow .ql-toolbar button:hover .ql-fill {
+    fill: var(--dark-text-primary) !important;
+}
+
+/* Улучшаем контрастность текста */
+.dark-theme {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme p, 
+.dark-theme span:not(.badge),
+.dark-theme div {
+    color: var(--dark-text-primary);
+}
+
+/* Дополнительная контрастность для текста в карточках */
+.dark-theme .note-item * {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .note-item .note-content {
+    color: var(--dark-text-primary) !important;
+}
+
+.dark-theme .note-item .note-meta,
+.dark-theme .note-item .text-muted {
+    color: var(--dark-text-secondary) !important;
+}
+
+.dark-theme .note-item h4,
+.dark-theme .note-item .note-title {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Выделение тегов в темной теме */
+.dark-theme .tag {
+    background-color: var(--dark-bg-tertiary);
+    color: var(--dark-text-primary) !important;
+    border: 1px solid var(--dark-border-light);
+}
+
+.dark-theme .badge {
+    color: #212529;
+}
+
+.dark-theme .badge.bg-secondary {
+    color: var(--dark-text-primary);
+}
+
+/* Исправляем видимость HTML-контента в Quill редакторе */
+.dark-theme .ql-editor p,
+.dark-theme .ql-editor h1,
+.dark-theme .ql-editor h2, 
+.dark-theme .ql-editor h3,
+.dark-theme .ql-editor ul li,
+.dark-theme .ql-editor ol li,
+.dark-theme .ql-editor span {
+    color: var(--dark-text-primary) !important;
+}
+
+/* Улучшаем контрастность для файлов в темной теме */
+.dark-theme .file-item .file-name {
+    color: var(--dark-text-primary) !important;
+}
+
+.dark-theme .file-item .file-size {
+    color: var(--dark-text-secondary) !important;
+}
+
+/* Исправляем контрастность для элементов списка */
+.dark-theme ul li, 
+.dark-theme ol li {
+    color: var(--dark-text-primary);
+}
+
+/* Исправляем контрастность для ссылок */
+.dark-theme a:not(.btn) {
+    color: #3f9fff;
+}
+
+.dark-theme a:hover:not(.btn) {
+    color: #63b1ff;
+}
+
+/* Контрастность для инпутов и элементов ввода */
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+    color: var(--dark-text-muted);
+}
+
+/* Исправляем видимость текста в фильтрах и выпадающих меню */
+.dark-theme .dropdown-menu,
+.dark-theme .filter-options {
+    background-color: var(--dark-bg-secondary);
+    border-color: var(--dark-border-color);
+}
+
+.dark-theme .dropdown-item,
+.dark-theme .filter-option {
+    color: var(--dark-text-primary);
+}
+
+.dark-theme .dropdown-item:hover,
+.dark-theme .filter-option:hover {
+    background-color: var(--dark-highlight);
+}
+
+/* Контрастное отображение счетчиков файлов */
+.dark-theme .file-counter,
+.dark-theme .attachment-count {
+    color: var(--dark-text-primary) !important;
+    background-color: var(--dark-bg-tertiary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Четкое отображение списков файлов */
+.dark-theme ul.note-files-list {
+    background-color: var(--dark-bg-tertiary);
+    border-radius: 8px;
+    padding: 10px;
+    list-style-type: none;
+}
+
+.dark-theme ul.note-files-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--dark-border-color);
+}
+
+.dark-theme ul.note-files-list li:last-child {
+    border-bottom: none;
+}
+
+/* Убираем нежелательные линии/полоски */
+.dark-theme .note-item:after,
+.dark-theme .note-item:before {
+    display: none !important;
+}
+
+/* Заголовки разделов */
+.dark-theme h3,
+.dark-theme h3.mb-3 {
+    color: var(--dark-text-primary);
+    border-bottom: 1px solid var(--dark-border-light);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+/* Исправляем отображение прикрепленных файлов */
+.dark-theme .existing-files-container,
+.dark-theme .files-container {
+    background-color: var(--dark-bg-secondary) !important;
+    border: 1px solid var(--dark-border-light) !important;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+/* Файлы в заметке - белый текст на темном фоне */
+.dark-theme .existing-files-container a,
+.dark-theme .files-container a {
+    color: var(--dark-text-primary) !important;
+    background-color: var(--dark-bg-tertiary);
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 3px;
+    display: inline-block;
+    border: 1px solid var(--dark-border-light);
+}
+
+.dark-theme .existing-files-container a:hover,
+.dark-theme .files-container a:hover {
+    background-color: var(--dark-highlight);
+}

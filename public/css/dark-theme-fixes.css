@@ -1,0 +1,443 @@
+/**
+ * Дополнительные исправления для темной темы
+ * Улучшает контрастность и читаемость элементов
+ */
+
+/* Стили для прикрепленных файлов в карточках заметок */
+.dark-theme .note-attachment-icon {
+    color: #ffffff;
+}
+
+.dark-theme .note-attachment-link,
+.dark-theme .note-attachment-file {
+    color: #ffffff !important;
+    background-color: #2a2f36;
+    padding: 4px 10px;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 3px;
+    border: 1px solid #5a606b;
+}
+
+/* Стиль для списка прикрепленных файлов */
+.dark-theme .note-attachments {
+    background-color: #2a2f36;
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #495057;
+}
+
+.dark-theme .note-attachments .note-attachment-file {
+    margin-right: 8px;
+    margin-bottom: 5px;
+}
+
+/* Название прикрепленных файлов */
+.dark-theme .attachment-label {
+    color: #e0e0e0;
+    font-weight: 500;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #5a606b;
+    margin-bottom: 10px;
+}
+
+/* Делаем текст читабельным на темном фоне */
+.dark-theme #searchResults .note-item h4, 
+.dark-theme #searchResults .note-item .note-content,
+.dark-theme #searchResults .note-item .note-date,
+.dark-theme #searchResults .note-item .note-footer {
+    color: #ffffff !important;
+}
+
+/* Улучшаем отображение блока "Прикрепленные файлы" */
+.dark-theme .attached-files-header,
+.dark-theme h3 {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Исправляем отображение списка файлов */
+.dark-theme a.file {
+    color: #ffffff !important;
+    background-color: #2a2f36;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 3px;
+    border: 1px solid #5a606b;
+}
+
+/* Блок с файлами */
+.dark-theme .files-section {
+    background-color: #1e2227;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #495057;
+}
+
+/* Исправляем контрастность имен файлов */
+.dark-theme .file-name {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+/* Исправляем отображение ссылок на файлы */
+.dark-theme a[href^="storage"],
+.dark-theme a[href*=".jpg"],
+.dark-theme a[href*=".png"],
+.dark-theme a[href*=".pdf"],
+.dark-theme a[href*=".doc"],
+.dark-theme a[href*=".mp3"],
+.dark-theme a[href*=".mp4"] {
+    color: #ffffff !important;
+    background-color: #2a2f36;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 2px;
+    border: 1px solid #495057;
+}
+
+/* Исправляем контрастность и видимость текста */
+.dark-theme p,
+.dark-theme div,
+.dark-theme span,
+.dark-theme li {
+    color: #ffffff !important;
+}
+
+/* Улучшаем отображение блока с прикрепленными файлами в карточке заметки */
+.dark-theme .note-files-container {
+    background-color: #2a2f36;
+    border-radius: 8px;
+    padding: 15px;
+    border: 1px solid #495057;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* Улучшаем видимость названия файлов в карточке */
+.dark-theme .note-file-item,
+.dark-theme a.note-file-item {
+    color: #ffffff !important;
+    background-color: #353941;
+    padding: 5px 10px;
+    border-radius: 4px;
+    margin: 2px;
+    display: inline-block;
+    border: 1px solid #495057;
+    text-decoration: none;
+}
+
+.dark-theme .note-file-item:hover,
+.dark-theme a.note-file-item:hover {
+    background-color: #4a5568;
+    border-color: #6c757d;
+}
+
+/* Улучшаем отображение блока "Прикрепленные файлы" на странице с темной темой */
+.dark-theme .attached-files-header {
+    color: #ffffff !important;
+    background-color: #2a2f36;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+/* Кнопка "выберите файлы" в зоне загрузки */
+.dark-theme .file-upload-area {
+    background-color: #2a2f36 !important;
+    border: 2px dashed #6c757d !important;
+    color: #ffffff !important;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.dark-theme .file-upload-area:hover {
+    background-color: #353941 !important;
+    border-color: #adb5bd !important;
+}
+
+.dark-theme .file-upload-area a,
+.dark-theme .file-upload-area span {
+    color: #0d6efd !important;
+    font-weight: 500;
+}
+
+/* Улучшаем видимость текста в зоне загрузки */
+.dark-theme .file-upload-instructions {
+    color: #ffffff !important;
+    margin-top: 10px;
+}
+
+/* Улучшенное отображение белых текстовых элементов на темном фоне */
+.dark-theme {
+    color-scheme: dark;
+}
+
+/* Улучшаем контрастность текста внутри редактора */
+.dark-theme .ql-editor {
+    color: #ffffff !important;
+}
+
+.dark-theme .ql-editor p,
+.dark-theme .ql-editor h1,
+.dark-theme .ql-editor h2,
+.dark-theme .ql-editor h3,
+.dark-theme .ql-editor h4,
+.dark-theme .ql-editor h5,
+.dark-theme .ql-editor h6,
+.dark-theme .ql-editor ol,
+.dark-theme .ql-editor ul,
+.dark-theme .ql-editor pre,
+.dark-theme .ql-editor blockquote {
+    color: #ffffff !important;
+}
+
+/* Улучшение контрастности для облачной иконки загрузки файлов */
+.dark-theme .fa-cloud-upload-alt,
+.dark-theme .fa-cloud-upload,
+.dark-theme .fa-upload {
+    color: #0d6efd !important;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+/* Улучшаем контрастность для прикрепленных файлов в списке */
+.dark-theme a[href^="/storage/"],
+.dark-theme a[href^="/file/"],
+.dark-theme a[href*=".jpg"],
+.dark-theme a[href*=".png"],
+.dark-theme a[href*=".mp3"],
+.dark-theme a[href*=".mp4"],
+.dark-theme a[href*=".pdf"],
+.dark-theme a[href*=".doc"] {
+    background-color: #353941;
+    color: #ffffff !important;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 3px 5px;
+    border: 1px solid #6c757d;
+    text-decoration: none;
+}
+
+/* Исправляем контрастность текста "выберите файлы" */
+.dark-theme .btn-outline-primary {
+    color: #0d6efd !important;
+    border-color: #0d6efd !important;
+}
+
+.dark-theme .btn-outline-primary:hover {
+    color: #ffffff !important;
+    background-color: #0d6efd !important;
+}
+
+/* Добавляем контрастности для элементов блока прикрепленных файлов */
+.dark-theme span.file-counter,
+.dark-theme .attachment-count {
+    color: #ffffff !important;
+    background-color: #353941;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Исправляем видимость всех текстовых элементов с классом text-muted */
+.dark-theme .text-muted {
+    color: #adb5bd !important;
+}
+
+/* Улучшаем контрастность для кнопки выбора файлов */
+.dark-theme .btn-file-select,
+.dark-theme a.btn-file-select,
+.dark-theme button.btn-file-select {
+    color: #ffffff !important;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 4px;
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 10px;
+}
+
+/* Явно выделяем ссылки для загрузки файлов */
+.dark-theme .file-upload-area .btn,
+.dark-theme .file-upload-area .btn-primary {
+    color: #ffffff !important;
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    padding: 8px 16px;
+    border-radius: 4px;
+    display: inline-block;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Явно выделяем текст "выберите файлы" */
+.dark-theme a[href^="javascript"][onclick*="file"],
+.dark-theme a.file-select-link,
+.dark-theme span.file-select-text {
+    color: #0d6efd !important;
+    text-decoration: underline !important;
+    font-weight: 500;
+    background-color: transparent !important;
+}
+
+/* Улучшаем видимость текста в области загрузки файлов */
+.dark-theme .file-upload-area .upload-text,
+.dark-theme .file-upload-text {
+    color: #ffffff !important;
+    margin-top: 10px;
+    font-size: 1.1rem;
+}
+
+/* Исправляем цвет иконки загрузки */
+.dark-theme .fa-cloud-arrow-up,
+.dark-theme .fa-cloud-upload-alt {
+    color: #0d6efd !important;
+    font-size: 2.5rem;
+}
+
+/* Исправляем видимость прикрепленных файлов в режиме просмотра */
+.dark-theme .existing-files-container a,
+.dark-theme .existing-files-container span,
+.dark-theme .existing-files-container div {
+    color: #ffffff !important;
+}
+
+/* Улучшаем отображение списка файлов в карточке заметки */
+.dark-theme .note-files-list {
+    background-color: #353941;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 15px;
+    border: 1px solid #495057;
+    list-style-type: none;
+}
+
+.dark-theme .note-files-list a {
+    color: #ffffff !important;
+    background-color: #2a2f36;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 3px;
+    border: 1px solid #495057;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.dark-theme .note-files-list a:hover {
+    background-color: #4a5568;
+    border-color: #6c757d;
+}
+
+/* Делаем заголовок "Прикрепленные файлы" более контрастным */
+.dark-theme h3,
+.dark-theme h3.mb-3,
+.dark-theme .files-header {
+    color: #ffffff !important;
+    border-bottom: 1px solid #6c757d;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+/* Улучшение видимости кнопки "Посмотреть" */
+.dark-theme .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0b5ed7;
+    color: white;
+}
+
+.dark-theme .btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+/* Улучшение для отображения списка прикрепленных файлов с подсчетом (10): */
+.dark-theme .files-section h3 {
+    color: #ffffff !important;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* Исправление для файлов в списке в карточке заметки */
+.dark-theme .note-item .file,
+.dark-theme .note-card .file {
+    background-color: #353941;
+    color: #ffffff !important;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin: 3px;
+    border: 1px solid #495057;
+    text-decoration: none;
+    font-weight: normal;
+}
+
+.dark-theme .note-item .file:hover,
+.dark-theme .note-card .file:hover {
+    background-color: #4a5568;
+    border-color: #6c757d;
+}
+
+/* Специфические исправления для области выбора файлов на форме создания/редактирования */
+.dark-theme .file-upload-container {
+    background-color: #2a2f36;
+    border: 1px solid #495057;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* Улучшаем видимость текста "выберите файлы" */
+.dark-theme .file-upload-area .file-select-link {
+    color: #0d6efd !important;
+    font-weight: 600;
+    text-decoration: underline !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Исправляем отображение текста рядом с облачной иконкой */
+.dark-theme .upload-cloud-icon + span,
+.dark-theme .fa-cloud-upload-alt + span,
+.dark-theme .fa-cloud-arrow-up + span {
+    color: #ffffff !important;
+    font-weight: 500;
+    margin-left: 10px;
+}
+
+/* Делаем более видимыми элементы формы и поле описания */
+.dark-theme textarea.form-control,
+.dark-theme input[type="text"].form-control,
+.dark-theme input[type="search"].form-control {
+    background-color: #2a2f36;
+    color: #ffffff;
+    border-color: #495057;
+}
+
+.dark-theme textarea.form-control:focus,
+.dark-theme input[type="text"].form-control:focus,
+.dark-theme input[type="search"].form-control:focus {
+    background-color: #353941;
+    color: #ffffff;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Исправление для плейсхолдера в темной теме */
+.dark-theme input::placeholder,
+.dark-theme textarea::placeholder {
+    color: #adb5bd !important;
+    opacity: 1;
+}

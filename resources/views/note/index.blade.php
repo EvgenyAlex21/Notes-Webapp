@@ -1,8 +1,4 @@
-<!DOCTYPE    <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -16,12 +12,16 @@
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
     <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/view-buttons.js') }}"></script>
     <script src="{{ asset('js/note-buttons-fix.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
         // Сохраняем оригинальную функцию console.warn
@@ -76,7 +76,10 @@
         }
         .note-item.pinned {
             background-color: #fffdf7;
-            border: 1px solid #ffeeba;
+            border-left: 5px solid #ffeeba;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
         }
         .note-item.completed {
             opacity: 0.8;
@@ -173,12 +176,14 @@
             margin-top: 15px;
         }
         .pin-badge {
-            position: absolute;
-            top: -5px;
-            right: 10px;
             background-color: #ffc107;
             color: #212529;
             font-size: 0.8rem;
+            margin-left: 5px;
+            z-index: 10;
+            padding: 0.25em 0.6em;
+            border-radius: 0.25rem;
+            font-weight: 500;
         }
         .empty-container {
             text-align: center;
@@ -286,7 +291,10 @@
         .dark-theme .note-item {
             background-color: #343a40;
             box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-            color: #f8f9fa;
+            color: #ffffff;
+            border-top: none;
+            border-right: none;
+            border-bottom: none;
         }
         .dark-theme .note-item.pinned {
             background-color: #3b3a30;

@@ -127,7 +127,18 @@ $(document).ready(function() {
             $('.search-result-item').on('click', function() {
                 const id = $(this).data('id');
                 console.log('Клик по результату поиска, ID заметки:', id);
-                viewNote(id);
+                
+                // Определяем источник вызова по URL
+                const currentPath = window.location.pathname;
+                let source = null;
+                
+                if (currentPath.includes('/trash') || currentPath.includes('/new-trash')) {
+                    source = 'trash';
+                } else if (currentPath.includes('/archive')) {
+                    source = 'archive';
+                }
+                
+                viewNote(id, source);
             });
             
             // Если тегов нет, добавляем сообщение

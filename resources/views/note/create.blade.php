@@ -10,11 +10,15 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -972,22 +976,7 @@
             
             // Инициализация темного режима
             const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
-            if (darkThemeEnabled) {
-                document.body.classList.add('dark-theme');
-                $('#theme-toggle').prop('checked', true);
-            }
-            
-            // Обработчик переключения темы
-            $('#theme-toggle').on('change', function() {
-                const isDarkMode = $(this).is(':checked');
-                if (isDarkMode) {
-                    document.body.classList.add('dark-theme');
-                    localStorage.setItem('darkTheme', 'true');
-                } else {
-                    document.body.classList.remove('dark-theme');
-                    localStorage.setItem('darkTheme', 'false');
-                }
-            });
+            // Примечание: управление темой перенесено в theme-manager.js
                   // Отключаем клики на цветах в боковой панели
         $('.sidebar .color-option').css('pointer-events', 'none');
         

@@ -9,10 +9,14 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -193,9 +197,8 @@
                 selectedColor = $(this).data('color');
             });
             
-            // Обработчик для переключения темы
+            // Обработчик для перерисовки календаря при смене темы
             $('#theme-toggle').on('change', function() {
-                toggleTheme();
                 // Перерисовываем календарь при смене темы
                 calendar.render();
             });
@@ -394,23 +397,7 @@
             }).format(date);
         }
         
-        // Инициализация темы
-        function initTheme() {
-            if (currentTheme === 'dark') {
-                $('body').addClass('dark-theme');
-                $('#theme-toggle').prop('checked', true);
-            } else {
-                $('body').removeClass('dark-theme');
-                $('#theme-toggle').prop('checked', false);
-            }
-        }
-        
-        // Переключение темы
-        function toggleTheme() {
-            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-            localStorage.setItem('theme', currentTheme);
-            initTheme();
-        }
+        // Примечание: функции управления темой перенесены в theme-manager.js
     </script>
 </body>
 </html>
