@@ -55,6 +55,7 @@ Route::prefix('api')->group(function () {
     Route::delete('/notes/{note}/reminder', [NoteController::class, 'removeReminder']);
     Route::put('/notes/{note}/folder', [NoteController::class, 'moveToFolder']);
     Route::put('/notes/{note}/view-mode', [NoteController::class, 'updateViewMode']);
+    Route::post('/api/notes/{note}/toggle-done', [NoteController::class, 'toggleDone']); // API версия для toggle-done
     
     // Получение статистики и дополнительных данных
     Route::get('/folders', [NoteController::class, 'getFolders']);

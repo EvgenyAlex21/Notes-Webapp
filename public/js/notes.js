@@ -23,9 +23,9 @@ $(document).ready(function() {
     // Текущий URL
     const currentPath = window.location.pathname;
     
-    // Инициализация локальных переменных
-    let trashMode = currentPath === '/notes/trash';
-    let archiveMode = currentPath === '/notes/archive';
+    // Инициализация локальных переменных - используем данные из pageData, если доступны
+    let trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || currentPath === '/notes/trash';
+    let archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
     
     // Инициализация темы
     initTheme();
@@ -268,7 +268,13 @@ function loadAllNotes(trashMode = false, folder = null) {
     let url = `/api/notes`;
     // Проверяем текущий режим
     const currentPath = window.location.pathname;
-    const archiveMode = currentPath === '/notes/archive';
+    const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
+    const trashModeFromPage = typeof pageData !== 'undefined' && pageData.trashMode;
+    
+    // Если trashMode передан как параметр, используем его, иначе берем из pageData
+    if (trashMode === false && trashModeFromPage) {
+        trashMode = trashModeFromPage;
+    }
     
     // Проверяем, находимся ли в режиме папки
     const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
@@ -703,6 +709,9 @@ function loadAllNotes(trashMode = false, folder = null) {
                                             <li><a class="dropdown-item toggle-pin-btn" href="#" data-id="${note.id}">
                                                 <i class="fas fa-thumbtack"></i> ${note.is_pinned ? 'Открепить' : 'Закрепить'}
                                             </a></li>
+                                            ${note.folder ? `<li><a class="dropdown-item remove-from-folder-btn" href="#" data-id="${note.id}">
+                                                <i class="fas fa-folder-minus"></i> Убрать из папки
+                                            </a></li>` : ''}
                                             <li><a class="dropdown-item view-note-btn" href="#" data-id="${note.id}">
                                                 <i class="fas fa-eye"></i> Просмотреть
                                             </a></li>
@@ -1679,6 +1688,9 @@ function executeDeleteNote(id) {
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
+    // Немедленно скрываем заметку для улучшения UX
+    $(`.note-wrapper#note-${id}`).fadeOut(300);
+    
     $.ajax({
         url: `/api/notes/${id}`,
         method: 'DELETE',
@@ -1696,16 +1708,14 @@ function executeDeleteNote(id) {
                     window.location.href = '/notes';
                 }, 1000);
             } else {
-                // Если мы на странице списка, анимируем удаление элемента
-                $(`.note-wrapper#${id}`).fadeOut(300, function() {
-                    $(this).remove();
-                    
-                    // Проверим, остались ли ещё заметки
-                    if ($('.note-wrapper:visible').length === 0) {
-                        $('.notes-container').hide();
-                        $('.empty-container').removeClass('d-none');
-                    }
-                });
+                // Заметка уже скрыта, теперь удаляем её из DOM
+                $(`.note-wrapper#note-${id}`).remove();
+                
+                // Проверим, остались ли ещё заметки
+                if ($('.note-wrapper:visible').length === 0) {
+                    $('.notes-container').hide();
+                    $('.empty-container').removeClass('d-none');
+                }
                 
                 // Обновляем список заметок и статистику
                 // Проверяем, находимся ли в режиме отображения папки
@@ -2060,6 +2070,10 @@ function updateStatsDisplay() {
         const folderMode = window.location.pathname.match(/\/notes\/folder\/(.+)/) !== null;
         const currentFolderName = folderMode ? getCurrentFolderNameFromUrl() : null;
         
+        // Определяем текущий режим просмотра
+        const trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || window.location.pathname === '/notes/trash';
+        const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || window.location.pathname === '/notes/archive';
+        
         // Если мы в режиме папки, используем статистику для конкретной папки
         if (folderMode && currentFolderName && statsData.by_folder && statsData.by_folder[currentFolderName]) {
             // Количество заметок в текущей папке
@@ -2076,6 +2090,27 @@ function updateStatsDisplay() {
             $('#pinned-notes').text(`Закреплено: ${folderNotes.pinned}`);
             
             console.log('Отображается статистика для текущей папки:', currentFolderName, folderNotes);
+        } else if (trashMode || archiveMode) {
+            // В режиме корзины или архива считаем видимые заметки
+            const visibleNotes = {
+                total: $('.note-wrapper:visible').length, 
+                active: $('.note-wrapper:visible:not(.completed)').length,
+                completed: $('.note-wrapper:visible.completed').length,
+                pinned: $('.note-wrapper:visible.pinned').length
+            };
+            
+            $('#total-notes').text(`Всего: ${visibleNotes.total}`);
+            $('#completed-notes').text(`Выполнено: ${visibleNotes.completed}`);
+            $('#active-notes').text(`Активно: ${visibleNotes.active}`);
+            $('#pinned-notes').text(`Закреплено: ${visibleNotes.pinned}`);
+            
+            console.log('Отображается статистика для ' + (trashMode ? 'корзины' : 'архива') + ':', visibleNotes);
+            
+            // Обновляем также счетчики в новом формате, если они есть
+            $('.counter-total').text(visibleNotes.total);
+            $('.counter-completed').text(visibleNotes.completed);
+            $('.counter-active').text(visibleNotes.active);
+            $('.counter-pinned').text(visibleNotes.pinned);
         } else {
             // Если не в папке, показываем общую статистику
             $('#total-notes').text(`Всего: ${statsData.total || 0}`);
@@ -2755,7 +2790,7 @@ function toggleDone(id, event) {
     noteElement.attr('data-done', newDoneState);
     
     $.ajax({
-        url: `/notes/${id}/toggle-done`,
+        url: `/api/notes/${id}/toggle-done`,
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken

@@ -25,7 +25,7 @@ class PagesController extends Controller
     
     public function archive()
     {
-        return view('note.archive', [
+        return view('note.index', [
             'trashMode' => false, 
             'archiveMode' => true
         ]);

@@ -653,9 +653,15 @@
                     <i class="fas fa-sticky-note me-2"></i> 
                     <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Заметки' }}</span>
                 </h1>
-                <a href="/notes/create" class="btn btn-primary d-flex align-items-center">
-                    <i class="fas fa-plus me-2"></i> Создать заметку
-                </a>
+                @if(isset($trashMode) && $trashMode)
+                    <button id="empty-trash" class="btn btn-danger">
+                        <i class="fas fa-trash-alt"></i> Очистить корзину
+                    </button>
+                @else
+                    <a href="/notes/create" class="btn btn-primary d-flex align-items-center">
+                        <i class="fas fa-plus me-2"></i> Создать заметку
+                    </a>
+                @endif
             </div>
         </div>
     </div>
@@ -831,6 +837,7 @@
     <script src="/js/robust-search.js"></script>
     <script src="/js/color-filter.js"></script>
     <script src="/js/folder-operations.js"></script>
+    <script src="/js/folder-remove.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">

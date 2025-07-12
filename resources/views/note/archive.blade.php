@@ -414,6 +414,7 @@
                         <button class="btn btn-secondary filter-btn" data-filter="all">Все</button>
                         <button class="btn btn-outline-secondary filter-btn" data-filter="active">Активные</button>
                         <button class="btn btn-outline-secondary filter-btn" data-filter="completed">Выполненные</button>
+                        <button class="btn btn-outline-secondary filter-btn" data-filter="pinned">Закрепленные</button>
                     </div>
                     
                     <div class="dropdown">
@@ -431,11 +432,21 @@
                     </div>
                 </div>
                 
-                <div class="note-stats mb-3">
-                    <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
-                    <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
-                            </div>
-                        </div>
+                <!-- Информация о количестве заметок (бейджи) -->
+                <div class="note-counters mb-3">
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge rounded-pill text-bg-primary" id="counter-all">
+                            Всего: <span class="counter-total">0</span>
+                        </span>
+                        <span class="badge rounded-pill text-bg-success" id="counter-done">
+                            Выполнено: <span class="counter-completed">0</span>
+                        </span>
+                        <span class="badge rounded-pill text-bg-warning" id="counter-active">
+                            Активно: <span class="counter-active">0</span>
+                        </span>
+                        <span class="badge rounded-pill text-bg-info" id="counter-pinned">
+                            Закреплено: <span class="counter-pinned">0</span>
+                        </span>
                     </div>
                 </div>
 
