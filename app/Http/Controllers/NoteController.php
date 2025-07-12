@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Note;
+use App\Models\Folder;
 use Illuminate\Support\Facades\Schema;
 
 class NoteController extends Controller
@@ -515,14 +516,52 @@ class NoteController extends Controller
     // Получение списка всех папок
     public function getFolders()
     {
-        $folders = Note::where('is_deleted', false)
-                      ->whereNotNull('folder')
-                      ->select('folder')
-                      ->distinct()
-                      ->get()
-                      ->pluck('folder');
-        
-        return response()->json(['data' => $folders]);
+        try {
+            // Получаем папки из специальной таблицы папок
+            $newFolders = Folder::where('is_deleted', false)
+                          ->select('name')
+                          ->get()
+                          ->pluck('name')
+                          ->toArray();
+            
+            // Получаем папки из старой системы (папки, указанные в заметках)
+            $oldFolders = Note::where('is_deleted', false)
+                          ->whereNotNull('folder')
+                          ->select('folder')
+                          ->distinct()
+                          ->get()
+                          ->pluck('folder')
+                          ->toArray();
+            
+            // Объединяем и удаляем дубликаты
+            $folders = array_unique(array_merge($newFolders, $oldFolders));
+            
+            // Подготовка данных с количеством заметок в каждой папке
+            $folderData = [];
+            foreach ($folders as $folderName) {
+                $count = Note::where('folder', $folderName)
+                          ->where('is_deleted', false)
+                          ->count();
+                
+                $folderData[] = [
+                    'name' => $folderName,
+                    'count' => $count
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'data' => $folderData
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при получении папок: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении списка папок',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
     
     // Изменение режима отображения заметки
@@ -567,13 +606,23 @@ class NoteController extends Controller
         ];
         
         // Добавляем статистику по папкам
-        $folders = Note::where('is_deleted', false)
+        // Получаем папки из старой системы (папки, указанные в заметках)
+        $oldFolders = Note::where('is_deleted', false)
             ->whereNotNull('folder')
             ->select('folder')
             ->distinct()
             ->get()
             ->pluck('folder');
             
+        // Получаем папки из новой системы
+        $newFolders = Folder::where('is_deleted', false)
+            ->select('name')
+            ->get()
+            ->pluck('name');
+            
+        // Объединяем папки
+        $folders = $oldFolders->merge($newFolders)->unique();
+        
         $folderStats = [];
         foreach ($folders as $folder) {
             $folderStats[$folder] = Note::where('folder', $folder)
@@ -690,6 +739,45 @@ class NoteController extends Controller
             'success' => true,
             'message' => 'Папка успешно создана',
             'data' => ['folder' => $folderName]
+        ]);
+    }
+    
+    /**
+     * Переименование папки
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function renameFolder(Request $request)
+    {
+        $validatedData = $request->validate([
+            'old_folder' => 'required|string',
+            'new_folder' => 'required|string|different:old_folder'
+        ]);
+        
+        // Проверяем существование новой папки
+        $folderExists = Note::where('folder', $validatedData['new_folder'])
+                          ->where('is_deleted', false)
+                          ->exists();
+        
+        if ($folderExists) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Папка с таким именем уже существует'
+            ], 400);
+        }
+        
+        // Обновляем все заметки в этой папке
+        $updatedCount = Note::where('folder', $validatedData['old_folder'])
+                          ->where('is_deleted', false)
+                          ->update(['folder' => $validatedData['new_folder']]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Папка успешно переименована',
+            'data' => [
+                'count' => $updatedCount
+            ]
         ]);
     }
 }

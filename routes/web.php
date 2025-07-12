@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\FolderController;
 
 Route::get('/', function () {
     return redirect('/notes');
@@ -57,7 +58,12 @@ Route::prefix('api')->group(function () {
     
     // Получение статистики и дополнительных данных
     Route::get('/folders', [NoteController::class, 'getFolders']);
-    Route::post('/folders', [NoteController::class, 'createFolder']);
+    
+    // Маршруты для работы с папками через FolderController
+    Route::post('/folders', [FolderController::class, 'createFolder']);
+    Route::post('/folders/rename', [FolderController::class, 'renameFolder']);
+    Route::post('/folders/delete', [FolderController::class, 'deleteFolder']);
+    Route::post('/notes/move-to-folder', [FolderController::class, 'moveNotesToFolder']);
     Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/stats', [NoteController::class, 'getStats']);
     

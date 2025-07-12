@@ -1568,17 +1568,25 @@ function applyFilters() {
 
 // Функция загрузки статистики
 function loadStats() {
-    $.ajax({
+    console.log('Загружаем статистику...');
+    return $.ajax({
         url: '/api/stats',
         method: 'GET',
         dataType: 'json',
         success: function(response) {
-            statsData = response.data;
-            console.log('Обновляем статистику:', statsData);
-            updateStatsDisplay();
+            if (response && response.data) {
+                statsData = response.data;
+                console.log('Статистика успешно обновлена:', statsData);
+                updateStatsDisplay();
+                return true;
+            } else {
+                console.error('Ошибка формата ответа при загрузке статистики:', response);
+                return false;
+            }
         },
         error: function(error) {
             console.error('Ошибка при загрузке статистики:', error);
+            return false;
         }
     });
 }
@@ -1785,10 +1793,16 @@ function removeReminder(id) {
 function addFolder(folderName) {
     if (!folderName || folderName.trim() === '') return;
     
+    console.log('Создание новой папки:', folderName);
+    
     // Получаем CSRF-токен
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Создаем папку через новый API
+    // Создаем папку сразу на странице с временным ID
+    const tempId = 'new-folder-' + Date.now();
+    addFolderToSidebar(folderName, 0, tempId);
+    
+    // Создаем папку через API
     $.ajax({
         url: '/api/folders',
         method: 'POST',
@@ -1802,18 +1816,26 @@ function addFolder(folderName) {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                // Добавляем папку в интерфейс
+                console.log('Папка успешно создана:', response);
+                
+                // Удаляем временный элемент и добавляем постоянный с правильным ID
+                $(`#${tempId}`).remove();
                 addFolderToSidebar(folderName, 0);
                 
                 showNotification('Папка успешно добавлена', 'success');
                 
-                // Обновляем счетчики
+                // Обновляем счетчики сразу, т.к. папка создается без заметки
                 loadStats();
             } else {
+                // В случае ошибки удаляем временный элемент
+                $(`#${tempId}`).remove();
                 showNotification(response.message || 'Ошибка при создании папки', 'warning');
             }
         },
         error: function(xhr) {
+            // В случае ошибки удаляем временный элемент
+            $(`#${tempId}`).remove();
+            
             let errorMessage = 'Ошибка при создании папки';
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMessage = xhr.responseJSON.message;
@@ -1825,14 +1847,17 @@ function addFolder(folderName) {
 }
 
 // Добавление папки в боковую панель
-function addFolderToSidebar(folderName, count) {
+function addFolderToSidebar(folderName, count, customId = null) {
     // Создаем ID для папки, заменяя пробелы и специальные символы
-    const folderId = 'folder-' + folderName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const folderId = customId || ('folder-' + folderName.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+    
+    console.log('Добавление папки в сайдбар:', folderName, 'ID:', folderId);
     
     // Проверяем, существует ли уже такая папка в sidebar
-    if ($('#' + folderId).length > 0) {
+    if (!customId && $('#' + folderId).length > 0) {
         // Если да, просто обновляем счетчик
         $('#' + folderId + ' .badge').text(count);
+        console.log('Папка уже существует, обновляем счетчик:', count);
         return;
     }
     

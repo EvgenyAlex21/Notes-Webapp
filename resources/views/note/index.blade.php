@@ -92,6 +92,39 @@
         .note-item.black { border-top-color: #000000; }
         .note-item.navy { border-top-color: #000080; }
         
+        /* Стили для выбранных цветов в фильтрации */
+        .color-option.selected {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
+        }
+        
+        /* Режим выбора заметок для перемещения в папку */
+        .selectable-note {
+            position: relative;
+        }
+        
+        .note-selection-checkbox {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        .note-selection-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+        
+        .already-in-folder .note-item {
+            opacity: 0.7;
+        }
+        
+        .notes-selection-active {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
         .color-picker {
             display: inline-flex;
             margin-right: 10px;
@@ -754,6 +787,8 @@
     <script src="/js/tags-improvements.js"></script>
     <script src="/js/debug-search.js"></script>
     <script src="/js/robust-search.js"></script>
+    <script src="/js/color-filter.js"></script>
+    <script src="/js/folder-operations.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">
