@@ -216,7 +216,10 @@
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">Создание заметки</h1>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-plus me-2"></i> 
+                    <span class="fw-bold">Создание заметки</span>
+                </h1>
                 <a href="/notes" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Назад к списку
                 </a>
@@ -250,6 +253,46 @@
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="theme-toggle">
                         </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Фильтры</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-all" checked disabled>
+                        <label class="form-check-label" for="filter-all">
+                            <i class="fas fa-list"></i> Все
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-active" disabled>
+                        <label class="form-check-label" for="filter-active">
+                            <i class="fas fa-circle"></i> Только активные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-completed" disabled>
+                        <label class="form-check-label" for="filter-completed">
+                            <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-pinned" disabled>
+                        <label class="form-check-label" for="filter-pinned">
+                            <i class="fas fa-thumbtack"></i> Только закрепленные
+                        </label>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Папки</h5>
+                    <div id="folders-list">
+                        <!-- Список папок будет загружен динамически -->
+                    </div>
+                    <div class="mb-3 mt-2">
+                        <button id="add-folder-btn" class="btn btn-sm btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-plus"></i> Добавить папку
+                        </button>
                     </div>
                 </div>
             </div>
@@ -567,6 +610,69 @@
                     mimeType.includes('sheet')) return 'document';
                 return 'file';
             }
+            
+            // Загрузка списка папок
+            function loadFoldersList() {
+                $.ajax({
+                    url: '/api/folders',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            const foldersContainer = $('#folders-list');
+                            foldersContainer.empty();
+                            
+                            // Отображение папок
+                            response.data.forEach(function(folder) {
+                                const folderName = folder.name;
+                                const count = folder.count || 0;
+                                const normalizedName = folderName.toLowerCase().trim();
+                                const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+                                
+                                foldersContainer.append(`
+                                    <div class="d-flex justify-content-between align-items-center mb-2 folder-item" 
+                                         id="${folderId}" 
+                                         data-folder-name="${normalizedName}" 
+                                         data-folder-original="${folderName}">
+                                        <a href="/notes/folder/${encodeURIComponent(folderName)}" 
+                                           class="text-decoration-none text-dark folder-link" 
+                                           data-folder="${folderName}">
+                                            <i class="fas fa-folder me-1"></i> ${folderName}
+                                        </a>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-secondary me-2">${count}</span>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                        }
+                    },
+                    error: function() {
+                        console.error('Ошибка при загрузке папок');
+                    }
+                });
+            }
+            
+            // Загружаем папки при загрузке страницы
+            loadFoldersList();
+            
+            // Инициализация темного режима
+            const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
+            if (darkThemeEnabled) {
+                document.body.classList.add('dark-theme');
+                $('#theme-toggle').prop('checked', true);
+            }
+            
+            // Обработчик переключения темы
+            $('#theme-toggle').on('change', function() {
+                const isDarkMode = $(this).is(':checked');
+                if (isDarkMode) {
+                    document.body.classList.add('dark-theme');
+                    localStorage.setItem('darkTheme', 'true');
+                } else {
+                    document.body.classList.remove('dark-theme');
+                    localStorage.setItem('darkTheme', 'false');
+                }
+            });
         });
     </script>
 </body>

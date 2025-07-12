@@ -405,8 +405,10 @@ function deleteFolder(folderName) {
                         loadAllNotes(false, null, true); // режим архива
                     } else if (window.location.pathname.startsWith('/notes/folder/')) {
                         // Если мы в другой папке, обновляем текущий список
-                        const currentFolderEncoded = window.location.pathname.split('/').pop();
-                        const currentFolder = decodeURIComponent(currentFolderEncoded);
+                        // Используем функцию getCurrentFolderNameFromUrl для надежности
+                        const currentFolder = window.getCurrentFolderNameFromUrl ? 
+                                             window.getCurrentFolderNameFromUrl() :
+                                             decodeURIComponent(window.location.pathname.split('/').pop());
                         loadAllNotes(false, currentFolder);
                     }
                     
@@ -793,7 +795,7 @@ function moveNotesToFolder(noteIds, folderName) {
                 console.log('Целевая папка:', response.data?.folder);
                 
                 // Обрабатываем успешное перемещение заметок
-                handleSuccessfulNoteMove(noteIds, folderName, window.location.pathname.startsWith('/notes/folder/' + encodeURIComponent(folderName)));
+                handleSuccessfulNoteMove(noteIds, folderName, window.location.pathname.startsWith(`/notes/folder/${encodeURIComponent(folderName)}`));
                 
                 // Выходим из режима выбора
                 exitSelectionMode();

@@ -229,6 +229,23 @@
         .dark-theme .ql-picker-label {
             color: #f1f3f5 !important;
         }
+        
+        /* Стилизация кнопок в заголовке редактирования */
+        .action-buttons .btn {
+            border-width: 2px;
+            font-weight: bold;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        /* Стили для кнопки статуса */
+        #done-button.btn-success {
+            border: 2px solid #198754;
+        }
+        
+        #done-button.btn-outline-primary {
+            border: 2px solid #0d6efd;
+        }
+        }
         .dark-theme .ql-snow .ql-stroke {
             stroke: #f1f3f5;
         }
@@ -312,6 +329,46 @@
                             <input class="form-check-input" type="checkbox" id="theme-toggle">
                         </div>
                     </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Фильтры</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-all" checked disabled>
+                        <label class="form-check-label" for="filter-all">
+                            <i class="fas fa-list"></i> Все
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-active" disabled>
+                        <label class="form-check-label" for="filter-active">
+                            <i class="fas fa-circle"></i> Только активные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-completed" disabled>
+                        <label class="form-check-label" for="filter-completed">
+                            <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="filter" id="filter-pinned" disabled>
+                        <label class="form-check-label" for="filter-pinned">
+                            <i class="fas fa-thumbtack"></i> Только закрепленные
+                        </label>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Папки</h5>
+                    <div id="folders-list">
+                        <!-- Список папок будет загружен динамически -->
+                    </div>
+                    <div class="mb-3 mt-2">
+                        <button id="add-folder-btn" class="btn btn-sm btn-outline-secondary w-100" disabled>
+                            <i class="fas fa-plus"></i> Добавить папку
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -329,11 +386,11 @@
                                     </div>
                                 </div>
                                 <div class="action-buttons">
-                                    <button type="button" id="done-button" class="btn btn-sm" title="Отметить как выполненное">
-                                        <i class="fas fa-check-circle"></i>
+                                    <button type="button" id="done-button" class="btn btn-outline-primary btn-sm" title="Отметить как выполненное">
+                                        <i class="fas fa-check-circle"></i> Статус
                                     </button>
-                                    <button type="button" id="toggle-pin-button" class="btn btn-outline-warning btn-sm" title="Закрепить">
-                                        <i class="fas fa-thumbtack"></i>
+                                    <button type="button" id="archive-button" class="btn btn-outline-secondary btn-sm" title="Архивировать">
+                                        <i class="fas fa-archive"></i> Архивировать
                                     </button>
                                     <button type="button" id="delete-button" class="btn btn-outline-danger btn-sm" title="Удалить">
                                         <i class="fas fa-trash"></i>
@@ -660,7 +717,7 @@
                 }
             });
             
-            // Функция для быстрой установки даты (через указанное количество дней)
+            // Функция для быстрой установки даты (через указанный период времени)
             function setQuickDate(daysToAdd) {
                 const now = new Date();
                 now.setDate(now.getDate() + daysToAdd);
@@ -797,12 +854,7 @@
                         updateDoneButtonAppearance();
                         updateButtonText();
                         
-                        // Если заметка закреплена, обновляем кнопку
-                        if (note.is_pinned) {
-                            $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i> Открепить');
-                        } else {
-                            $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i> Закрепить');
-                        }
+                        // Код для обработки закрепления удален
                         
                         // Загружаем теги если они есть
                         if (note.tags) {
@@ -902,11 +954,7 @@
             // Загружаем данные заметки
             loadNoteData();
             
-            // Обработчик для кнопки закрепления
-            $('#toggle-pin-button').on('click', function() {
-                const noteId = $('#note-id').val();
-                togglePin(noteId);
-            });
+            // Обработчик для кнопки закрепления удален
             
             // Обработчик для кнопки удаления
             $('#delete-button').on('click', function() {
@@ -931,6 +979,36 @@
             $('.color-option').on('click', function() {
                 $('.color-option').removeClass('selected');
                 $(this).addClass('selected');
+            });
+            
+            // Обработчик кнопки архивации
+            $('#archive-button').on('click', function() {
+                const noteId = $('#note-id').val();
+                
+                if (confirm('Вы уверены, что хотите архивировать заметку?')) {
+                    // Показываем индикатор загрузки
+                    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                    
+                    $.ajax({
+                        url: `/notes/${noteId}/archive`,
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            showNotification('Заметка перемещена в архив');
+                            // Перенаправляем на список заметок
+                            setTimeout(function() {
+                                window.location.href = '/notes';
+                            }, 1000);
+                        },
+                        error: function(error) {
+                            console.error('Ошибка при архивации заметки:', error);
+                            $('#archive-button').prop('disabled', false).html('<i class="fas fa-archive"></i> Архивировать');
+                            showNotification('Не удалось архивировать заметку', 'error');
+                        }
+                    });
+                }
             });
         });
         
@@ -1077,34 +1155,7 @@
         }
         
         // Функция для переключения закрепления заметки
-        function togglePin(id) {
-            const isPinned = $('#toggle-pin-button').hasClass('active');
-            const newStatus = !isPinned;
-            
-            // Отображаем индикатор загрузки
-            $('#toggle-pin-button').html('<i class="fas fa-spinner fa-spin"></i>');
-            
-            $.ajax({
-                url: `/api/notes/${id}/pin`,
-                method: 'PUT',
-                data: { is_pinned: newStatus },
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function() {
-                    if (newStatus) {
-                        $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i> Открепить');
-                    } else {
-                        $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i> Закрепить');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Ошибка при изменении статуса закрепления:', xhr.responseText);
-                    $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
-                    alert('Произошла ошибка при изменении статуса закрепления');
-                }
-            });
-        }
+        // Функция togglePin удалена
         
         // Функция для удаления заметки
         function deleteNote(id) {
@@ -1283,6 +1334,69 @@
                 }
             });
         }
+        
+        // Загрузка списка папок
+        function loadFoldersList() {
+            $.ajax({
+                url: '/api/folders',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const foldersContainer = $('#folders-list');
+                        foldersContainer.empty();
+                        
+                        // Отображение папок
+                        response.data.forEach(function(folder) {
+                            const folderName = folder.name;
+                            const count = folder.count || 0;
+                            const normalizedName = folderName.toLowerCase().trim();
+                            const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+                            
+                            foldersContainer.append(`
+                                <div class="d-flex justify-content-between align-items-center mb-2 folder-item" 
+                                     id="${folderId}" 
+                                     data-folder-name="${normalizedName}" 
+                                     data-folder-original="${folderName}">
+                                    <a href="/notes/folder/${encodeURIComponent(folderName)}" 
+                                       class="text-decoration-none text-dark folder-link" 
+                                       data-folder="${folderName}">
+                                        <i class="fas fa-folder me-1"></i> ${folderName}
+                                    </a>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2">${count}</span>
+                                    </div>
+                                </div>
+                            `);
+                        });
+                    }
+                },
+                error: function() {
+                    console.error('Ошибка при загрузке папок');
+                }
+            });
+        }
+        
+        // Загружаем папки при загрузке страницы
+        loadFoldersList();
+        
+        // Инициализация темного режима
+        const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
+        if (darkThemeEnabled) {
+            document.body.classList.add('dark-theme');
+            $('#theme-toggle').prop('checked', true);
+        }
+        
+        // Обработчик переключения темы
+        $('#theme-toggle').on('change', function() {
+            const isDarkMode = $(this).is(':checked');
+            if (isDarkMode) {
+                document.body.classList.add('dark-theme');
+                localStorage.setItem('darkTheme', 'true');
+            } else {
+                document.body.classList.remove('dark-theme');
+                localStorage.setItem('darkTheme', 'false');
+            }
+        });
     </script>
 </body>
 </html>

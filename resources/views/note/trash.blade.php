@@ -75,8 +75,10 @@
     </div>
 
     <script src="/js/note-update-handler.js"></script>
+    <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/trash-handler.js"></script>
     <script src="/js/accessibility-fix.js"></script>
+    <script src="/js/modal-fix.js"></script>
 </body>
 </html>

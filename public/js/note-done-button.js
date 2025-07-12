@@ -56,17 +56,19 @@ function updateDoneButtonAppearance() {
     const $button = $('#done-button');
     
     if (isDone) {
-        $button.removeClass('btn-outline-success btn-outline-primary btn-light text-success text-primary');
+        $button.removeClass('btn-outline-success btn-outline-primary btn-primary');
         $button.addClass('btn-success');
+        $button.html('<i class="fas fa-check-circle"></i> Выполнено');
     } else {
-        $button.removeClass('btn-success btn-primary');
-        $button.addClass('btn-light text-success');
+        $button.removeClass('btn-success');
+        $button.addClass('btn-outline-primary');
+        $button.html('<i class="fas fa-circle"></i> Активно');
     }
 }
 
 // Функция для обновления текста кнопки
 function updateButtonText() {
-    const buttonText = isDone ? 'Выполнено' : 'Отметить как выполненное';
+    const buttonText = isDone ? 'Отметить как активное' : 'Отметить как выполненное';
     $('#done-button').attr('title', buttonText);
 }
 

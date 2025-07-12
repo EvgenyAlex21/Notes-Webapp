@@ -731,8 +731,10 @@
 
     <!-- Подключаем скрипты -->
     <script src="/js/note-update-handler.js"></script>
+    <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/trash-handler.js"></script>
+    <script src="/js/modal-fix.js"></script>
     <script src="/js/sidebar-active.js"></script>
     <script src="/js/debug-search.js"></script>
     <script src="/js/robust-search.js"></script>

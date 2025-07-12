@@ -603,7 +603,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 } else if (folderMode) {
                     emptyMessage = `В папке "${folderName}" нет заметок`;
                     emptyIcon = 'fa-folder-open';
-                    emptyButtonText = 'Создать заметку в этой папке';
+                    emptyButtonText = 'Создать заметку';
                     emptySubtext = 'Вы можете переместить существующие заметки в эту папку или создать новые';
                 }
                 
@@ -1214,6 +1214,13 @@ function createNote() {
     // Добавляем значение done со значением false
     formData.append('done', '0');
     
+    // Проверяем, находимся ли мы в папке
+    const currentFolder = getCurrentFolderNameFromUrl();
+    if (currentFolder) {
+        formData.append('folder', currentFolder);
+        console.log('Создаем заметку в папке:', currentFolder);
+    }
+    
     if (currentTags && currentTags.length > 0) {
         formData.append('tags', currentTags.join(','));
     }
@@ -1297,7 +1304,14 @@ function createNote() {
             
             // Небольшая задержка перед перенаправлением
             setTimeout(() => {
-                window.location.href = '/notes';
+                // Проверяем, находимся ли мы в папке
+                const currentFolder = getCurrentFolderNameFromUrl();
+                if (currentFolder) {
+                    // Если мы в папке, возвращаемся в эту папку
+                    window.location.href = `/notes/folder/${encodeURIComponent(currentFolder)}`;
+                } else {
+                    window.location.href = '/notes';
+                }
             }, 1000);
         },
         error: function(xhr, status, error) {
@@ -1811,9 +1825,10 @@ function executeDeleteNote(id) {
                 // Обновляем список заметок и статистику
                 // Проверяем, находимся ли в режиме отображения папки
                 if (window.location.pathname.startsWith('/notes/folder/')) {
-                    const currentFolder = window.location.pathname.split('/').pop();
+                    // Используем getCurrentFolderNameFromUrl вместо ручной обработки
+                    const currentFolder = getCurrentFolderNameFromUrl();
                     console.log('Обновляем заметки в текущей папке:', currentFolder);
-                    loadAllNotes(false, decodeURIComponent(currentFolder));
+                    loadAllNotes(false, currentFolder);
                 } else {
                     // Обновляем статистику
                     loadStats();
@@ -1832,8 +1847,16 @@ function restoreNote(id) {
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
+    // Обрабатываем ID заметки, удаляя префикс "note-" если он есть
+    let noteId = id;
+    if (typeof noteId === 'string' && noteId.startsWith('note-')) {
+        noteId = noteId.substring(5);
+    }
+    
+    console.log(`Восстановление заметки из корзины: ${id} -> ${noteId}`);
+    
     $.ajax({
-        url: `/api/notes/${id}/restore`,
+        url: `/api/notes/${noteId}/restore`,
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -1905,8 +1928,16 @@ function executeForceDeleteNote(id) {
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
+    // Обрабатываем ID заметки, удаляя префикс "note-" если он есть
+    let noteId = id;
+    if (typeof noteId === 'string' && noteId.startsWith('note-')) {
+        noteId = noteId.substring(5);
+    }
+    
+    console.log(`Окончательное удаление заметки: ${id} -> ${noteId}`);
+    
     $.ajax({
-        url: `/api/notes/${id}/force`,
+        url: `/api/notes/${noteId}/force`,
         method: 'DELETE',
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -1958,7 +1989,13 @@ function executeForceDeleteNote(id) {
 function emptyTrash() {
     console.log('Функция emptyTrash вызвана');
     // Получаем все идентификаторы заметок в корзине
-    const noteIds = Array.from($('.note-wrapper')).map(el => $(el).attr('id'));
+    const noteElements = $('.note-wrapper');
+    console.log('Найдено элементов в корзине:', noteElements.length);
+    
+    const noteIds = Array.from(noteElements).map(el => {
+        // Получаем полный ID элемента
+        return $(el).attr('id');
+    });
     
     if (noteIds.length === 0) {
         showNotification('Корзина уже пуста', 'info');
@@ -2024,34 +2061,86 @@ function emptyTrash() {
 function executeEmptyTrash(noteIds) {
     // Последовательно удаляем каждую заметку
     let deletedCount = 0;
+    let errorCount = 0;
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Проверяем, есть ли заметки для удаления
+    if (!noteIds || noteIds.length === 0) {
+        showNotification('Нет заметок для удаления', 'info');
+        return;
+    }
+    
+    console.log('Удаление заметок из корзины:', noteIds);
     
     noteIds.forEach(id => {
+        // Проверяем и обрабатываем ID заметки
+        let noteId = id;
+        
+        // Если ID содержит префикс "note-", удаляем его
+        if (typeof noteId === 'string' && noteId.startsWith('note-')) {
+            noteId = noteId.substring(5);
+        }
+        
+        console.log(`Удаление заметки: ${id} -> ${noteId}`);
+        
         $.ajax({
-            url: `/api/notes/${id}/force`,
+            url: `/api/notes/${noteId}/force`,
             method: 'DELETE',
             dataType: 'json',
             contentType: 'application/json',
-            success: function() {
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            },
+            success: function(response) {
+                console.log(`Заметка ${noteId} успешно удалена:`, response);
                 deletedCount++;
-                $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                
+                // Находим и удаляем элемент из DOM
+                const noteElement = $(`.note-wrapper#note-${noteId}, #note-${noteId}`);
+                noteElement.fadeOut(300, function() {
                     $(this).remove();
                     
-                    // Если все заметки удалены
-                    if (deletedCount === noteIds.length) {
-                        showNotification('Корзина очищена', 'success');
-                        $('.notes-container').hide();
-                        $('.empty-container').removeClass('d-none');
-                        
-                        // Обновляем статистику после очистки корзины
-                        loadStats();
+                    // Проверяем, все ли заметки обработаны
+                    if (deletedCount + errorCount === noteIds.length) {
+                        completeTrashEmptying(deletedCount, errorCount);
                     }
                 });
             },
             error: function(error) {
-                console.error(`Ошибка при удалении заметки ${id}:`, error);
+                console.error(`Ошибка при удалении заметки ${noteId}:`, error);
+                errorCount++;
+                
+                // Проверяем, все ли заметки обработаны
+                if (deletedCount + errorCount === noteIds.length) {
+                    completeTrashEmptying(deletedCount, errorCount);
+                }
             }
         });
     });
+    
+    // Функция завершения процесса очистки корзины
+    function completeTrashEmptying(success, errors) {
+        if (success > 0) {
+            const message = errors > 0 
+                ? `Удалено ${success} заметок, ${errors} с ошибками` 
+                : `Корзина очищена. Удалено ${success} заметок`;
+                
+            showNotification(message, errors > 0 ? 'warning' : 'success');
+            
+            // Если все заметки удалены или возникли ошибки, но видимых заметок нет
+            if ($('.note-wrapper:visible').length === 0) {
+                $('.notes-container, .trash-notes-container').hide();
+                $('.empty-container, .empty-trash-container').removeClass('d-none');
+            }
+            
+            // Обновляем статистику после очистки корзины
+            loadStats();
+        } else if (errors > 0) {
+            showNotification(`Не удалось удалить заметки (${errors})`, 'danger');
+        }
+    }
 }
 
 // Закрепление/открепление заметки
@@ -2227,6 +2316,9 @@ function getCurrentFolderNameFromUrl() {
     }
     return null;
 }
+
+// Экспортируем функцию для использования в других скриптах
+window.getCurrentFolderNameFromUrl = getCurrentFolderNameFromUrl;
 
 // Обновление отображения статистики
 function updateStatsDisplay() {
@@ -2876,7 +2968,7 @@ function toggleDone(id, event) {
     if (event) event.stopPropagation();
     
     // Блокируем кнопки статуса, чтобы предотвратить множественные клики
-    const noteElement = $(`.note-wrapper#${id}, .note-item#${id}`);
+    const noteElement = $(`.note-wrapper[id="${id}"], .note-item[id="${id}"]`);
     const statusButton = noteElement.find('.note-done-toggle, .toggle-done-btn');
     statusButton.prop('disabled', true);
     
@@ -2895,51 +2987,61 @@ function toggleDone(id, event) {
     const currentDoneState = noteElement.attr('data-done') === 'true';
     const newDoneState = !currentDoneState;
     
+    console.log(`Переключаем статус заметки ${id}:`, { 
+        currentDoneState, 
+        newDoneState, 
+        pageMode: window.location.pathname 
+    });
+    
     // Предварительно меняем UI для немедленного отклика
     if (currentDoneState) {
-        // Меняем с "Выполнено" на "В процессе"
+        // Меняем с "Выполнено" на "Активно"
         noteElement.removeClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
-        noteElement.find('.note-done-toggle').text('В процессе');
+        noteElement.find('.note-done-toggle').text('Активно');
         
         // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
-        dropdownBtn.html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-        dropdownBtn.attr('title', 'Отметить как выполненное');
-        
-        // Обновляем значения всех элементов с одинаковым ID заметки 
-        // (может быть несколько представлений одной заметки на странице)
-        $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
-            $(this).html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-            $(this).attr('title', 'Отметить как выполненное');
-        });
-       } else {
-        // Меняем с "В процессе" на "Выполнено" 
+        if (dropdownBtn.length) {
+            dropdownBtn.html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
+            dropdownBtn.attr('title', 'Отметить как выполненное');
+            
+            // Обновляем значения всех элементов с одинаковым ID заметки 
+            // (может быть несколько представлений одной заметки на странице)
+            $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
+                $(this).html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
+                $(this).attr('title', 'Отметить как выполненное');
+            });
+        }
+    } else {
+        // Меняем с "Активно" на "Выполнено" 
         noteElement.addClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
         noteElement.find('.note-done-toggle').text('Выполнено');
         
         // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
-        dropdownBtn.html('<i class="fas fa-circle"></i> Отметить как активное');
-        dropdownBtn.attr('title', 'Отметить как активное');
-        
-        // Обновляем значения всех элементов с одинаковым ID заметки
-        $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
-            $(this).html('<i class="fas fa-circle"></i> Отметить как активное');
-            $(this).attr('title', 'Отметить как активное');
-        });
+        if (dropdownBtn.length) {
+            dropdownBtn.html('<i class="fas fa-circle"></i> Отметить как активное');
+            dropdownBtn.attr('title', 'Отметить как активное');
+            
+            // Обновляем значения всех элементов с одинаковым ID заметки
+            $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
+                $(this).html('<i class="fas fa-circle"></i> Отметить как активное');
+                $(this).attr('title', 'Отметить как активное');
+            });
+        }
     }
     
     // Обновляем визуальное состояние всех элементов с одинаковым ID заметки
-    $(`.note-wrapper#${id}, .note-item#${id}`).each(function() {
+    $(`.note-wrapper[id="${id}"], .note-item[id="${id}"]`).each(function() {
         $(this).attr('data-done', newDoneState);
         if (newDoneState) {
             $(this).addClass('completed');
             $(this).find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success').text('Выполнено');
         } else {
             $(this).removeClass('completed');
-            $(this).find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning').text('В процессе');
+            $(this).find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning').text('Активно');
         }
     });
     
@@ -2956,6 +3058,8 @@ function toggleDone(id, event) {
         success: function(response) {
             const note = response.data;
             
+            console.log('Ответ сервера при переключении статуса:', response);
+            
             // Разблокируем кнопки статуса
             statusButton.prop('disabled', false);
             
@@ -2964,6 +3068,20 @@ function toggleDone(id, event) {
             
             // Показываем уведомление
             showNotification(response.message || (note.done ? 'Заметка отмечена как выполненная' : 'Заметка отмечена как невыполненная'), 'info');
+            
+            // Вызываем событие изменения статуса заметки
+            $(document).trigger('note:statusChanged', { 
+                noteId: id, 
+                isDone: note.done 
+            });
+            
+            // Используем общий обработчик для обновления внешнего вида заметки на всех страницах
+            if (typeof window.updateNoteAppearance === 'function') {
+                // Обновляем все экземпляры заметки с тем же ID
+                $(`.note-wrapper[id="note-${id}"], [id="note-${id}"], .note-item[id="note-${id}"]`).each(function() {
+                    window.updateNoteAppearance($(this), note.done);
+                });
+            }
             
             // Обновляем счетчики на боковой панели
             loadStats();
@@ -2979,10 +3097,10 @@ function toggleDone(id, event) {
             noteElement.find('.toggle-done-btn').html('<i class="fas fa-circle"></i> Отметить как активное');
             noteElement.find('.toggle-done-btn').attr('title', 'Отметить как активное');
         } else {
-            // Восстанавливаем состояние "В процессе"
+            // Восстанавливаем состояние "Активно"
             noteElement.removeClass('completed');
             noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
-            noteElement.find('.note-done-toggle').text('В процессе');
+            noteElement.find('.note-done-toggle').text('Активно');
             
             // Восстанавливаем текст и иконку в контекстном меню
             noteElement.find('.toggle-done-btn').html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
@@ -3067,7 +3185,7 @@ function createConfirmationModal(options) {
     
     // Создаем HTML модального окна с улучшенным дизайном
     const modalHTML = `
-        <div class="${modalClasses}" id="${settings.id}" tabindex="-1" aria-labelledby="${settings.id}Label" aria-hidden="true">
+        <div class="${modalClasses}" id="${settings.id}" tabindex="-1" aria-labelledby="${settings.id}Label}" role="dialog">
             <div class="${dialogClasses}">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light border-bottom-0">

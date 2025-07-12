@@ -846,8 +846,10 @@
     <script src="/js/note-counter.js"></script>
     <script src="/js/sidebar-active.js"></script>
     <script src="/js/note-update-handler.js"></script>
+    <script src="/js/note-status-handler.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/note-view.js"></script>
+    <script src="/js/modal-fix.js"></script>
     <script src="/js/note-filters.js"></script>
     <script src="/js/tags-improvements.js"></script>
     <script src="/js/debug-search.js"></script>
