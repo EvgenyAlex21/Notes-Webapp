@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
@@ -577,17 +578,21 @@
             <div class="col-md-3">
                 <div class="sidebar mb-4">
                     <h3>Навигация</h3>
-                    <a href="/notes" class="sidebar-link all-notes-link">
+                    <a href="/notes" class="sidebar-link all-notes-link d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-sticky-note"></i> Все заметки</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="all-notes-count">0</span>
                     </a>
-                    <a href="/notes/archive" class="sidebar-link archive-link">
+                    <a href="/notes/archive" class="sidebar-link archive-link d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-archive"></i> Архив</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="archive-notes-count">0</span>
                     </a>
-                    <a href="/notes/trash" class="sidebar-link trash-link active">
+                    <a href="/notes/trash" class="sidebar-link trash-link active d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-trash-alt"></i> Корзина</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
                     </a>
-                    <a href="/notes/calendar" class="sidebar-link calendar-link">
+                    <a href="/notes/calendar" class="sidebar-link calendar-link d-flex justify-content-between align-items-center">
                         <div><i class="fas fa-calendar-alt"></i> Календарь</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
                     </a>
                     
                     <hr>
@@ -749,6 +754,7 @@
     <script src="/js/folder-operations.js"></script>
     <script src="/js/folder-remove.js"></script>
     <script src="/js/accessibility-fix.js"></script>
+    <script src="/js/sidebar-counters.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">

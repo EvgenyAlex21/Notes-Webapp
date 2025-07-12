@@ -685,9 +685,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                 <div class="note-header">
                                     <h4>${note.name}</h4>
                                     <div class="note-status-priority">
-                                        ${note.folder ? `<span class="badge bg-secondary folder-badge" title="В папке: ${note.folder}">
-                                            <i class="fas fa-folder me-1"></i>${note.folder}
-                                        </span>` : ''}
                                         <span class="badge" style="background-color: ${getNoteColorHex(note.color)}; font-weight: 400;">
                                             ${getPriorityName(note.color)}
                                         </span>
@@ -695,9 +692,12 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                               onclick="toggleDone(${note.id}, event)" style="cursor: pointer;">
                                             ${note.done ? 'Выполнено' : 'Активно'}
                                         </span>
-                                        ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
+                                        ${note.folder ? `<span class="badge bg-secondary folder-badge" title="В папке: ${note.folder}">
+                                            <i class="fas fa-folder me-1"></i>${note.folder}
+                                        </span>` : ''}
                                         ${window.location.pathname.includes('/archive') ? '<span class="badge bg-info">Архивирован</span>' : ''}
                                         ${(window.location.pathname.includes('/trash') || window.location.pathname.includes('/new-trash')) ? '<span class="badge bg-danger">В корзине</span>' : ''}
+                                        ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
                                     </div>
                                 </div>
                                 

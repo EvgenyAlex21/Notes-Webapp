@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -320,17 +321,21 @@
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
-                    <a href="/notes" class="sidebar-link">
-                        <i class="fas fa-sticky-note"></i> Все заметки
+                    <a href="/notes" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-sticky-note"></i> Все заметки</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="all-notes-count">0</span>
                     </a>
-                    <a href="/notes/archive" class="sidebar-link">
-                        <i class="fas fa-archive"></i> Архив
+                    <a href="/notes/archive" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-archive"></i> Архив</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="archive-notes-count">0</span>
                     </a>
-                    <a href="/notes/trash" class="sidebar-link">
-                        <i class="fas fa-trash"></i> Корзина
+                    <a href="/notes/trash" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-trash"></i> Корзина</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
                     </a>
-                    <a href="/notes/calendar" class="sidebar-link">
-                        <i class="fas fa-calendar"></i> Календарь
+                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-calendar"></i> Календарь</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
                     </a>
                     
                     <hr>
@@ -538,6 +543,7 @@
     <script src="/js/notes.js"></script>
     <script src="/js/tags-form-improvements.js"></script>
     <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar-counters.js"></script>
     <script>
         $(document).ready(function() {
             // Инициализация Quill

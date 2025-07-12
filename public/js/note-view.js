@@ -281,11 +281,15 @@ function renderNoteInModal(note, source) {
             <span class="badge ${note.done ? 'bg-success' : 'bg-warning'}" style="${badgeStyle}">
                 ${note.done ? 'Выполнено' : 'Активно'}
             </span>
+            ${note.folder ? `<span class="badge bg-secondary ms-1" style="${badgeStyle}">
+                <i class="fas fa-folder me-1"></i>${note.folder}
+            </span>` : ''}
             <span class="badge ms-1" style="${badgeStyle} background-color: ${getNoteColorHex(note.color)};">
                 ${getPriorityName(note.color)}
             </span>
             ${isArchive ? `<span class="badge bg-info ms-1" style="${badgeStyle}">Архивирован</span>` : ''}
             ${isTrash ? `<span class="badge bg-danger ms-1" style="${badgeStyle}">В корзине</span>` : ''}
+            ${note.is_pinned ? `<span class="badge pin-badge ms-1" style="${badgeStyle}">Закреплено</span>` : ''}
         </div>
     `);
     
@@ -338,15 +342,43 @@ function renderNoteInModal(note, source) {
     }
     
     // Дополнительно выводим плашки статусов прямо в тело модального окна для большей видимости
+    
+    // Массив для хранения всех необходимых уведомлений
+    const statusAlerts = [];
+    
+    // Добавляем уведомление о папке, если она есть
+    if (note.folder) {
+        statusAlerts.push({
+            type: 'warning',
+            icon: 'folder',
+            message: `<strong>Внимание!</strong> Эта заметка находится в папке <strong>${note.folder}</strong>.`
+        });
+    }
+    
+    // Добавляем уведомление о корзине или архиве
     if (source === 'trash' || source === 'archive') {
-        const statusBadge = `
+        statusAlerts.push(`
             <div class="alert ${source === 'trash' ? 'alert-danger' : 'alert-info'} mb-3">
                 <i class="fas ${source === 'trash' ? 'fa-trash-alt' : 'fa-archive'} me-2"></i>
                 <strong>Внимание!</strong> Эта заметка находится в ${source === 'trash' ? 'корзине' : 'архиве'}.
                 ${source === 'trash' ? 'Редактирование недоступно.' : ''}
             </div>
-        `;
-        $('#viewNoteContent').prepend(statusBadge);
+        `);
+    }
+    
+    // Добавляем уведомление о принадлежности к папке
+    if (note.folder) {
+        statusAlerts.push(`
+            <div class="alert alert-secondary mb-3">
+                <i class="fas fa-folder me-2"></i>
+                <strong>Внимание!</strong> Эта заметка находится в папке <strong>${note.folder}</strong>.
+            </div>
+        `);
+    }
+    
+    // Добавляем все уведомления в начало содержимого
+    if (statusAlerts.length > 0) {
+        $('#viewNoteContent').prepend(statusAlerts.join(''));
     }
 }
 

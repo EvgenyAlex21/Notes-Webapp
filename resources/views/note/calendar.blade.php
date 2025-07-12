@@ -12,11 +12,13 @@
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
     <script src="{{ asset('js/theme-manager.js') }}"></script>
+    <script src="{{ asset('js/sidebar-counters.js') }}"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -41,11 +43,53 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .sidebar {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            color: #495057;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background-color: #f8f9fa;
+        }
+        .sidebar-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
+        .sidebar-link i {
+            margin-right: 10px;
+        }
         
         /* Темная тема */
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
+        }
+        .dark-theme .sidebar {
+            background-color: #343a40;
+            color: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .dark-theme .sidebar-link {
+            color: #f1f3f5;
+        }
+        .dark-theme .sidebar-link:hover {
+            background-color: #4a4f55;
+        }
+        .dark-theme .sidebar-link.active {
+            background-color: #4a4f55;
+            color: #ffffff;
         }
         .dark-theme .header {
             background-color: #343a40;
@@ -99,7 +143,31 @@
     
     <div class="container">
         <div class="row">
-            <div class="col-md-12">
+            <!-- Боковая панель -->
+            <div class="col-md-3 mb-4">
+                <div class="sidebar">
+                    <h5 class="mb-3">Навигация</h5>
+                    <a href="/notes" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-sticky-note"></i> Все заметки</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="all-notes-count">0</span>
+                    </a>
+                    <a href="/notes/archive" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-archive"></i> Архив</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="archive-notes-count">0</span>
+                    </a>
+                    <a href="/notes/trash" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-trash"></i> Корзина</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
+                    </a>
+                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center active">
+                        <div><i class="fas fa-calendar"></i> Календарь</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Основное содержимое -->
+            <div class="col-md-9">
                 <div class="calendar-container">
                     <div id="calendar"></div>
                 </div>

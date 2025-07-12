@@ -3,6 +3,13 @@
  * Улучшает контрастность и читаемость элементов
  */
 
+/* Стили для счетчиков в боковой панели в темной теме */
+.dark-theme .notes-count,
+.dark-theme .folder-badge {
+    background-color: #6c757d !important; /* Более заметный светло-серый для счетчиков */
+    color: #ffffff !important;
+}
+
 /* Стили для прикрепленных файлов в карточках заметок */
 .dark-theme .note-attachment-icon {
     color: #ffffff;

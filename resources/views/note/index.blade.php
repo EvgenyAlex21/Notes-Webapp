@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
@@ -708,17 +709,21 @@
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
-                    <a href="/notes" class="sidebar-link {{ (!isset($trashMode) || !$trashMode) && (!isset($archiveMode) || !$archiveMode) && (!isset($folderMode) || !$folderMode) ? 'active' : '' }}">
-                        <i class="fas fa-sticky-note"></i> Все заметки
+                    <a href="/notes" class="sidebar-link d-flex justify-content-between align-items-center {{ (!isset($trashMode) || !$trashMode) && (!isset($archiveMode) || !$archiveMode) && (!isset($folderMode) || !$folderMode) ? 'active' : '' }}">
+                        <div><i class="fas fa-sticky-note"></i> Все заметки</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="all-notes-count">0</span>
                     </a>
-                    <a href="/notes/archive" class="sidebar-link {{ isset($archiveMode) && $archiveMode ? 'active' : '' }}">
-                        <i class="fas fa-archive"></i> Архив
+                    <a href="/notes/archive" class="sidebar-link d-flex justify-content-between align-items-center {{ isset($archiveMode) && $archiveMode ? 'active' : '' }}">
+                        <div><i class="fas fa-archive"></i> Архив</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="archive-notes-count">0</span>
                     </a>
-                    <a href="/notes/trash" class="sidebar-link {{ isset($trashMode) && $trashMode ? 'active' : '' }}">
-                        <i class="fas fa-trash"></i> Корзина
+                    <a href="/notes/trash" class="sidebar-link d-flex justify-content-between align-items-center {{ isset($trashMode) && $trashMode ? 'active' : '' }}">
+                        <div><i class="fas fa-trash"></i> Корзина</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
                     </a>
-                    <a href="/notes/calendar" class="sidebar-link {{ isset($calendarMode) && $calendarMode ? 'active' : '' }}">
-                        <i class="fas fa-calendar"></i> Календарь
+                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center {{ isset($calendarMode) && $calendarMode ? 'active' : '' }}">
+                        <div><i class="fas fa-calendar"></i> Календарь</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
                     </a>
                     
                     <hr>
@@ -894,6 +899,7 @@
     <script src="/js/folder-operations.js"></script>
     <script src="/js/folder-remove.js"></script>
     <script src="/js/accessibility-fix.js"></script>
+    <script src="/js/sidebar-counters.js"></script>
     
     <script>
         // Инициализация просмотрщика файлов после загрузки всех скриптов
