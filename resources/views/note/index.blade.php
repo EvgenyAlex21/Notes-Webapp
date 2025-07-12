@@ -2,7 +2,7 @@
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">l>
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
 <html lang="ru">
 <head>
     <meta charset="UTF-8">

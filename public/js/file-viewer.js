@@ -7,6 +7,25 @@ let fileViewerModal = null;
 let currentFileIndex = 0;
 let filesList = [];
 
+// Делаем переменные доступными глобально для взаимодействия с другими скриптами
+window.currentFileIndex = currentFileIndex;
+window.filesList = filesList;
+
+/**
+ * Обновление глобального массива файлов из внешних скриптов
+ * @param {Array} newFilesList - Новый массив файлов
+ */
+function updateGlobalCurrentFiles(newFilesList) {
+    filesList = newFilesList || [];
+    window.filesList = filesList;
+    currentFileIndex = 0;
+    window.currentFileIndex = currentFileIndex;
+    console.log('Обновлен глобальный массив файлов:', filesList.length, 'файлов');
+}
+
+// Делаем функцию доступной глобально
+window.updateGlobalCurrentFiles = updateGlobalCurrentFiles;
+
 /**
  * Инициализация просмотрщика файлов
  */
@@ -59,6 +78,11 @@ function setupFilePreviewHandlers() {
         
         // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
+        
+        // Обновляем глобальные переменные
+        window.filesList = filesList;
+        window.currentFileIndex = currentFileIndex;
+        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
         
         console.log('Открытие файла в просмотрщике:', fileName);
@@ -88,9 +112,50 @@ function setupFilePreviewHandlers() {
         
         // Устанавливаем текущий индекс и показываем файл
         currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
+        
+        // Обновляем глобальные переменные
+        window.filesList = filesList;
+        window.currentFileIndex = currentFileIndex;
+        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
         
         console.log('Открытие файла из модального окна заметки:', fileName);
+    });
+    
+    // Обработчик для существующих файлов в модальном окне просмотра заметки
+    $(document).on('click', '.existing-file-preview', function(e) {
+        e.preventDefault();
+        
+        const fileUrl = $(this).data('url');
+        const fileName = $(this).data('name');
+        const fileSize = $(this).data('size');
+        const fileType = $(this).data('type');
+        const fileIndex = $(this).data('index');
+        
+        // Ищем все файлы в модальном окне просмотра заметки
+        const files = $('#viewNoteModal .existing-files-container .existing-file-preview, #viewNoteModal .note-files .existing-file-preview');
+        
+        // Собираем информацию о всех файлах для галереи
+        filesList = [];
+        files.each(function() {
+            filesList.push({
+                url: $(this).data('url'),
+                name: $(this).data('name'),
+                size: $(this).data('size'),
+                type: $(this).data('type')
+            });
+        });
+        
+        // Устанавливаем текущий индекс и показываем файл
+        currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
+        
+        // Обновляем глобальные переменные
+        window.filesList = filesList;
+        window.currentFileIndex = currentFileIndex;
+        
+        showFileInViewer(fileUrl, fileName, fileSize, fileType);
+        
+        console.log('Открытие существующего файла в просмотрщике:', fileName, 'из', filesList.length, 'файлов');
     });
     
     // Обработчик для страницы редактирования
@@ -101,10 +166,64 @@ function setupFilePreviewHandlers() {
         const fileName = $(this).data('name');
         const fileSize = $(this).data('size');
         const fileType = $(this).data('type');
+        const fileIndex = $(this).data('index');
+        const files = $(this).closest('.existing-files-container').find('.edit-file-preview');
         
-        // Показываем файл в просмотрщике
+        // Собираем информацию о всех файлах для галереи
+        filesList = [];
+        files.each(function() {
+            filesList.push({
+                url: $(this).data('url'),
+                name: $(this).data('name'),
+                size: $(this).data('size'),
+                type: $(this).data('type')
+            });
+        });
+        
+        // Устанавливаем текущий индекс и показываем файл
+        currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
+        
+        // Обновляем глобальные переменные
+        window.filesList = filesList;
+        window.currentFileIndex = currentFileIndex;
+        
         showFileInViewer(fileUrl, fileName, fileSize, fileType);
-        console.log('Открытие файла на странице редактирования:', fileName);
+        
+        console.log('Открытие файла на странице редактирования:', fileName, 'из', filesList.length, 'файлов');
+    });
+    
+    // Обработчик для новых загруженных файлов на страницах создания/редактирования
+    $(document).on('click', '.new-file-preview', function(e) {
+        e.preventDefault();
+        
+        const fileUrl = $(this).data('url');
+        const fileName = $(this).data('name');
+        const fileSize = $(this).data('size');
+        const fileType = $(this).data('type');
+        const fileIndex = $(this).data('index');
+        const files = $(this).closest('#file-preview').find('.new-file-preview');
+        
+        // Собираем информацию о всех новых файлах для галереи
+        filesList = [];
+        files.each(function() {
+            filesList.push({
+                url: $(this).data('url'),
+                name: $(this).data('name'),
+                size: $(this).data('size'),
+                type: $(this).data('type')
+            });
+        });
+        
+        // Устанавливаем текущий индекс и показываем файл
+        currentFileIndex = fileIndex !== undefined ? fileIndex : 0;
+        
+        // Обновляем глобальные переменные
+        window.filesList = filesList;
+        window.currentFileIndex = currentFileIndex;
+        
+        showFileInViewer(fileUrl, fileName, fileSize, fileType);
+        
+        console.log('Открытие нового файла в просмотрщике:', fileName, 'из', filesList.length, 'файлов');
     });
 }
 
@@ -483,10 +602,19 @@ function createGenericFileInfo(container, url, name, type) {
  * Показывает предыдущий файл в галерее
  */
 function showPreviousFile() {
-    if (filesList.length <= 1) return;
+    // Используем глобальные переменные
+    const currentList = window.filesList || filesList;
+    let currentIndex = window.currentFileIndex !== undefined ? window.currentFileIndex : currentFileIndex;
     
-    currentFileIndex = (currentFileIndex - 1 + filesList.length) % filesList.length;
-    const file = filesList[currentFileIndex];
+    if (currentList.length <= 1) return;
+    
+    currentIndex = (currentIndex - 1 + currentList.length) % currentList.length;
+    const file = currentList[currentIndex];
+    
+    // Обновляем глобальные переменные
+    window.currentFileIndex = currentIndex;
+    currentFileIndex = currentIndex;
+    
     showFileInViewer(file.url, file.name, file.size, file.type);
 }
 
@@ -494,10 +622,19 @@ function showPreviousFile() {
  * Показывает следующий файл в галерее
  */
 function showNextFile() {
-    if (filesList.length <= 1) return;
+    // Используем глобальные переменные
+    const currentList = window.filesList || filesList;
+    let currentIndex = window.currentFileIndex !== undefined ? window.currentFileIndex : currentFileIndex;
     
-    currentFileIndex = (currentFileIndex + 1) % filesList.length;
-    const file = filesList[currentFileIndex];
+    if (currentList.length <= 1) return;
+    
+    currentIndex = (currentIndex + 1) % currentList.length;
+    const file = currentList[currentIndex];
+    
+    // Обновляем глобальные переменные
+    window.currentFileIndex = currentIndex;
+    currentFileIndex = currentIndex;
+    
     showFileInViewer(file.url, file.name, file.size, file.type);
 }
 
@@ -508,7 +645,10 @@ function updateNavigationButtons() {
     const prevBtn = document.getElementById('prev-file-btn');
     const nextBtn = document.getElementById('next-file-btn');
     
-    if (filesList.length <= 1) {
+    // Используем глобальные переменные
+    const currentList = window.filesList || filesList;
+    
+    if (currentList.length <= 1) {
         // Если в галерее только один файл, скрываем кнопки навигации
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';

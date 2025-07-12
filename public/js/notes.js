@@ -1085,7 +1085,7 @@ function loadNote(id) {
                 // Если есть валидные файлы - отображаем их
                 if (validFiles.length > 0) {
                     // Заголовок для файлов
-                    existingFilesContainer.html('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6><div class="row g-2"></div>');
+                    existingFilesContainer.html('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6><div class="row g-2 files-container"></div>');
                     let filesHtml = '';
                     
                     validFiles.forEach((file, index) => {
@@ -1152,7 +1152,7 @@ function loadNote(id) {
                         `;
                     });
                     
-                    existingFilesContainer.find('.row').html(filesHtml);
+                    existingFilesContainer.find('.files-container').html(filesHtml);
                 } else {
                     console.log('Нет валидных файлов для отображения');
                 }

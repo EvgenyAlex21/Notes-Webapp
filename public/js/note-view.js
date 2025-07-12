@@ -144,7 +144,7 @@ function renderNoteInModal(note) {
             filesHTML = `
                 <div class="note-files mt-4">
                     <h6 class="mb-3">Прикрепленные файлы (${validFiles.length}):</h6>
-                    <div class="row g-3 mt-2">
+                    <div class="existing-files-container row g-3 mt-2">
                         ${validFiles.map(file => {
                             let preview = '';
                             if (file.type === 'image') {
@@ -170,15 +170,18 @@ function renderNoteInModal(note) {
                                         ${preview}
                                         <div class="card-body p-2 text-center">
                                             <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
-                                            <button type="button" 
-                                                class="btn btn-sm btn-outline-primary note-file-item" 
-                                                data-url="${file.url}" 
-                                                data-name="${file.name}" 
-                                                data-size="${file.size || ''}" 
-                                                data-type="${file.type || ''}"
-                                                data-index="${validFiles.indexOf(file)}">
-                                                Открыть
-                                            </button>
+                                            <div class="btn-group btn-group-sm w-100">
+                                                <button type="button" 
+                                                    class="btn btn-outline-primary existing-file-preview" 
+                                                    data-url="${file.url}" 
+                                                    data-name="${file.name}" 
+                                                    data-size="${file.size || ''}" 
+                                                    data-type="${file.type || ''}"
+                                                    data-index="${validFiles.indexOf(file)}"
+                                                    title="Просмотр файла">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -187,6 +190,19 @@ function renderNoteInModal(note) {
                     </div>
                 </div>
             `;
+            
+            // Обновляем глобальный массив для галереи
+            if (typeof updateGlobalCurrentFiles === 'function') {
+                const fileData = validFiles.map((file, index) => ({
+                    url: file.url,
+                    name: file.name,
+                    size: file.size || 0,
+                    type: file.type || 'file',
+                    index: index
+                }));
+                updateGlobalCurrentFiles(fileData);
+                console.log('Обновлен глобальный массив файлов для просмотра заметки:', fileData);
+            }
         }
     }
     

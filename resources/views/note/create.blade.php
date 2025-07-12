@@ -809,154 +809,101 @@
                 const preview = $('#file-preview');
                 preview.empty();
                 
-                uploadedFiles.forEach(file => {
+                uploadedFiles.forEach((file, index) => {
                     const fileType = getFileType(file.type);
                     const fileSize = (file.size / (1024 * 1024)).toFixed(1);
                     const fileId = file.id;
+                    const fileUrl = URL.createObjectURL(file);
                     
-                    let filePreview;
-                    
+                    // Создаем превью в едином стиле
+                    let previewContent = '';
                     if (fileType === 'image') {
-                        // Создаем превью для изображений
-                        filePreview = $(`
-                            <div class="col-md-3 mb-3" id="file-item-${fileId}">
-                                <div class="card file-preview-card">
-                                    <div class="image-preview-container">
-                                        <img class="preview-image" src="${URL.createObjectURL(file)}" alt="${file.name}" data-file-id="${fileId}">
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <div class="file-name text-truncate" style="max-width: 150px;">${file.name}</div>
-                                                <small class="text-muted">${fileSize} МБ</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="file-remove" data-file-id="${fileId}">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
+                        previewContent = `<img src="${fileUrl}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}">`;
+                    } else if (fileType === 'video') {
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-film fa-2x text-danger"></i></div>`;
+                    } else if (fileType === 'audio') {
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-music fa-2x text-info"></i></div>`;
                     } else {
-                        // Создаем превью для других файлов
-                        filePreview = $(`
-                            <div class="col-md-3 mb-3" id="file-item-${fileId}">
-                                <div class="card file-preview-card">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-${
-                                                fileType === 'video' ? 'video' : 
-                                                fileType === 'audio' ? 'music' :
-                                                fileType === 'document' ? 'file-alt' : 'file'
-                                            } me-3 fa-2x text-${
-                                                fileType === 'video' ? 'danger' : 
-                                                fileType === 'audio' ? 'success' :
-                                                fileType === 'document' ? 'primary' : 'secondary'
-                                            }"></i>
-                                            <div>
-                                                <div class="file-name text-truncate" style="max-width: 150px;">${file.name}</div>
-                                                <small class="text-muted">${fileSize} МБ</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="file-remove" data-file-id="${fileId}">
-                                        <i class="fas fa-times"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        `);
+                        // Документы и прочее
+                        let iconClass = 'fa-file';
+                        if (file.name) {
+                            const ext = file.name.split('.').pop().toLowerCase();
+                            if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                            else if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                            else if (['xls', 'xlsx'].includes(ext)) iconClass = 'fa-file-excel';
+                            else if (['ppt', 'pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                            else if (['zip', 'rar', 'tar', 'gz'].includes(ext)) iconClass = 'fa-file-archive';
+                            else if (['txt', 'rtf'].includes(ext)) iconClass = 'fa-file-alt';
+                            else if (['exe'].includes(ext)) iconClass = 'fa-cog';
+                        }
+                        previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
                     }
                     
-                    preview.append(filePreview);
+                    const fileElement = `
+                        <div class="col-md-3 col-sm-4 col-6 mb-2" id="file-item-${fileId}">
+                            <div class="card h-100">
+                                ${previewContent}
+                                <div class="card-body p-2 text-center">
+                                    <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <button type="button" class="btn btn-outline-primary new-file-preview" 
+                                                data-url="${fileUrl}" 
+                                                data-name="${file.name}" 
+                                                data-size="${file.size}" 
+                                                data-type="${fileType}" 
+                                                data-index="${index}" 
+                                                title="Открыть файл">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger file-remove" data-file-id="${fileId}" title="Удалить файл">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    preview.append(fileElement);
                 });
                 
                 // Привязываем обработчики событий к новым элементам
                 attachFileEventHandlers();
+                
+                // Обновляем глобальный массив для галереи
+                updateGlobalFilesArray();
             }
             
             // Привязывает обработчики событий к превью файлов
             function attachFileEventHandlers() {
                 // Обработчик для удаления файлов
-                $('.file-remove').on('click', function(e) {
+                $('.file-remove').off('click').on('click', function(e) {
                     e.stopPropagation();
                     const fileId = $(this).data('file-id');
+                    const fileName = uploadedFiles.find(file => file.id === fileId)?.name || 'файл';
                     
-                    // Удаляем файл из массива
-                    uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-                    
-                    // Удаляем превью из DOM
-                    $(`#file-item-${fileId}`).fadeOut(300, function() {
-                        $(this).remove();
-                    });
+                    // Используем модальное окно подтверждения вместо confirm
+                    createConfirmationModal(
+                        'Удалить файл?',
+                        `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                        'Удалить',
+                        'Отмена',
+                        function() {
+                            // Удаляем файл из массива
+                            uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                            
+                            // Удаляем превью из DOM
+                            $(`#file-item-${fileId}`).fadeOut(300, function() {
+                                $(this).remove();
+                                // Обновляем глобальный массив для галереи
+                                updateGlobalFilesArray();
+                            });
+                        }
+                    );
                 });
                 
-                // Обработчик для открытия изображений в модальном окне
-                $('.preview-image').on('click', function() {
-                    const fileId = $(this).data('file-id');
-                    const file = uploadedFiles.find(file => file.id === fileId);
-                    
-                    if (file) {
-                        const imageUrl = URL.createObjectURL(file);
-                        openImagePreviewModal(file.name, imageUrl, fileId);
-                    }
-                });
-            }
-            
-            // Открывает модальное окно с предпросмотром изображения
-            function openImagePreviewModal(fileName, imageUrl, fileId) {
-                // Проверяем, существует ли модальное окно
-                let modal = $('#imagePreviewModal');
-                
-                // Если модального окна нет, создаем его
-                if (modal.length === 0) {
-                    modal = $(`
-                        <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-xl modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title"></h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-                                    </div>
-                                    <div class="modal-body text-center p-0">
-                                        <img src="" class="img-fluid" style="max-height: 80vh;">
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-danger" id="removeImageBtn">
-                                            <i class="fas fa-trash-alt"></i> Удалить
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                    
-                    $('body').append(modal);
-                }
-                
-                // Обновляем содержимое модального окна
-                modal.find('.modal-title').text(fileName);
-                modal.find('img').attr('src', imageUrl);
-                
-                // Обработчик для удаления изображения
-                modal.find('#removeImageBtn').off('click').on('click', function() {
-                    // Удаляем файл из массива
-                    uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-                    
-                    // Удаляем превью из DOM
-                    $(`#file-item-${fileId}`).fadeOut(300, function() {
-                        $(this).remove();
-                    });
-                    
-                    // Закрываем модальное окно
-                    const bsModal = bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal'));
-                    bsModal.hide();
-                });
-                
-                // Открываем модальное окно
-                const bsModal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
-                bsModal.show();
+                // Обработчик кнопок просмотра файлов уже настроен в file-viewer.js как '.new-file-preview'
+                console.log('Привязаны обработчики для', $('.file-remove').length, 'кнопок удаления и', $('.new-file-preview').length, 'кнопок просмотра');
             }
             
             // Функция для определения типа файла

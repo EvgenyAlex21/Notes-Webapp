@@ -1662,11 +1662,24 @@
                 // Обработчик для открытия изображений в модальном окне
                 $('.preview-image').on('click', function() {
                     const fileId = $(this).data('file-id');
-                    const file = uploadedFiles.find(file => file.id === fileId);
+                    const fileIndex = uploadedFiles.findIndex(file => file.id === fileId);
+                    const file = uploadedFiles[fileIndex];
                     
                     if (file) {
+                        // Собираем информацию о всех новых файлах для галереи и сохраняем в глобальные переменные file-viewer.js
+                        window.filesList = uploadedFiles.map(file => ({
+                            url: URL.createObjectURL(file),
+                            name: file.name,
+                            size: file.size,
+                            type: getFileType(file.type)
+                        }));
+                        
+                        // Устанавливаем текущий индекс и показываем файл
+                        window.currentFileIndex = fileIndex;
                         const imageUrl = URL.createObjectURL(file);
-                        openImagePreviewModal(file.name, imageUrl, fileId);
+                        showFileInViewer(imageUrl, file.name, file.size, getFileType(file.type));
+                        
+                        console.log('Открытие нового файла в просмотрщике:', file.name, 'из', window.filesList.length, 'файлов');
                     }
                 });
             }
@@ -1783,10 +1796,10 @@
             console.log(`Отображение ${files.length} существующих файлов`);
             
             // Добавляем заголовок
-            $('#existing-files').html('<h6 class="mt-2 mb-3">Прикрепленные файлы:</h6><div class="row g-2"></div>');
+            $('#existing-files').html('<h6 class="mt-2 mb-3">Прикрепленные файлы:</h6><div class="row g-2 existing-files-container"></div>');
             
             // Добавляем файлы в контейнер
-            files.forEach(file => {
+            files.forEach((file, index) => {
                 // Определяем URL файла - используем url или создаем из path
                 const fileUrl = file.url || (file.path ? `/storage/${file.path}` : null);
                 if (!fileUrl) {
@@ -1824,9 +1837,15 @@
                             <div class="card-body p-2 text-center">
                                 <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
                                 <div class="btn-group btn-group-sm w-100">
-                                    <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary" title="Открыть файл">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
+                                    <button type="button" class="btn btn-outline-primary edit-file-preview" 
+                                            data-url="${fileUrl}" 
+                                            data-name="${file.name}" 
+                                            data-size="${file.size || 0}" 
+                                            data-type="${file.type || 'file'}" 
+                                            data-index="${index}" 
+                                            title="Открыть файл">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <button type="button" class="btn btn-outline-danger remove-file" data-file-path="${file.path}" data-file-name="${file.name}" title="Удалить файл">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -1836,7 +1855,7 @@
                     </div>
                 `;
                 
-                $('#existing-files .row').append(fileElement);
+                $('#existing-files .existing-files-container').append(fileElement);
             });
             
             // Привязываем обработчики событий после добавления всех элементов
