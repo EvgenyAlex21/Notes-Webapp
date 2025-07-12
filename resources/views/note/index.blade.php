@@ -33,26 +33,37 @@
         .header {
             background-color: #fff;
             border-bottom: 1px solid #e9ecef;
-            padding: 15px 0;
+            padding: 20px 0;
             margin-bottom: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .header h1 {
+            display: flex;
+            align-items: center;
+            color: #3c4858;
+            font-weight: 600;
+        }
+        .header h1 i {
+            color: #007bff;
         }
         .note-item {
             border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
+            padding: 15px;
+            margin-bottom: 15px;
             transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             background-color: #fff;
-            border-left: 5px solid #6c757d;
+            border-left: none;
             position: relative;
+            border-top: 4px solid #6c757d; /* Цвет по умолчанию */
         }
         .note-item:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             transform: translateY(-2px);
         }
         .note-item.pinned {
-            border-left: 5px solid #ffc107;
             background-color: #fffdf7;
+            border: 1px solid #ffeeba;
         }
         .note-item.completed {
             opacity: 0.8;
@@ -65,20 +76,21 @@
             transform: scale(1.05);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .note-item.default { border-left-color: #6c757d; }
-        .note-item.red { border-left-color: #dc3545; }
-        .note-item.green { border-left-color: #28a745; }
-        .note-item.blue { border-left-color: #007bff; }
-        .note-item.yellow { border-left-color: #ffc107; }
-        .note-item.purple { border-left-color: #6f42c1; }
-        .note-item.pink { border-left-color: #e83e8c; }
-        .note-item.orange { border-left-color: #fd7e14; }
-        .note-item.teal { border-left-color: #20c997; }
-        .note-item.cyan { border-left-color: #17a2b8; }
-        .note-item.indigo { border-left-color: #6610f2; }
-        .note-item.brown { border-left-color: #8b4513; }
-        .note-item.black { border-left-color: #000000; }
-        .note-item.navy { border-left-color: #000080; }
+        /* Индикатор приоритета (цветная полоска сверху) */
+        .note-item.default { border-top-color: #6c757d; }
+        .note-item.red { border-top-color: #dc3545; }
+        .note-item.green { border-top-color: #28a745; }
+        .note-item.blue { border-top-color: #007bff; }
+        .note-item.yellow { border-top-color: #ffc107; }
+        .note-item.purple { border-top-color: #6f42c1; }
+        .note-item.pink { border-top-color: #e83e8c; }
+        .note-item.orange { border-top-color: #fd7e14; }
+        .note-item.teal { border-top-color: #20c997; }
+        .note-item.cyan { border-top-color: #17a2b8; }
+        .note-item.indigo { border-top-color: #6610f2; }
+        .note-item.brown { border-top-color: #8b4513; }
+        .note-item.black { border-top-color: #000000; }
+        .note-item.navy { border-top-color: #000080; }
         
         .color-picker {
             display: inline-flex;
@@ -303,6 +315,134 @@
             white-space: pre-line;
             margin-top: 10px;
         }
+        .note-item {
+            transition: transform 0.2s ease;
+            overflow: hidden;
+            padding-top: 15px;
+            padding-bottom: 15px;
+        }
+        .note-item .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .note-item .note-status-priority {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .note-item h4 {
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        .dark-theme .note-item h4 {
+            color: #f1f3f5;
+        }
+        .note-item .note-meta {
+            font-size: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #6c757d;
+        }
+        .note-item .note-meta .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .note-item .tag {
+            font-size: 0.75rem;
+            padding: 0.15rem 0.5rem;
+            background-color: #f0f0f0;
+            color: #555;
+            border-radius: 12px;
+            display: inline-block;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .note-item .tag:hover {
+            background-color: #e5e5e5;
+            transform: translateY(-1px);
+        }
+        .note-item .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .dark-theme .note-item .tag {
+            background-color: #444;
+            color: #ccc;
+        }
+        .note-item .note-content-preview {
+            max-height: 150px;
+            overflow: hidden;
+            position: relative;
+            border-top: 1px solid #f0f0f0;
+            padding-top: 10px;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+        .dark-theme .note-item .note-content-preview {
+            border-top-color: #444;
+        }
+        .note-item .note-content-preview.has-more::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, #fff);
+            pointer-events: none;
+        }
+        .dark-theme .note-item .note-content-preview.has-more::after {
+            background: linear-gradient(to bottom, transparent, #343a40);
+        }
+        .view-more-badge {
+            margin-top: 10px;
+            display: inline-block;
+            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 50px;
+            transition: all 0.2s;
+        }
+        .view-more-badge:hover {
+            background-color: #0d6efd;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        #viewNoteModal .modal-content {
+            border-radius: 10px;
+        }
+        #viewNoteModal .modal-header {
+            border-bottom: 2px solid #f1f1f1;
+        }
+        #viewNoteModal .note-full-content {
+            white-space: pre-line;
+        }
+        #viewNoteModal .note-meta {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        .dark-theme #viewNoteModal .modal-content {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-theme #viewNoteModal .modal-header {
+            border-color: #495057;
+        }
+        .dark-theme #viewNoteModal .note-meta {
+            border-color: #495057;
+        }
         .dropdown-menu {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             border: none;
@@ -401,15 +541,41 @@
             overflow: visible;
             display: block;
         }
+        
+        /* Стили для просмотра заметки */
+        .tags-section .tag {
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            background-color: #e9f3ff;
+            color: #0d6efd;
+            border-radius: 20px;
+            display: inline-block;
+            transition: all 0.2s;
+        }
+        .dark-theme .tags-section .tag {
+            background-color: #2c3844;
+            color: #8cb2fb;
+        }
+        .note-files .file-link {
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .note-files .file-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">Заметки</h1>
-                <a href="/notes/create" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Создать заметку
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-sticky-note me-2"></i> 
+                    <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Заметки' }}</span>
+                </h1>
+                <a href="/notes/create" class="btn btn-primary d-flex align-items-center">
+                    <i class="fas fa-plus me-2"></i> Создать заметку
                 </a>
             </div>
         </div>
@@ -447,19 +613,25 @@
                     
                     <h5 class="mb-3">Фильтры</h5>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="filter-completed">
-                        <label class="form-check-label" for="filter-completed">
-                            <i class="fas fa-check-circle"></i> Только выполненные
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-all" value="all" checked>
+                        <label class="form-check-label" for="filter-all">
+                            <i class="fas fa-list"></i> Все
                         </label>
                     </div>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="filter-active">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-active" value="active">
                         <label class="form-check-label" for="filter-active">
                             <i class="fas fa-circle"></i> Только активные
                         </label>
                     </div>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="filter-pinned">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-completed" value="completed">
+                        <label class="form-check-label" for="filter-completed">
+                            <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-pinned" value="pinned">
                         <label class="form-check-label" for="filter-pinned">
                             <i class="fas fa-thumbtack"></i> Только закрепленные
                         </label>
@@ -477,22 +649,22 @@
                     
                     <hr>
                     
-                    <h5 class="mb-3">Цвета</h5>
+                    <h5 class="mb-3">Приоритет заметки</h5>
                     <div class="color-picker d-flex flex-wrap gap-2 mb-3">
-                        <div class="color-option color-default" data-color="default" title="Серый"></div>
-                        <div class="color-option color-red" data-color="red" title="Красный"></div>
-                        <div class="color-option color-green" data-color="green" title="Зеленый"></div>
-                        <div class="color-option color-blue" data-color="blue" title="Синий"></div>
-                        <div class="color-option color-yellow" data-color="yellow" title="Желтый"></div>
-                        <div class="color-option color-purple" data-color="purple" title="Фиолетовый"></div>
-                        <div class="color-option color-pink" data-color="pink" title="Розовый"></div>
-                        <div class="color-option color-orange" data-color="orange" title="Оранжевый"></div>
-                        <div class="color-option color-teal" data-color="teal" title="Бирюзовый"></div>
-                        <div class="color-option color-cyan" data-color="cyan" title="Голубой"></div>
-                        <div class="color-option color-indigo" data-color="indigo" title="Индиго"></div>
-                        <div class="color-option color-brown" data-color="brown" title="Коричневый"></div>
-                        <div class="color-option color-black" data-color="black" title="Черный"></div>
-                        <div class="color-option color-navy" data-color="navy" title="Темно-синий"></div>
+                        <div class="color-option color-default" data-color="default" title="Без приоритета"></div>
+                        <div class="color-option color-red" data-color="red" title="Критически важно"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Очень важно"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Важно"></div>
+                        <div class="color-option color-green" data-color="green" title="Средний приоритет"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Планирование"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Личное"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Идея"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Информация"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Обучение"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Ожидание"></div>
+                        <div class="color-option color-black" data-color="black" title="Архивное"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Ночное"></div>
                     </div>
                 </div>
             </div>
@@ -558,6 +730,30 @@
         </div>
     </div>
 
+    <script src="/js/note-colors.js"></script>
     <script src="/js/notes.js"></script>
+    <script src="/js/note-view.js"></script>
+    <script src="/js/note-filters.js"></script>
+    
+    <!-- Модальное окно для просмотра полной заметки -->
+    <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewNoteModalLabel">Просмотр заметки</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="viewNoteContent">
+                        <!-- Содержимое заметки будет загружено сюда через JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    <a href="#" id="viewNoteEditBtn" class="btn btn-primary">Редактировать</a>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

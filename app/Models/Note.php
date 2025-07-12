@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Note extends Model
 {
@@ -84,6 +85,12 @@ class Note extends Model
      */
     public function addVersion()
     {
+        // Проверяем, существует ли столбец version_history в таблице
+        if (!Schema::hasColumn('notes', 'version_history')) {
+            // Если столбца нет, просто возвращаем объект без изменений
+            return $this;
+        }
+        
         $history = $this->version_history ?? [];
         
         $history[] = [

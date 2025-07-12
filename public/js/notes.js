@@ -4,8 +4,22 @@ let currentTags = [];
 let currentSort = 'date-new';
 let currentTheme = localStorage.getItem('theme') || 'light';
 let statsData = {};
+let viewNoteModal = null;
 
 $(document).ready(function() {
+    // Инициализация модального окна просмотра заметки если оно существует
+    const viewNoteModalElement = document.getElementById('viewNoteModal');
+    if (viewNoteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        try {
+            viewNoteModal = new bootstrap.Modal(viewNoteModalElement);
+        } catch (e) {
+            console.warn('Ошибка инициализации модального окна:', e);
+        }
+    }
+    
+    // Инициализация выпадающих меню
+    safeInitBootstrap();
+    
     // Текущий URL
     const currentPath = window.location.pathname;
     
@@ -59,57 +73,7 @@ $(document).ready(function() {
     if (currentPath === '/notes' || currentPath === '/notes/trash') {
         loadAllNotes(trashMode);
         
-        // Улучшенные обработчики фильтров
-        $('#filter-pinned').on('change', function() {
-            // Устанавливаем соответствующую верхнюю кнопку фильтра
-            if ($(this).is(':checked')) {
-                // Визуально активируем кнопку
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="pinned"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-                
-                // Снимаем другие чекбоксы
-                $('#filter-completed, #filter-active').prop('checked', false);
-            } else if (!$('#filter-completed').is(':checked') && !$('#filter-active').is(':checked')) {
-                // Если ни один фильтр не выбран, активируем "Все"
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-            }
-            applyFilters();
-        });
-        
-        $('#filter-completed').on('change', function() {
-            // Устанавливаем соответствующую верхнюю кнопку фильтра
-            if ($(this).is(':checked')) {
-                // Визуально активируем кнопку
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="completed"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-                
-                // Снимаем другие чекбоксы
-                $('#filter-pinned, #filter-active').prop('checked', false);
-            } else if (!$('#filter-pinned').is(':checked') && !$('#filter-active').is(':checked')) {
-                // Если ни один фильтр не выбран, активируем "Все"
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-            }
-            applyFilters();
-        });
-        
-        $('#filter-active').on('change', function() {
-            // Устанавливаем соответствующую верхнюю кнопку фильтра
-            if ($(this).is(':checked')) {
-                // Визуально активируем кнопку
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="active"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-                
-                // Снимаем другие чекбоксы
-                $('#filter-pinned, #filter-completed').prop('checked', false);
-            } else if (!$('#filter-pinned').is(':checked') && !$('#filter-completed').is(':checked')) {
-                // Если ни один фильтр не выбран, активируем "Все"
-                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-            }
-            applyFilters();
-        });
+        // Обработчики фильтров вынесены в отдельный файл note-filters.js
         
         $('.filter-btn').on('click', function() {
             const filter = $(this).data('filter');
@@ -297,18 +261,23 @@ function loadAllNotes(trashMode = false) {
             const generateNoteHTML = (note, isPinned = false) => {
                 // Получаем массив тегов, если они есть
                 const tagsArray = note.tags ? note.tags.split(',') : [];
-                const tagsHTML = tagsArray.length > 0 ? 
-                    `<div class="mt-2">
-                        ${tagsArray.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                    </div>` : '';
+                let tagsHTML = '';
+                if (tagsArray.length > 0) {
+                    tagsHTML = `
+                        <div class="tags-container mt-2">
+                            ${tagsArray.slice(0, 3).map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                            ${tagsArray.length > 3 ? `<span class="tag bg-secondary text-white">+${tagsArray.length - 3}</span>` : ''}
+                        </div>
+                    `;
+                }
                 
                 // Форматируем даты
                 const createdAt = new Date(note.created_at);
                 const updatedAt = new Date(note.updated_at);
                 const isUpdated = createdAt.getTime() !== updatedAt.getTime();
                 const dateString = isUpdated ? 
-                    `Обновлено: ${formatDate(updatedAt)}` : 
-                    `Создано: ${formatDate(createdAt)}`;
+                    `${formatDate(updatedAt)}` : 
+                    `${formatDate(createdAt)}`;
                 
                 return `
                     <div class="note-item note-wrapper ${note.color} ${note.done ? 'completed' : ''} ${isPinned ? 'pinned' : ''}" 
@@ -319,30 +288,51 @@ function loadAllNotes(trashMode = false) {
                         ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
                         
                         <div class="row">
-                            <div class="col-md-8">
-                                <h4>${note.name}</h4>
-                                <div class="note-description">
-                                    ${note.formatted_description ? 
-                                      `<div class="formatted-content">${note.formatted_description.length > 300 ? 
-                                        note.formatted_description.substring(0, 300) + '...' : 
-                                        note.formatted_description}</div>` : 
-                                      `<div>${$('<div>').html(note.description).text().length > 150 ? 
-                                        $('<div>').html(note.description).text().substring(0, 150) + '...' : 
-                                        note.description}</div>`}
+                            <div class="col-12">
+                                <!-- Заголовок и статус -->
+                                <div class="note-header">
+                                    <h4>${note.name}</h4>
+                                    <div class="note-status-priority">
+                                        <span class="badge" style="background-color: ${getNoteColorHex(note.color)}; font-weight: 400;">
+                                            ${getPriorityName(note.color)}
+                                        </span>
+                                        <span class="badge ${note.done ? 'bg-success' : 'bg-warning'} note-done-toggle" 
+                                              onclick="toggleDone(${note.id}, event)" style="cursor: pointer;">
+                                            ${note.done ? 'Выполнено' : 'Активно'}
+                                        </span>
+                                    </div>
                                 </div>
                                 
-                                <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
-                                    <span class="badge ${note.done ? 'bg-success' : 'bg-warning'} note-done-toggle" 
-                                          onclick="toggleDone(${note.id}, event)" style="cursor: pointer;">
-                                        ${note.done ? 'Выполнено' : 'В процессе'}
-                                    </span>
-                                    <small class="text-muted note-date">
-                                        <i class="far fa-clock me-1"></i>${dateString}
-                                    </small>
+                                <!-- Метаданные (дата) -->
+                                <div class="note-meta">
+                                    <div class="meta-item">
+                                        <i class="far fa-clock me-1"></i>
+                                        <span>${dateString}</span>
+                                    </div>
                                 </div>
                                 
+                                <!-- Теги -->
                                 ${tagsHTML}
                                 
+                                <!-- Содержимое заметки -->
+                                <div class="note-description">
+                                    <div class="note-content-preview ${note.formatted_description && note.formatted_description.length > 200 || note.description && $('<div>').html(note.description).text().length > 100 ? 'has-more' : ''}">
+                                    ${note.formatted_description ? 
+                                      `<div class="formatted-content">${
+                                        note.formatted_description.length > 200 ? 
+                                        note.formatted_description.substring(0, 200) + '...' : 
+                                        note.formatted_description}</div>` : 
+                                      `<div>${$('<div>').html(note.description).text().length > 100 ? 
+                                        $('<div>').html(note.description).text().substring(0, 100) + '...' : 
+                                        note.description}</div>`}
+                                    </div>
+                                    ${note.formatted_description && note.formatted_description.length > 200 || note.description && $('<div>').html(note.description).text().length > 100 ? 
+                                    `<span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}">
+                                        <i class="fas fa-eye me-1"></i> Посмотреть
+                                    </span>` : ''}
+                                </div>
+                                
+                                <!-- Прикрепленные файлы -->
                                 ${note.files && note.files.length > 0 ? `
                                     <div class="note-files mt-3">
                                         <div class="small text-muted mb-2">Прикрепленные файлы (${note.files.length}):</div>
@@ -360,7 +350,8 @@ function loadAllNotes(trashMode = false) {
                                     </div>
                                 ` : ''}
                             </div>
-                            <div class="col-md-4 text-end note-actions">
+                            <!-- Кнопки действий (справа) -->
+                            <div class="col-12 text-end note-actions mt-2">
                                 <div class="dropdown d-inline-block">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="fas fa-ellipsis-v"></i>
@@ -411,6 +402,9 @@ function loadAllNotes(trashMode = false) {
             regularNotes.forEach(note => {
                 $('.notes-container').append(generateNoteHTML(note, false));
             });
+            
+            // Инициализация обработчиков для просмотра заметок
+            initViewNoteHandlers();
             
             // Добавляем обработчики событий
             if (trashMode) {
@@ -1324,74 +1318,35 @@ function togglePin(id) {
 function applyFilters() {
     // Получаем параметры фильтрации
     const searchQuery = $('#search-notes').val().toLowerCase();
-    const activeFilter = $('.filter-btn.btn-secondary').data('filter');
+    const activeFilter = $('.filter-btn.btn-secondary').data('filter') || $('input[name="sidebar-filter"]:checked').val() || 'all';
     
-    // Полная двусторонняя синхронизация между верхними фильтрами и боковыми чекбоксами
-    if (activeFilter) {
-        // Сначала снимаем все боковые фильтры
-        $('#filter-pinned, #filter-completed, #filter-active').prop('checked', false);
-        
-        // Устанавливаем соответствующий чекбокс в зависимости от активного фильтра
-        if (activeFilter === 'active') {
-            $('#filter-active').prop('checked', true);
-        } else if (activeFilter === 'completed') {
-            $('#filter-completed').prop('checked', true);
-        } else if (activeFilter === 'pinned') {
-            $('#filter-pinned').prop('checked', true);
-        }
-    } else {
-        // Если нажата кнопка "Все", снимаем все чекбоксы
-        if (!$('#filter-pinned').is(':checked') && !$('#filter-completed').is(':checked') && !$('#filter-active').is(':checked')) {
-            $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-            $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-        }
-    }
-    
-    // Проверяем, если какие-то чекбоксы отмечены, устанавливаем соответствующую кнопку фильтра
-    if ($('#filter-pinned').is(':checked')) {
-        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-        $('.filter-btn[data-filter="pinned"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-    } else if ($('#filter-completed').is(':checked')) {
-        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-        $('.filter-btn[data-filter="completed"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-    } else if ($('#filter-active').is(':checked')) {
-        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
-        $('.filter-btn[data-filter="active"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
-    }
-    
-    // Обновляем переменные после синхронизации для фильтрации
-    const updatedShowOnlyPinned = $('#filter-pinned').is(':checked');
-    const updatedShowOnlyCompleted = $('#filter-completed').is(':checked');
-    const updatedShowOnlyActive = $('#filter-active').is(':checked');
-    const updatedActiveFilter = $('.filter-btn.btn-secondary').data('filter');
+    // Обновляем интерфейс в соответствии с выбранным фильтром
+    $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+    $(`.filter-btn[data-filter="${activeFilter}"]`).removeClass('btn-outline-secondary').addClass('btn-secondary');
+    $(`#filter-${activeFilter}`).prop('checked', true);
     
     // Перебираем все заметки и скрываем/показываем их в соответствии с фильтрами
     $('.note-wrapper, .note-item').each(function() {
         let shouldShow = true;
         
-        // Фильтр по закрепленным
-        if (updatedShowOnlyPinned && $(this).data('pinned') !== true) {
-            shouldShow = false;
-        }
-        
-        // Фильтр по выполненным
-        if (updatedShowOnlyCompleted && $(this).data('done') !== true) {
-            shouldShow = false;
-        }
-        
-        // Фильтр по активным (не выполненным)
-        if (updatedShowOnlyActive && $(this).data('done') === true) {
-            shouldShow = false;
-        }
-        
-        // Фильтр по кнопкам (Все, Активные, Выполненные, Закрепленные)
-        // Используем обновленный activeFilter после синхронизации
-        if (updatedActiveFilter === 'active' && $(this).data('done') === true) {
-            shouldShow = false;
-        } else if (updatedActiveFilter === 'completed' && $(this).data('done') !== true) {
-            shouldShow = false;
-        } else if (updatedActiveFilter === 'pinned' && $(this).data('pinned') !== true) {
-            shouldShow = false;
+        // Применяем фильтр в зависимости от выбранного значения
+        switch (activeFilter) {
+            case 'active':
+                if ($(this).data('done') === true) {
+                    shouldShow = false;
+                }
+                break;
+            case 'completed':
+                if ($(this).data('done') !== true) {
+                    shouldShow = false;
+                }
+                break;
+            case 'pinned':
+                if ($(this).data('pinned') !== true) {
+                    shouldShow = false;
+                }
+                break;
+            // Для фильтра "all" показываем все заметки
         }
         
         // Поиск по тексту
@@ -1959,7 +1914,7 @@ function toggleDone(id, event) {
             $(this).html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
             $(this).attr('title', 'Отметить как выполненное');
         });
-    } else {
+       } else {
         // Меняем с "В процессе" на "Выполнено" 
         noteElement.addClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
@@ -2043,6 +1998,20 @@ function toggleDone(id, event) {
             
             console.error('Ошибка при изменении статуса выполнения:', xhr.responseText, status, error);
             showNotification('Ошибка при изменении статуса выполнения', 'danger');
+        }
+    });
+}
+
+// Функция для безопасной инициализации элементов Bootstrap
+function safeInitBootstrap() {
+    // Инициализация выпадающих меню, если они есть на странице
+    document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
+        try {
+            if (element && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+                new bootstrap.Dropdown(element);
+            }
+        } catch (e) {
+            console.warn('Ошибка инициализации выпадающего меню:', e);
         }
     });
 }

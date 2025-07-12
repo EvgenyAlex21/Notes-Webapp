@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Note;
+use Illuminate\Support\Facades\Schema;
 
 class NoteController extends Controller
 {
@@ -65,8 +66,10 @@ class NoteController extends Controller
             $data['is_pinned'] = false;
         }
         
-        // Сохраняем отформатированное описание
-        $data['formatted_description'] = $data['description'];
+        // Сохраняем отформатированное описание только если столбец существует
+        if (Schema::hasColumn('notes', 'formatted_description')) {
+            $data['formatted_description'] = $data['description'];
+        }
         
         // Устанавливаем значение done по умолчанию как false
         if (!isset($data['done'])) {
@@ -140,12 +143,14 @@ class NoteController extends Controller
             'tags' => 'nullable|string',
             'files' => 'nullable|array',
             'reminder_at' => 'nullable|date',
-            'formatted_description' => 'nullable|string',
             'due_date' => 'nullable|date',
         ]);
         
-        // Сохраняем отформатированное описание
-        $data['formatted_description'] = $data['description'];
+        // Проверяем, существует ли столбец formatted_description в таблице
+        // и только тогда добавляем его в данные
+        if (Schema::hasColumn('notes', 'formatted_description')) {
+            $data['formatted_description'] = $data['description'];
+        }
         
         // Обработка загруженных файлов
         if ($request->hasFile('upload_files')) {

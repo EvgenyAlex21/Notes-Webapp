@@ -10,17 +10,19 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
+    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли и другие ошибки Quill -->
     <script>
         // Сохраняем оригинальную функцию console.warn
         const originalWarn = console.warn;
         
         // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
         console.warn = function() {
-            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted
+            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted или другие проблемы с Quill
             if (arguments[0] && typeof arguments[0] === 'string' && 
-                arguments[0].includes('DOMNodeInserted')) {
-                // Игнорируем это предупреждение
+                (arguments[0].includes('DOMNodeInserted') || 
+                arguments[0].includes('mutation event') || 
+                arguments[0].includes('scroll.js'))) {
+                // Игнорируем эти предупреждения
                 return;
             }
             // Для всех остальных предупреждений используем оригинальную функцию
@@ -335,22 +337,22 @@
                             </div>
                             
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Цвет приоритета</label>
+                                <label class="form-label fw-bold">Приоритет заметки</label>
                                 <div class="color-picker">
-                                    <div class="color-option color-default" data-color="default" title="По умолчанию"></div>
-                                    <div class="color-option color-red" data-color="red" title="Высокий приоритет"></div>
-                                    <div class="color-option color-yellow" data-color="yellow" title="Средний приоритет"></div>
-                                    <div class="color-option color-green" data-color="green" title="Низкий приоритет"></div>
-                                    <div class="color-option color-blue" data-color="blue" title="Информационный"></div>
-                                    <div class="color-option color-purple" data-color="purple" title="Личный"></div>
-                                    <div class="color-option color-pink" data-color="pink" title="Розовый"></div>
-                                    <div class="color-option color-orange" data-color="orange" title="Оранжевый"></div>
-                                    <div class="color-option color-teal" data-color="teal" title="Бирюзовый"></div>
-                                    <div class="color-option color-cyan" data-color="cyan" title="Голубой"></div>
-                                    <div class="color-option color-indigo" data-color="indigo" title="Индиго"></div>
-                                    <div class="color-option color-brown" data-color="brown" title="Коричневый"></div>
-                                    <div class="color-option color-black" data-color="black" title="Черный"></div>
-                                    <div class="color-option color-navy" data-color="navy" title="Темно-синий"></div>
+                                    <div class="color-option color-default" data-color="default" title="Без приоритета"></div>
+                                    <div class="color-option color-red" data-color="red" title="Критически важно"></div>
+                                    <div class="color-option color-orange" data-color="orange" title="Очень важно"></div>
+                                    <div class="color-option color-yellow" data-color="yellow" title="Важно"></div>
+                                    <div class="color-option color-green" data-color="green" title="Средний приоритет"></div>
+                                    <div class="color-option color-blue" data-color="blue" title="Стандартная задача"></div>
+                                    <div class="color-option color-purple" data-color="purple" title="Планирование"></div>
+                                    <div class="color-option color-pink" data-color="pink" title="Личное"></div>
+                                    <div class="color-option color-teal" data-color="teal" title="Идея"></div>
+                                    <div class="color-option color-cyan" data-color="cyan" title="Информация"></div>
+                                    <div class="color-option color-indigo" data-color="indigo" title="Обучение"></div>
+                                    <div class="color-option color-brown" data-color="brown" title="Ожидание"></div>
+                                    <div class="color-option color-black" data-color="black" title="Архивное"></div>
+                                    <div class="color-option color-navy" data-color="navy" title="Ночное"></div>
                                 </div>
                             </div>
                             
@@ -365,7 +367,7 @@
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Прикрепить файлы</label>
                                 <input type="file" class="form-control" id="upload-files" multiple>
-                                <small class="text-muted">Можно загружать изображения, документы и другие файлы</small>
+                                <small class="text-muted">Можно загружать до 10 файлов, каждый размером до 100 МБ. Поддерживаются изображения, документы и другие типы файлов</small>
                                 <div id="file-preview" class="mt-2 row g-2"></div>
                                 <div id="existing-files" class="mt-2 row g-2">
                                     <!-- Тут будут отображаться существующие файлы -->
@@ -417,6 +419,34 @@
         </div>
     </div>
 
+    <!-- Модальное окно для ошибок -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">Ошибка</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-exclamation-triangle text-danger fs-1 me-3"></i>
+                    <div>
+                        <p id="errorModalText">Произошла ошибка при сохранении заметки.</p>
+                    </div>
+                </div>
+                <div class="alert alert-secondary overflow-auto" style="max-height: 200px;">
+                    <pre id="errorModalDetails" class="m-0" style="white-space: pre-wrap;"></pre>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-primary" id="retryButton">Попробовать снова</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script src="/js/note-colors.js"></script>
     <script src="/js/notes.js"></script>
     <script>
         $(document).ready(function() {
@@ -458,6 +488,11 @@
                 updateHiddenField();
                 const id = $('#note-id').val();
                 updateNote(id);
+            });
+            
+            // Обновляем содержимое при изменении для предотвращения потери данных
+            quill.on('text-change', function() {
+                updateHiddenField();
             });
             
             // Создаем глобальную функцию для установки содержимого редактора
@@ -561,6 +596,382 @@
                 toggleTheme();
             });
         });
+    </script>
+    <script>
+        // Функция для загрузки данных заметки
+        function loadNoteData() {
+            const noteId = $('#note-id').val();
+            
+            // Отображаем спиннер или индикатор загрузки
+            $('#update-button').html('<i class="fas fa-spinner fa-spin"></i> Загрузка...');
+            $('#update-button').attr('disabled', true);
+            
+            // Запрос данных заметки
+            $.ajax({
+                url: `/api/notes/${noteId}`,
+                method: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response && response.data) {
+                        const note = response.data;
+                        
+                        // Заполняем поля формы
+                        $('#name').val(note.name);
+                        
+                        // Установка описания в Quill редактор
+                        if (note.description) {
+                            window.setQuillContent(note.description);
+                        }
+                        
+                        // Выбор цвета
+                        $('.color-option').removeClass('selected');
+                        $(`.color-option.color-${note.color}`).addClass('selected');
+                        
+                        // Отображаем дату создания/обновления
+                        const createdAt = new Date(note.created_at);
+                        const updatedAt = new Date(note.updated_at);
+                        const dateString = formatDate(createdAt);
+                        $('#note-date').text(`Создано: ${dateString}`);
+                        
+                        // Если заметка завершена, отмечаем чекбокс
+                        $('#done-checkbox').prop('checked', note.done);
+                        
+                        // Если заметка закреплена, обновляем кнопку
+                        if (note.is_pinned) {
+                            $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i> Открепить');
+                        } else {
+                            $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i> Закрепить');
+                        }
+                        
+                        // Загружаем теги если они есть
+                        if (note.tags) {
+                            const tags = note.tags.split(',');
+                            tags.forEach(tag => {
+                                addTag(tag.trim());
+                            });
+                        }
+                        
+                        // Восстанавливаем кнопку сохранения
+                        $('#update-button').html('<i class="fas fa-save"></i> Сохранить изменения');
+                        $('#update-button').attr('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Ошибка при загрузке заметки:', xhr.responseText);
+                    $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка загрузки');
+                    
+                    // Отображаем сообщение об ошибке
+                    alert('Не удалось загрузить данные заметки. Пожалуйста, попробуйте обновить страницу.');
+                }
+            });
+        }
+        
+        // Функция для форматирования даты
+        function formatDate(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${day}.${month}.${year}, ${hours}:${minutes}`;
+        }
+        
+        // Функция для добавления тега
+        function addTag(tagText) {
+            // Проверяем, что такой тег еще не добавлен
+            if (!currentTags.includes(tagText)) {
+                currentTags.push(tagText);
+                
+                // Создаем элемент тега
+                const tagElement = $(`
+                    <div class="tag" data-tag="${tagText}">
+                        ${tagText}
+                        <span class="remove-tag ms-1">&times;</span>
+                    </div>
+                `);
+                
+                // Добавляем перед input
+                $('#tag-input').before(tagElement);
+                
+                // Обработчик для удаления тега
+                tagElement.find('.remove-tag').on('click', function() {
+                    const tag = $(this).parent().data('tag');
+                    // Удаляем из массива
+                    const index = currentTags.indexOf(tag);
+                    if (index !== -1) {
+                        currentTags.splice(index, 1);
+                    }
+                    // Удаляем элемент из DOM
+                    $(this).parent().remove();
+                });
+            }
+        }
+        
+        // Загружаем данные заметки при загрузке страницы
+        $(document).ready(function() {
+            // Инициализируем глобальный массив тегов
+            window.currentTags = [];
+            
+            // Загружаем данные заметки
+            loadNoteData();
+            
+            // Обработчик для кнопки закрепления
+            $('#toggle-pin-button').on('click', function() {
+                const noteId = $('#note-id').val();
+                togglePin(noteId);
+            });
+            
+            // Обработчик для кнопки удаления
+            $('#delete-button').on('click', function() {
+                const noteId = $('#note-id').val();
+                
+                if (confirm('Вы уверены, что хотите удалить эту заметку?')) {
+                    deleteNote(noteId);
+                }
+            });
+            
+            // Обработчик ввода тегов
+            $('#tag-input').on('keydown', function(e) {
+                if (e.key === 'Enter' && $(this).val().trim() !== '') {
+                    e.preventDefault();
+                    const tagText = $(this).val().trim();
+                    addTag(tagText);
+                    $(this).val('');
+                }
+            });
+            
+            // Обработчик для выбора цвета
+            $('.color-option').on('click', function() {
+                $('.color-option').removeClass('selected');
+                $(this).addClass('selected');
+            });
+        });
+        
+        // Функция для обновления заметки
+        function updateNote(id) {
+            // Собираем данные формы
+            const name = $('#name').val().trim();
+            const description = $('#description').val();
+            const color = $('.color-option.selected').data('color') || 'default';
+            const done = $('#done-checkbox').is(':checked');
+            const tags = currentTags.join(',');
+            
+            // Проверка обязательных полей
+            if (!name) {
+                alert('Пожалуйста, введите название заметки');
+                return;
+            }
+            
+            // Отображаем индикатор загрузки
+            $('#update-button').html('<i class="fas fa-spinner fa-spin"></i> Сохранение...');
+            $('#update-button').attr('disabled', true);
+            
+            // Очень важно! Создаем объект FormData для корректной отправки данных
+            const formData = new FormData();
+            
+            // Добавляем базовые поля
+            formData.append('name', name);
+            formData.append('description', description);
+            formData.append('color', color);
+            formData.append('done', done ? '1' : '0');
+            formData.append('tags', tags);
+            
+            // Добавляем дату напоминания, если она есть
+            if ($('#reminder-type').val() !== 'none' && $('#reminder-date').val()) {
+                formData.append('reminder_date', $('#reminder-date').val());
+            }
+            
+            // Добавляем метод PUT, так как FormData не поддерживает его напрямую
+            formData.append('_method', 'PUT');
+            
+            // ВАЖНО: НЕ добавляем поля version_history и formatted_description,
+            // так как они могут отсутствовать в базе данных и вызывать ошибку 500
+            
+            // Для отладки
+            console.log('Отправляемые данные:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            // Отправляем AJAX запрос
+            $.ajax({
+                url: `/api/notes/${id}`,
+                method: 'POST', // Используем POST с _method=PUT для совместимости
+                data: formData,
+                processData: false, // Важно для FormData
+                contentType: false, // Важно для FormData
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    console.log('Заметка успешно обновлена:', response);
+                    // Восстанавливаем кнопку
+                    $('#update-button').html('<i class="fas fa-save"></i> Сохранено!');
+                    
+                    // Перенаправляем на страницу заметки
+                    setTimeout(() => {
+                        window.location.href = '/notes';
+                    }, 1000);
+                },
+                error: function(xhr) {
+                    console.error('Ошибка при обновлении заметки:', xhr.responseText);
+                    $('#update-button').html('<i class="fas fa-exclamation-circle"></i> Ошибка сохранения');
+                    $('#update-button').attr('disabled', false);
+                    
+                    // Отображаем более подробное сообщение об ошибке
+                    let errorMsg = 'Произошла ошибка при сохранении заметки.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg += ' ' + xhr.responseJSON.message;
+                    }
+                    
+                    // Отображаем модальное окно с ошибкой
+                    $('#errorModalText').text(errorMsg);
+                    
+                    // Добавляем детали ошибки
+                    let errorDetails = '';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorDetails = JSON.stringify(response, null, 2);
+                    } catch (e) {
+                        errorDetails = xhr.responseText;
+                    }
+                    
+                    $('#errorModalDetails').text(errorDetails);
+                    
+                    // Показываем модальное окно
+                    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                    errorModal.show();
+                    
+                    // Настраиваем кнопку повторной попытки
+                    $('#retryButton').off('click').on('click', function() {
+                        errorModal.hide();
+                        updateNote(id);
+                    });
+                }
+            });
+        }
+        
+        // Функция для переключения закрепления заметки
+        function togglePin(id) {
+            const isPinned = $('#toggle-pin-button').hasClass('active');
+            const newStatus = !isPinned;
+            
+            // Отображаем индикатор загрузки
+            $('#toggle-pin-button').html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            $.ajax({
+                url: `/api/notes/${id}/pin`,
+                method: 'PUT',
+                data: { is_pinned: newStatus },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function() {
+                    if (newStatus) {
+                        $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i> Открепить');
+                    } else {
+                        $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i> Закрепить');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Ошибка при изменении статуса закрепления:', xhr.responseText);
+                    $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
+                    alert('Произошла ошибка при изменении статуса закрепления');
+                }
+            });
+        }
+        
+        // Функция для удаления заметки
+        function deleteNote(id) {
+            $.ajax({
+                url: `/api/notes/${id}`,
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function() {
+                    // Перенаправляем на главную страницу
+                    window.location.href = '/notes';
+                },
+                error: function(xhr) {
+                    console.error('Ошибка при удалении заметки:', xhr.responseText);
+                    alert('Произошла ошибка при удалении заметки');
+                }
+            });
+        }
+    </script>
+    <script>
+        // Обработчик загрузки файлов с проверкой ограничений
+        $('#upload-files').on('change', function() {
+            const files = this.files;
+            const maxFiles = 10;
+            const maxSize = 100 * 1024 * 1024; // 100 МБ
+            
+            // Проверка на количество файлов
+            if (files.length > maxFiles) {
+                alert(`Вы выбрали ${files.length} файлов. Максимально допустимое количество - ${maxFiles} файлов.`);
+                $(this).val(''); // Очищаем поле
+                return;
+            }
+            
+            // Проверка размера каждого файла
+            for (let i = 0; i < files.length; i++) {
+                if (files[i].size > maxSize) {
+                    alert(`Файл "${files[i].name}" имеет размер ${(files[i].size / (1024 * 1024)).toFixed(1)} МБ. Максимально допустимый размер - 100 МБ.`);
+                    $(this).val(''); // Очищаем поле
+                    return;
+                }
+            }
+            
+            // Если все проверки пройдены, отображаем превью
+            previewFiles(this.files);
+        });
+        
+        // Функция для отображения превью файлов
+        function previewFiles(files) {
+            const preview = $('#file-preview');
+            preview.empty();
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileType = getFileType(file.type);
+                const fileSize = (file.size / (1024 * 1024)).toFixed(1);
+                
+                const fileElement = $(`
+                    <div class="col-md-3 mb-2">
+                        <div class="card file-preview-card">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-${fileType === 'image' ? 'image' : 
+                                                       fileType === 'video' ? 'video' : 
+                                                       fileType === 'audio' ? 'music' :
+                                                       fileType === 'document' ? 'file-alt' : 'file'} me-2 fa-2x"></i>
+                                    <div>
+                                        <div class="file-name text-truncate" style="max-width: 150px;">${file.name}</div>
+                                        <small class="text-muted">${fileSize} МБ</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+                
+                preview.append(fileElement);
+            }
+        }
+        
+        // Функция для определения типа файла
+        function getFileType(mimeType) {
+            if (mimeType.startsWith('image/')) return 'image';
+            if (mimeType.startsWith('video/')) return 'video';
+            if (mimeType.startsWith('audio/')) return 'audio';
+            if (mimeType.startsWith('text/') || 
+                mimeType === 'application/pdf' || 
+                mimeType.includes('document') || 
+                mimeType.includes('sheet')) return 'document';
+            return 'file';
+        }
     </script>
 </body>
 </html>
