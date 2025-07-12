@@ -8,8 +8,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/file-viewer.js') }}"></script>
+    <script src="{{ asset('js/scroll-top.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли и другие ошибки Quill -->
     <script>
         // Сохраняем оригинальную функцию console.warn
@@ -1897,6 +1900,47 @@
             $('.sidebar .color-option.color-default').addClass('selected');
             $('.sidebar .color-option:not(.color-default)').removeClass('selected');
         });
+        
+        // Инициализируем просмотрщик файлов
+        initFileViewer();
     </script>
+
+    <!-- Модальное окно для просмотра файлов -->
+    <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fileViewerModalLabel">Просмотр файла</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="file-viewer-container d-flex align-items-center justify-content-center position-relative">
+                        <!-- Содержимое будет добавлено динамически -->
+                        <div id="file-viewer-content" class="w-100"></div>
+                        
+                        <!-- Элементы управления навигацией для галереи изображений -->
+                        <button class="btn btn-light position-absolute start-0 top-50 translate-middle-y rounded-circle ms-2 file-nav-btn" id="prev-file-btn" style="display:none">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="btn btn-light position-absolute end-0 top-50 translate-middle-y rounded-circle me-2 file-nav-btn" id="next-file-btn" style="display:none">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <div class="file-info">
+                        <span id="file-name">Имя файла</span>
+                        <small class="text-muted ms-2" id="file-size"></small>
+                    </div>
+                    <div>
+                        <a href="#" class="btn btn-primary" id="download-file" download>
+                            <i class="fas fa-download"></i> Скачать
+                        </a>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

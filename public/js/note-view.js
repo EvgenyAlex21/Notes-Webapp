@@ -170,7 +170,15 @@ function renderNoteInModal(note) {
                                         ${preview}
                                         <div class="card-body p-2 text-center">
                                             <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
-                                            <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">Открыть</a>
+                                            <button type="button" 
+                                                class="btn btn-sm btn-outline-primary note-file-item" 
+                                                data-url="${file.url}" 
+                                                data-name="${file.name}" 
+                                                data-size="${file.size || ''}" 
+                                                data-type="${file.type || ''}"
+                                                data-index="${validFiles.indexOf(file)}">
+                                                Открыть
+                                            </button>
                                         </div>
                                     </div>
                                 </div>

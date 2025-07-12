@@ -710,10 +710,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                         $('<div>').html(note.description).text().substring(0, 100) + '...' : 
                                         note.description}</div>`}
                                     </div>
-                                    ${note.formatted_description && note.formatted_description.length > 200 || note.description && $('<div>').html(note.description).text().length > 100 ? 
-                                    `<span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}">
-                                        <i class="fas fa-eye me-1"></i> Посмотреть
-                                    </span>` : ''}
                                 </div>
                                 
                                 <!-- Прикрепленные файлы -->
@@ -745,7 +741,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                             <div class="note-files mt-3">
                                                 <div class="small text-muted mb-2">Прикрепленные файлы (${validFiles.length}):</div>
                                                 <div class="d-flex flex-wrap gap-2">
-                                                    ${validFiles.map(file => {
+                                                    ${validFiles.map((file, index) => {
                                                         // Если нет url, но есть path - генерируем url
                                                         let fileUrl = file.url || '';
                                                         if (!fileUrl && file.path) {
@@ -758,8 +754,13 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                                         }
                                                         
                                                         return `
-                                                        <a href="${fileUrl}" target="_blank" 
-                                                           class="file-link badge bg-light text-dark d-flex align-items-center">
+                                                        <a href="#" 
+                                                           class="file-link file-preview-item badge bg-light text-dark d-flex align-items-center"
+                                                           data-url="${fileUrl}"
+                                                           data-name="${file.name || ''}"
+                                                           data-size="${file.size || ''}"
+                                                           data-type="${file.type || ''}"
+                                                           data-index="${index}">
                                                             <i class="fas fa-${file.type === 'image' ? 'image' : 
                                                                                file.type === 'video' ? 'video' : 
                                                                                file.type === 'document' ? 'file-alt' : 'file'} me-1"></i>
@@ -775,6 +776,13 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                         return '';
                                     }
                                 })()}
+                                
+                                <!-- Кнопка "Посмотреть" -->
+                                <div class="mt-2">
+                                    <span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}">
+                                        <i class="fas fa-eye me-1"></i> Посмотреть
+                                    </span>
+                                </div>
                             </div>
                             <!-- Кнопки действий (справа) -->
                             <div class="col-12 text-end note-actions mt-2">
@@ -1071,7 +1079,7 @@ function loadNote(id) {
                     existingFilesContainer.html('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6><div class="row g-2"></div>');
                     let filesHtml = '';
                     
-                    validFiles.forEach(file => {
+                    validFiles.forEach((file, index) => {
                         // Определяем URL файла - используем url или создаем из path
                         const fileUrl = file.url || (file.path ? `/storage/${file.path}` : null);
                         if (!fileUrl) {
@@ -1120,7 +1128,15 @@ function loadNote(id) {
                                     ${preview}
                                     <div class="card-body p-2 text-center">
                                         <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
-                                        <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary">Открыть</a>
+                                        <button type="button" 
+                                            class="btn btn-sm btn-outline-primary file-preview-item" 
+                                            data-url="${fileUrl}" 
+                                            data-name="${file.name || ''}" 
+                                            data-size="${file.size || ''}" 
+                                            data-type="${file.type || ''}"
+                                            data-index="${index}">
+                                            Открыть
+                                        </button>
                                     </div>
                                 </div>
                             </div>

@@ -1,0 +1,36 @@
+/* Стили для кнопки "Посмотреть" */
+.view-more-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: normal;
+    font-size: 0.85rem;
+}
+
+.view-more-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    background-color: #0069d9 !important;
+}
+
+/* Анимация появления кнопки */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.view-more-badge {
+    animation: pulse 2s infinite ease-in-out;
+}
+
+/* В темной теме */
+body.dark-theme .view-more-badge {
+    background-color: #375a7f !important;
+}
+
+body.dark-theme .view-more-badge:hover {
+    background-color: #2c4764 !important;
+}
