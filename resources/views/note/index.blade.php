@@ -40,12 +40,28 @@
         .note-item.completed {
             opacity: 0.8;
         }
+        .note-done-toggle {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .note-done-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
         .note-item.default { border-left-color: #6c757d; }
         .note-item.red { border-left-color: #dc3545; }
         .note-item.green { border-left-color: #28a745; }
         .note-item.blue { border-left-color: #007bff; }
         .note-item.yellow { border-left-color: #ffc107; }
         .note-item.purple { border-left-color: #6f42c1; }
+        .note-item.pink { border-left-color: #e83e8c; }
+        .note-item.orange { border-left-color: #fd7e14; }
+        .note-item.teal { border-left-color: #20c997; }
+        .note-item.cyan { border-left-color: #17a2b8; }
+        .note-item.indigo { border-left-color: #6610f2; }
+        .note-item.brown { border-left-color: #8b4513; }
+        .note-item.black { border-left-color: #000000; }
+        .note-item.navy { border-left-color: #000080; }
         
         .color-picker {
             display: inline-flex;

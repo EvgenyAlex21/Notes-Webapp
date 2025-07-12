@@ -34,6 +34,7 @@ Route::prefix('api')->group(function () {
     // Новые маршруты для расширенных функций
     Route::post('/notes/{note}/archive', [NoteController::class, 'archive']);
     Route::post('/notes/{note}/unarchive', [NoteController::class, 'unarchive']);
+    Route::post('/notes/{note}/toggle-done', [NoteController::class, 'toggleDone']); // Быстрая отметка выполнено
     Route::post('/notes/{note}/reminder', [NoteController::class, 'setReminder']);
     Route::delete('/notes/{note}/reminder', [NoteController::class, 'removeReminder']);
     Route::put('/notes/{note}/folder', [NoteController::class, 'moveToFolder']);
@@ -43,4 +44,6 @@ Route::prefix('api')->group(function () {
     Route::get('/folders', [NoteController::class, 'getFolders']);
     Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/stats', [NoteController::class, 'getStats']);
+    
+
 });

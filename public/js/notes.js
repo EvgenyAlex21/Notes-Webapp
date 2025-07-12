@@ -114,6 +114,9 @@ $(document).ready(function() {
         updateNote(id);
     });
     
+    // Инициализация обработки файлов
+    handleFileUpload();
+    
     // Обработка формы редактирования при нажатии Enter
     $('#edit-note-form').on('submit', function(e) {
         e.preventDefault();
@@ -175,13 +178,24 @@ $(document).ready(function() {
     if (currentPath === '/notes/calendar') {
         initCalendar();
     }
+    
+
+    
+    // Обновляем статистику
+    loadStats();
 });
 
 // Загрузка всех заметок
 function loadAllNotes(trashMode = false) {
     let url = `/api/notes`;
+    // Проверяем текущий режим
+    const currentPath = window.location.pathname;
+    const archiveMode = currentPath === '/notes/archive';
+    
     if (trashMode) {
         url += '?trash=true';
+    } else if (archiveMode) {
+        url += '?archive=true';
     }
     
     // Обновляем статистику
@@ -217,25 +231,57 @@ function loadAllNotes(trashMode = false) {
                         ${tagsArray.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>` : '';
                 
+                // Форматируем даты
+                const createdAt = new Date(note.created_at);
+                const updatedAt = new Date(note.updated_at);
+                const isUpdated = createdAt.getTime() !== updatedAt.getTime();
+                const dateString = isUpdated ? 
+                    `Обновлено: ${formatDate(updatedAt)}` : 
+                    `Создано: ${formatDate(createdAt)}`;
+                
                 return `
                     <div class="note-item note-wrapper ${note.color} ${note.done ? 'completed' : ''} ${isPinned ? 'pinned' : ''}" 
                          id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
-                         data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}">
+                         data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}"
+                         data-updated-at="${note.updated_at}">
                          
                         ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
                         
                         <div class="row">
                             <div class="col-md-8">
                                 <h4>${note.name}</h4>
-                                <div class="note-description">${note.description}</div>
+                                <div class="note-description">${$('<div>').html(note.description).text().length > 150 ? 
+                                    $('<div>').html(note.description).text().substring(0, 150) + '...' : 
+                                    note.description}</div>
                                 
-                                <div class="mt-2">
-                                    <span class="badge ${note.done ? 'bg-success' : 'bg-warning'}">
+                                <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="badge ${note.done ? 'bg-success' : 'bg-warning'} note-done-toggle" 
+                                          onclick="toggleDone(${note.id}, event)" style="cursor: pointer;">
                                         ${note.done ? 'Выполнено' : 'В процессе'}
                                     </span>
+                                    <small class="text-muted note-date">
+                                        <i class="far fa-clock me-1"></i>${dateString}
+                                    </small>
                                 </div>
                                 
                                 ${tagsHTML}
+                                
+                                ${note.files && note.files.length > 0 ? `
+                                    <div class="note-files mt-3">
+                                        <div class="small text-muted mb-2">Прикрепленные файлы (${note.files.length}):</div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            ${note.files.map(file => `
+                                                <a href="${file.url}" target="_blank" 
+                                                   class="file-link badge bg-light text-dark d-flex align-items-center">
+                                                    <i class="fas fa-${file.type === 'image' ? 'image' : 
+                                                                       file.type === 'video' ? 'video' : 
+                                                                       file.type === 'document' ? 'file-alt' : 'file'} me-1"></i>
+                                                    ${file.name}
+                                                </a>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
                             </div>
                             <div class="col-md-4 text-end note-actions">
                                 ${trashMode ? `
@@ -246,8 +292,17 @@ function loadAllNotes(trashMode = false) {
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 ` : `
+                                    <button class="btn ${note.done ? 'btn-success' : 'btn-outline-success'} btn-sm toggle-done-btn" data-id="${note.id}" title="${note.done ? 'Отметить как активное' : 'Отметить как выполненное'}">
+                                        <i class="fas ${note.done ? 'fa-check-circle' : 'fa-circle'}"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm toggle-archive-btn" data-id="${note.id}" title="${window.location.pathname === '/notes/archive' ? 'Разархивировать' : 'Архивировать'}">
+                                        <i class="fas ${window.location.pathname === '/notes/archive' ? 'fa-box-open' : 'fa-archive'}"></i>
+                                    </button>
                                     <button class="btn btn-outline-warning btn-sm toggle-pin-btn" data-id="${note.id}" title="${note.is_pinned ? 'Открепить' : 'Закрепить'}">
                                         <i class="fas fa-thumbtack"></i>
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm view-note-btn" data-id="${note.id}" title="Просмотреть">
+                                        <i class="fas fa-eye"></i>
                                     </button>
                                     <a href="/notes/${note.id}/edit" class="btn btn-outline-primary btn-sm" title="Редактировать">
                                         <i class="fas fa-edit"></i>
@@ -296,6 +351,18 @@ function loadAllNotes(trashMode = false) {
                 $('.toggle-pin-btn').on('click', function() {
                     const noteId = $(this).data('id');
                     togglePin(noteId);
+                });
+                
+                // Архивирование/разархивирование заметки
+                $('.toggle-archive-btn').on('click', function() {
+                    const noteId = $(this).data('id');
+                    // Если мы в архиве, восстанавливаем из архива
+                    if (window.location.pathname === '/notes/archive') {
+                        unarchiveNote(noteId);
+                    } else {
+                        // Иначе архивируем
+                        archiveNote(noteId);
+                    }
                 });
             }
             
@@ -357,8 +424,85 @@ function loadNote(id) {
                 // Обработчик для удаления тега
                 $('.remove-tag').off('click').on('click', function() {
                     const tag = $(this).parent().data('tag');
-                    currentTags = currentTags.filter(t => t !== tag);
                     $(this).parent().remove();
+                    
+                    // Удаляем тег из массива
+                    currentTags = currentTags.filter(t => t !== tag);
+                });
+            }
+            
+            // Устанавливаем дату напоминания, если она есть
+            if (note.reminder_at) {
+                // Форматируем дату напоминания для input datetime-local
+                const reminderDate = new Date(note.reminder_at);
+                const year = reminderDate.getFullYear();
+                const month = String(reminderDate.getMonth() + 1).padStart(2, '0');
+                const day = String(reminderDate.getDate()).padStart(2, '0');
+                const hours = String(reminderDate.getHours()).padStart(2, '0');
+                const minutes = String(reminderDate.getMinutes()).padStart(2, '0');
+                
+                $('#reminder-date').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+                $('#reminder-actions').show();
+            } else {
+                $('#reminder-date').val('');
+                $('#reminder-actions').hide();
+            }
+            
+            // Обработчик удаления напоминания
+            $('#remove-reminder').off('click').on('click', function() {
+                if (confirm('Вы уверены, что хотите удалить напоминание?')) {
+                    $.ajax({
+                        url: `/api/notes/${note.id}/remove-reminder`,
+                        type: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        success: function(response) {
+                            $('#reminder-date').val('');
+                            $('#reminder-actions').hide();
+                            showNotification('Напоминание удалено', 'info');
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Ошибка при удалении напоминания:', error);
+                            showNotification('Ошибка при удалении напоминания', 'danger');
+                        }
+                    });
+                }
+            });
+            
+            // Отображаем существующие файлы
+            if (note.files && note.files.length > 0) {
+                const existingFilesContainer = $('#existing-files');
+                existingFilesContainer.empty();
+                
+                existingFilesContainer.append('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6>');
+                
+                note.files.forEach(file => {
+                    let fileIcon, filePreview;
+                    
+                    if (file.type === 'image') {
+                        filePreview = `<img src="${file.url}" class="img-thumbnail" style="max-height: 100px; max-width: 100%;" alt="${file.name}">`;
+                    } else if (file.type === 'video') {
+                        fileIcon = '<i class="fas fa-film fa-2x text-secondary"></i>';
+                    } else if (file.type === 'document') {
+                        fileIcon = '<i class="fas fa-file-alt fa-2x text-secondary"></i>';
+                    } else {
+                        fileIcon = '<i class="fas fa-file fa-2x text-secondary"></i>';
+                    }
+                    
+                    existingFilesContainer.append(`
+                        <div class="col-md-3 mb-3">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    ${filePreview || fileIcon || ''}
+                                    <p class="mt-2 mb-0 text-truncate">${file.name}</p>
+                                    <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                        Открыть
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `);
                 });
             }
         },
@@ -408,20 +552,39 @@ function createNote() {
         console.log('Инициализирована пустая переменная currentTags');
     }
     
-    const data = {
-        name: $('#name').val(),
-        description: $('#description').val(),
-        color: noteColor || 'default',
-        is_pinned: $('#is_pinned').is(':checked'),
-        tags: (currentTags && currentTags.length > 0) ? currentTags.join(',') : null
-    };
+    // Проверяем, есть ли файлы для загрузки
+    const fileInput = $('#upload-files')[0];
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     
-    if (!data.name || !data.description) {
+    // Создаем FormData для отправки файлов
+    const formData = new FormData();
+    formData.append('name', $('#name').val());
+    formData.append('description', $('#description').val());
+    
+    // Добавляем дату напоминания, если она указана
+    if ($('#reminder-date').val()) {
+        formData.append('reminder_at', $('#reminder-date').val());
+    }
+    formData.append('color', noteColor || 'default');
+    formData.append('is_pinned', $('#is_pinned').is(':checked'));
+    
+    if (currentTags && currentTags.length > 0) {
+        formData.append('tags', currentTags.join(','));
+    }
+    
+    // Добавляем файлы, если они есть
+    if (hasFiles) {
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('upload_files[]', fileInput.files[i]);
+        }
+    }
+    
+    if (!$('#name').val() || !$('#description').val()) {
         showNotification('Пожалуйста, заполните название и описание заметки', 'warning');
         return;
     }
     
-    console.log('Отправляю данные на сервер:', data);
+    console.log('Отправляю данные на сервер (с файлами)');
     
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
@@ -441,10 +604,10 @@ function createNote() {
         headers: {
             'X-CSRF-TOKEN': csrfToken
         },
-        contentType: 'application/json',
-        dataType: 'json',
-        data: JSON.stringify(data),
+        data: formData,
+        contentType: false,
         processData: false,
+        cache: false,
         success: function(response) {
             console.log('Успешно создана заметка:', response);
             showNotification('Заметка успешно создана', 'success');
@@ -518,6 +681,178 @@ function showNotification(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+// Обработка загрузки файлов
+function handleFileUpload() {
+    // Для страницы создания и редактирования заметки
+    $('#upload-files').on('change', function() {
+        const files = this.files;
+        
+        // Очищаем превью
+        $('#file-preview').empty();
+        
+        // Проверка на превышение лимита файлов
+        if (files.length > 10) {
+            showNotification('Можно загрузить максимум 10 файлов за раз', 'warning');
+            $(this).val(''); // Очистить выбор
+            return;
+        }
+        
+        // Проверяем размер каждого файла
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            totalSize += files[i].size;
+            
+            if (files[i].size > 15 * 1024 * 1024) { // 15 МБ
+                showNotification(`Файл "${files[i].name}" слишком большой. Максимальный размер - 15МБ`, 'warning');
+                $(this).val(''); // Очистить выбор
+                $('#file-preview').empty();
+                return;
+            }
+            
+            // Создаем превью для файла
+            createFilePreview(files[i]);
+        }
+        
+        // Проверка общего размера
+        if (totalSize > 50 * 1024 * 1024) { // 50 МБ
+            showNotification('Общий размер файлов не должен превышать 50МБ', 'warning');
+            $(this).val(''); // Очистить выбор
+            $('#file-preview').empty();
+            return;
+        }
+    });
+}
+
+// Создание превью для загруженных файлов
+function createFilePreview(file) {
+    const reader = new FileReader();
+    const previewContainer = $('#file-preview');
+    const fileType = getFileTypeByMime(file.type);
+    
+    reader.onload = function(e) {
+        let previewElement = '';
+        
+        if (fileType === 'image') {
+            // Для изображений создаем превью с миниатюрой
+            previewElement = `
+                <div class="col-md-3 col-sm-4 col-6">
+                    <div class="card h-100">
+                        <div class="card-img-top file-preview-img" style="height: 100px; background-image: url('${e.target.result}'); background-size: cover; background-position: center;"></div>
+                        <div class="card-body p-2">
+                            <p class="card-text small text-truncate">${file.name}</p>
+                            <small class="text-muted">${formatFileSize(file.size)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (fileType === 'video') {
+            // Для видео показываем иконку
+            previewElement = `
+                <div class="col-md-3 col-sm-4 col-6">
+                    <div class="card h-100">
+                        <div class="card-img-top file-preview-icon d-flex align-items-center justify-content-center" style="height: 100px; background-color: #f8f9fa;">
+                            <i class="fas fa-film fa-2x text-secondary"></i>
+                        </div>
+                        <div class="card-body p-2">
+                            <p class="card-text small text-truncate">${file.name}</p>
+                            <small class="text-muted">${formatFileSize(file.size)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Для других файлов
+            let iconClass = 'fa-file';
+            if (file.name.match(/\.pdf$/i)) iconClass = 'fa-file-pdf';
+            else if (file.name.match(/\.(doc|docx)$/i)) iconClass = 'fa-file-word';
+            else if (file.name.match(/\.(xls|xlsx)$/i)) iconClass = 'fa-file-excel';
+            else if (file.name.match(/\.(ppt|pptx)$/i)) iconClass = 'fa-file-powerpoint';
+            else if (file.name.match(/\.(zip|rar|tar|gz)$/i)) iconClass = 'fa-file-archive';
+            else if (file.name.match(/\.(txt|rtf)$/i)) iconClass = 'fa-file-alt';
+            
+            previewElement = `
+                <div class="col-md-3 col-sm-4 col-6">
+                    <div class="card h-100">
+                        <div class="card-img-top file-preview-icon d-flex align-items-center justify-content-center" style="height: 100px; background-color: #f8f9fa;">
+                            <i class="fas ${iconClass} fa-2x text-secondary"></i>
+                        </div>
+                        <div class="card-body p-2">
+                            <p class="card-text small text-truncate">${file.name}</p>
+                            <small class="text-muted">${formatFileSize(file.size)}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        previewContainer.append(previewElement);
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Определение типа файла по MIME-типу
+function getFileTypeByMime(mimeType) {
+    if (mimeType.startsWith('image/')) return 'image';
+    if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'audio';
+    if (mimeType.startsWith('text/') || mimeType.includes('pdf') || 
+        mimeType.includes('document') || mimeType.includes('spreadsheet') ||
+        mimeType.includes('presentation')) return 'document';
+    return 'other';
+}
+
+// Форматирование размера файла
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Б';
+    const k = 1024;
+    const sizes = ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Функция для отображения красивых уведомлений
+function showNotification(message, type = 'info', duration = 3000) {
+    // Удаляем существующие уведомления, если они есть
+    $('.notification-toast').remove();
+    
+    // Создаем HTML для уведомления
+    const toast = $(`
+        <div class="toast notification-toast align-items-center text-white bg-${type} border-0 position-fixed show" 
+             role="alert" aria-live="assertive" aria-atomic="true" style="top: 20px; right: 20px; z-index: 9999;">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    `);
+    
+    // Добавляем в DOM
+    $('body').append(toast);
+    
+    // Создаем контейнер для тостов, если его нет
+    if ($('.toast-container').length === 0) {
+        $('body').append('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+    }
+    
+    // Показываем уведомление
+    toast.show();
+    
+    // Обработчик на кнопку закрытия
+    toast.find('.btn-close').on('click', function() {
+        toast.hide();
+        setTimeout(() => toast.remove(), 500);
+    });
+    
+    // Удаляем через указанный интервал
+    setTimeout(() => {
+        toast.hide();
+        setTimeout(() => toast.remove(), 500);
+    }, duration);
+}
+
 // Обновление заметки
 function updateNote(id) {
     // Получаем выбранный цвет
@@ -529,20 +864,40 @@ function updateNote(id) {
         console.log('Инициализирована пустая переменная currentTags в updateNote');
     }
     
-    const data = {
-        name: $('#name').val(),
-        description: $('#description').val(),
-        done: $('#done').is(':checked'),
-        color: noteColor || 'default',
-        tags: (currentTags && currentTags.length > 0) ? currentTags.join(',') : null
-    };
+    // Проверяем, есть ли файлы для загрузки
+    const fileInput = $('#upload-files')[0];
+    const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     
-    if (!data.name || !data.description) {
+    // Создаем FormData для отправки файлов
+    const formData = new FormData();
+    formData.append('name', $('#name').val());
+    formData.append('description', $('#description').val());
+    
+    // Добавляем дату напоминания, если она указана
+    if ($('#reminder-date').val()) {
+        formData.append('reminder_at', $('#reminder-date').val());
+    }
+    formData.append('done', $('#done').is(':checked'));
+    formData.append('color', noteColor || 'default');
+    formData.append('_method', 'PUT'); // Для поддержки PUT-запроса через FormData
+    
+    if (currentTags && currentTags.length > 0) {
+        formData.append('tags', currentTags.join(','));
+    }
+    
+    // Добавляем файлы, если они есть
+    if (hasFiles) {
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('upload_files[]', fileInput.files[i]);
+        }
+    }
+    
+    if (!$('#name').val() || !$('#description').val()) {
         showNotification('Пожалуйста, заполните название и описание заметки', 'warning');
         return;
     }
     
-    console.log('Обновляю заметку:', id, data);
+    console.log('Обновляю заметку:', id);
     
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
@@ -558,17 +913,22 @@ function updateNote(id) {
     
     $.ajax({
         url: `/api/notes/${id}`,
-        type: 'PUT',
+        type: 'POST', // Используем POST для FormData с методом PUT
         headers: {
             'X-CSRF-TOKEN': csrfToken
         },
-        contentType: 'application/json',
-        dataType: 'json',
-        data: JSON.stringify(data),
+        data: formData,
+        contentType: false,
         processData: false,
+        cache: false,
         success: function(response) {
             console.log('Заметка успешно обновлена:', response);
             showNotification('Заметка успешно обновлена', 'success');
+            
+            // Редирект на главную страницу после успешного обновления
+            setTimeout(function() {
+                window.location.href = '/notes';
+            }, 1000); // Задержка в 1 секунду, чтобы пользователь увидел уведомление
             
             // Обновляем значения полей на форме
             const note = response.data;
@@ -762,11 +1122,23 @@ function emptyTrash() {
 
 // Закрепление/открепление заметки
 function togglePin(id) {
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Проверяем наличие CSRF-токена
+    if (!csrfToken) {
+        console.error('CSRF-токен отсутствует');
+        showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
+        return;
+    }
+    
     $.ajax({
         url: `/api/notes/${id}/toggle-pin`,
         method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
         dataType: 'json',
-        contentType: 'application/json',
         success: function(response) {
             const note = response.data;
             
@@ -781,8 +1153,8 @@ function togglePin(id) {
                 showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
             }
         },
-        error: function(error) {
-            console.error('Ошибка при изменении статуса закрепления:', error);
+        error: function(xhr, status, error) {
+            console.error('Ошибка при изменении статуса закрепления:', xhr.responseText, status, error);
             showNotification('Ошибка при изменении статуса закрепления', 'danger');
         }
     });
@@ -880,10 +1252,14 @@ function loadStats() {
 // Обновление отображения статистики
 function updateStatsDisplay() {
     if (statsData) {
+        // Обновляем основные счетчики
         $('#total-notes').text(`Всего: ${statsData.total || 0}`);
         $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
         $('#active-notes').text(`Активно: ${statsData.active || 0}`);
         $('#pinned-notes').text(`Закреплено: ${statsData.pinned || 0}`);
+        $('#archived-notes').text(`В архиве: ${statsData.archived || 0}`);
+        $('#trashed-notes').text(`В корзине: ${statsData.trashed || 0}`);
+        $('#reminders-notes').text(`С напоминаниями: ${statsData.with_reminders || 0}`);
     }
 }
 
@@ -919,8 +1295,24 @@ function archiveNote(id) {
         success: function() {
             showNotification('Заметка архивирована', 'info');
             
-            // Обновляем список заметок
-            loadAllNotes(window.location.pathname === '/notes/trash');
+            // Если мы на обычной странице (не архив), удаляем заметку из представления
+            if (window.location.pathname === '/notes') {
+                $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Проверим, остались ли ещё заметки
+                    if ($('.note-wrapper:visible').length === 0) {
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
+                
+                // Обновляем статистику
+                loadStats();
+            } else {
+                // В других случаях обновляем весь список
+                loadAllNotes(window.location.pathname === '/notes/trash');
+            }
         },
         error: function(error) {
             console.error('Ошибка при архивации заметки:', error);
@@ -943,8 +1335,24 @@ function unarchiveNote(id) {
         success: function() {
             showNotification('Заметка извлечена из архива', 'info');
             
-            // Обновляем список заметок
-            loadAllNotes(window.location.pathname === '/notes/trash');
+            // Если мы на странице архива, удаляем заметку из представления
+            if (window.location.pathname === '/notes/archive') {
+                $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                    
+                    // Проверим, остались ли ещё заметки
+                    if ($('.note-wrapper:visible').length === 0) {
+                        $('.notes-container').hide();
+                        $('.empty-container').removeClass('d-none');
+                    }
+                });
+                
+                // Обновляем статистику
+                loadStats();
+            } else {
+                // В других случаях обновляем весь список
+                loadAllNotes(window.location.pathname === '/notes/trash');
+            }
         },
         error: function(error) {
             console.error('Ошибка при извлечении заметки из архива:', error);
@@ -997,7 +1405,7 @@ function removeReminder(id) {
         success: function() {
             showNotification('Напоминание удалено', 'info');
             
-            // Если мы на странице редактирования, скрываем информацию о напоминании
+            // Если мы находимся на странице редактирования, скрываем информацию о напоминании
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
                 $('#reminder-container').addClass('d-none');
             }
@@ -1013,7 +1421,10 @@ function removeReminder(id) {
 function addFolder(folderName) {
     if (!folderName || folderName.trim() === '') return;
     
-    // Получаем существующие папки
+    // Получаем CSRF-токен
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Получаем существующие папки и добавляем новую
     $.ajax({
         url: '/api/folders',
         method: 'GET',
@@ -1028,20 +1439,59 @@ function addFolder(folderName) {
             }
             
             // Добавляем папку в интерфейс
-            $('#folders-list').append(`
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span><i class="fas fa-folder"></i> ${folderName}</span>
-                    <span class="badge bg-secondary">0</span>
-                </div>
-            `);
+            addFolderToSidebar(folderName, 0);
             
             showNotification('Папка добавлена', 'success');
+            
+            // Обновляем счетчики
+            loadStats();
         },
         error: function(error) {
             console.error('Ошибка при получении списка папок:', error);
             showNotification('Ошибка при добавлении папки', 'danger');
         }
     });
+}
+
+// Добавление папки в боковую панель
+function addFolderToSidebar(folderName, count) {
+    // Создаем ID для папки, заменяя пробелы и специальные символы
+    const folderId = 'folder-' + folderName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    
+    // Проверяем, существует ли уже такая папка в sidebar
+    if ($('#' + folderId).length > 0) {
+        // Если да, просто обновляем счетчик
+        $('#' + folderId + ' .badge').text(count);
+        return;
+    }
+    
+    // Добавляем папку в интерфейс
+    $('#folders-list').append(`
+        <div class="d-flex justify-content-between align-items-center mb-2 folder-item" id="${folderId}">
+            <a href="/notes/folder/${encodeURIComponent(folderName)}" class="text-decoration-none text-dark folder-link">
+                <i class="fas fa-folder me-1"></i> ${folderName}
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-secondary me-2">${count}</span>
+                <div class="dropdown folder-actions">
+                    <button class="btn btn-sm btn-link text-secondary p-0" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item rename-folder" href="#" data-folder="${folderName}">
+                            <i class="fas fa-edit me-1"></i> Переименовать
+                        </a></li>
+                        <li><a class="dropdown-item delete-folder" href="#" data-folder="${folderName}">
+                            <i class="fas fa-trash me-1"></i> Удалить папку
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `);
+    
+    // Добавляем обработчики событий для новой папки
+    initFolderEventHandlers();
 }
 
 // Применение сортировки
@@ -1197,3 +1647,57 @@ function highlightText(text, query) {
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<span class="highlight">$1</span>');
 }
+
+// Быстрое переключение статуса "Выполнено"
+function toggleDone(id, event) {
+    // Предотвращаем всплытие события, чтобы не активировалась карточка заметки
+    if (event) event.stopPropagation();
+    
+    // Получаем CSRF-токен из meta-тега
+    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    
+    // Проверяем наличие CSRF-токена
+    if (!csrfToken) {
+        console.error('CSRF-токен отсутствует');
+        showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
+        return;
+    }
+    
+    $.ajax({
+        url: `/api/notes/${id}/toggle-done`,
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken
+        },
+        dataType: 'json',
+        success: function(response) {
+            const note = response.data;
+            
+            // Обновляем внешний вид заметки
+            const noteElement = $(`.note-wrapper#${id}`);
+            if (note.done) {
+                noteElement.find('.note-done-toggle').addClass('done');
+                noteElement.addClass('note-done');
+            } else {
+                noteElement.find('.note-done-toggle').removeClass('done');
+                noteElement.removeClass('note-done');
+            }
+            
+            showNotification(response.message || (note.done ? 'Заметка отмечена как выполненная' : 'Заметка отмечена как невыполненная'), 'info');
+            
+            // Обновляем счетчики на боковой панели
+            updateStatistics();
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка при изменении статуса выполнения:', xhr.responseText, status, error);
+            showNotification('Ошибка при изменении статуса выполнения', 'danger');
+        }
+    });
+}
+
+
+
+
+
+
+

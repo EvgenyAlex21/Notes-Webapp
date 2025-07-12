@@ -51,6 +51,14 @@
         .color-blue { background-color: #007bff; }
         .color-yellow { background-color: #ffc107; }
         .color-purple { background-color: #6f42c1; }
+        .color-pink { background-color: #e83e8c; }
+        .color-orange { background-color: #fd7e14; }
+        .color-teal { background-color: #20c997; }
+        .color-cyan { background-color: #17a2b8; }
+        .color-indigo { background-color: #6610f2; }
+        .color-brown { background-color: #8b4513; }
+        .color-black { background-color: #000000; }
+        .color-navy { background-color: #000080; }
         .tag-input {
             display: flex;
             flex-wrap: wrap;
@@ -92,6 +100,7 @@
             color: #6c757d;
             font-size: 0.85rem;
         }
+
     </style>
 </head>
 <body>
@@ -149,6 +158,14 @@
                                     <div class="color-option color-green" data-color="green" title="Низкий приоритет"></div>
                                     <div class="color-option color-blue" data-color="blue" title="Информационный"></div>
                                     <div class="color-option color-purple" data-color="purple" title="Личный"></div>
+                                    <div class="color-option color-pink" data-color="pink" title="Розовый"></div>
+                                    <div class="color-option color-orange" data-color="orange" title="Оранжевый"></div>
+                                    <div class="color-option color-teal" data-color="teal" title="Бирюзовый"></div>
+                                    <div class="color-option color-cyan" data-color="cyan" title="Голубой"></div>
+                                    <div class="color-option color-indigo" data-color="indigo" title="Индиго"></div>
+                                    <div class="color-option color-brown" data-color="brown" title="Коричневый"></div>
+                                    <div class="color-option color-black" data-color="black" title="Черный"></div>
+                                    <div class="color-option color-navy" data-color="navy" title="Темно-синий"></div>
                                 </div>
                             </div>
                             
@@ -161,11 +178,31 @@
                             </div>
                             
                             <div class="mb-4">
+                                <label class="form-label fw-bold">Прикрепить файлы</label>
+                                <input type="file" class="form-control" id="upload-files" multiple>
+                                <small class="text-muted">Можно загружать изображения, документы и другие файлы</small>
+                                <div id="file-preview" class="mt-2 row g-2"></div>
+                                <div id="existing-files" class="mt-2 row g-2">
+                                    <!-- Тут будут отображаться существующие файлы -->
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
                                 <div class="form-check form-switch">
                                     <input class="form-check-input" type="checkbox" id="done">
                                     <label class="form-check-label" for="done">
                                         <i class="fas fa-check-circle"></i> Отметить как выполненное
                                     </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="reminder-date" class="form-label fw-bold">Установить напоминание</label>
+                                <input type="datetime-local" class="form-control" id="reminder-date">
+                                <div class="mt-2" id="reminder-actions" style="display: none;">
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="remove-reminder">
+                                        <i class="fas fa-times"></i> Удалить напоминание
+                                    </button>
                                 </div>
                             </div>
                             
