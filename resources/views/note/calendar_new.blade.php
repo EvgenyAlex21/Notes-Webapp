@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Календарь</title>
+    <link rel="icon" href="/favicon.ico?v=1">
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
+    <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
+    <link rel="shortcut icon" href="/favicon.ico?v=1">
+    <link rel="apple-touch-icon" href="/images/logo.png?v=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+    <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script src="{{ asset('js/file-viewer.js') }}"></script>
+    <script src="{{ asset('js/scroll-top.js') }}"></script>
+    <script src="{{ asset('js/view-buttons.js') }}"></script>
+    <script src="{{ asset('js/note-buttons-fix.js') }}"></script>
+    <script src="{{ asset('js/theme-manager.js') }}"></script>
+    <script>
+        const originalWarn = console.warn;
+        console.warn = function() {
+            if (arguments[0] && typeof arguments[0] === 'string' && 
+                arguments[0].includes('DOMNodeInserted')) {
+                return;
+            }
+            originalWarn.apply(console, arguments);
+        };
+    </script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .header h1 {
+            display: flex;
+            align-items: center;
+            color: #3c4858;
+            font-weight: 600;
+        }
+        .header h1 i {
+            color: #007bff;
+        }
+        .sidebar {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            color: #495057;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background-color: #f8f9fa;
+        }
+        .sidebar-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
+        .sidebar-link i {
+            margin-right: 10px;
+        }
+        .folder-link {
+            display: block;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.2s;
+        }
+        .folder-link:hover {
+            background-color: #f8f9fa;
+        }
+        .folder-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
+        .color-option {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin: 0 3px;
+            cursor: pointer;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px #ddd;
+        }
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+        .color-default { background-color: #6c757d; }
+        .color-red { background-color: #dc3545; }
+        .color-green { background-color: #28a745; }
+        .color-blue { background-color: #007bff; }
+        .color-yellow { background-color: #ffc107; }
+        .color-purple { background-color: #6f42c1; }
+        .color-pink { background-color: #e83e8c; }
+        .color-orange { background-color: #fd7e14; }
+        .color-teal { background-color: #20c997; }
+        .color-cyan { background-color: #17a2b8; }
+        .color-indigo { background-color: #6610f2; }
+        .color-brown { background-color: #8b4513; }
+        .color-black { background-color: #000000; }
+        .color-navy { background-color: #000080; }
+        .theme-switch {
+            cursor: pointer;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        .calendar-content {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            min-height: 600px;
+        }
+        #calendar {
+            height: 100%;
+            min-height: 500px;
+        }
+        
+        /* Темная тема */
+        body.dark-theme {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-theme .header {
+            background-color: #343a40;
+            border-bottom-color: #495057;
+        }
+        .dark-theme .sidebar {
+            background-color: #343a40;
+            color: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .dark-theme .sidebar-link {
+            color: #f1f3f5;
+        }
+        .dark-theme .sidebar-link:hover {
+            background-color: #4a4f55;
+        }
+        .dark-theme .sidebar-link.active {
+            background-color: #4a4f55;
+            color: #ffffff;
+        }
+        .dark-theme .folder-link {
+            color: #f1f3f5 !important;
+        }
+        .dark-theme .folder-link:hover {
+            background-color: #4a4f55;
+        }
+        .dark-theme .folder-link.active {
+            background-color: #4a4f55;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+        .dark-theme .theme-switch {
+            background-color: #495057;
+        }
+        .dark-theme .calendar-content {
+            background-color: #343a40;
+        }
+        .dark-theme .btn-outline-secondary {
+            color: #c2c7d0;
+            border-color: #495057;
+        }
+        .dark-theme .btn-outline-secondary:hover {
+            background-color: #495057;
+            color: #ffffff;
+        }
+        
+        /* Стили для календаря */
+        .dark-theme .fc-theme-standard .fc-list-day-cushion {
+            background-color: #495057;
+        }
+        .dark-theme .fc-theme-standard th {
+            background-color: #343a40;
+            color: #f8f9fa;
+            border-color: #495057;
+        }
+        .dark-theme .fc-theme-standard td {
+            border-color: #495057;
+        }
+        .dark-theme .fc-theme-standard .fc-scrollgrid {
+            border-color: #495057;
+        }
+        .dark-theme .fc-col-header-cell-cushion {
+            color: #f8f9fa;
+        }
+        .dark-theme .fc-daygrid-day-number {
+            color: #f8f9fa;
+        }
+        .dark-theme .fc-button-primary {
+            background-color: #495057;
+            border-color: #495057;
+        }
+        .dark-theme .fc-button-primary:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+        .dark-theme .fc-toolbar-title {
+            color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-calendar me-2"></i>
+                    <span class="fw-bold">Календарь</span>
+                </h1>
+                <a href="/notes" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Назад к списку
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="row">
+            <!-- Боковая панель -->
+            <div class="col-md-3 mb-4">
+                <div class="sidebar">
+                    <h5 class="mb-3">Навигация</h5>
+                    <a href="/notes" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-sticky-note"></i> Все заметки</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="all-notes-count">0</span>
+                    </a>
+                    <a href="/notes/archive" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-archive"></i> Архив</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="archive-notes-count">0</span>
+                    </a>
+                    <a href="/notes/trash" class="sidebar-link d-flex justify-content-between align-items-center">
+                        <div><i class="fas fa-trash"></i> Корзина</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="trash-notes-count">0</span>
+                    </a>
+                    <a href="/notes/calendar" class="sidebar-link d-flex justify-content-between align-items-center active">
+                        <div><i class="fas fa-calendar"></i> Календарь</div>
+                        <span class="badge bg-secondary me-2 notes-count" id="calendar-notes-count">0</span>
+                    </a>
+                    <hr>
+                    <div class="theme-switch" id="theme-switch">
+                        <span><i class="fas fa-sun"></i> Тема</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="theme-toggle">
+                        </div>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Фильтры</h5>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-all" value="all" checked>
+                        <label class="form-check-label" for="filter-all">
+                            <i class="fas fa-list"></i> Все
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-active" value="active">
+                        <label class="form-check-label" for="filter-active">
+                            <i class="fas fa-circle"></i> Только активные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-completed" value="completed">
+                        <label class="form-check-label" for="filter-completed">
+                            <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input sidebar-filter" type="radio" name="sidebar-filter" id="filter-pinned" value="pinned">
+                        <label class="form-check-label" for="filter-pinned">
+                            <i class="fas fa-thumbtack"></i> Только закрепленные
+                        </label>
+                    </div>
+                    <hr>
+                    <h5 class="mb-3">Папки</h5>
+                    <div id="folders-list">
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary w-100" id="add-folder-btn">
+                        <i class="fas fa-plus"></i> Добавить папку
+                    </button>
+                    <hr>
+                    <h5 class="mb-3">Приоритет заметки</h5>
+                    <div class="color-picker d-flex flex-wrap gap-2 mb-3">
+                        <div class="color-option color-default" data-color="default" title="Без приоритета"></div>
+                        <div class="color-option color-red" data-color="red" title="Критически важно"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Очень важно"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Важно"></div>
+                        <div class="color-option color-green" data-color="green" title="Средний приоритет"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Планирование"></div>
+                        <div class="w-100"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Личное"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Идея"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Информация"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Обучение"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Ожидание"></div>
+                        <div class="color-option color-black" data-color="black" title="Архивное"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Ночное"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Основное содержимое -->
+            <div class="col-md-9">
+                <div class="calendar-content">
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('js/sidebar-counters.js') }}"></script>
+    <script>
+        let calendar;
+        
+        $(document).ready(function() {
+            // Инициализация календаря
+            initCalendar();
+            
+            // Инициализация темы
+            if (typeof ThemeManager !== 'undefined') {
+                ThemeManager.init();
+            }
+            
+            // Загрузка счетчиков
+            if (typeof loadNoteCounts === 'function') {
+                loadNoteCounts();
+            }
+            
+            // Загрузка папок
+            loadFolders();
+        });
+
+        function initCalendar() {
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'ru',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: loadCalendarEvents,
+                eventClick: function(info) {
+                    // Обработка клика по событию
+                    const noteId = info.event.id;
+                    if (noteId) {
+                        window.location.href = '/notes/' + noteId;
+                    }
+                },
+                height: 'auto',
+                dayMaxEvents: true,
+                moreLinkClick: 'popover'
+            });
+            
+            calendar.render();
+        }
+
+        function loadCalendarEvents(info, successCallback, failureCallback) {
+            $.ajax({
+                url: '/api/notes/by-date',
+                type: 'GET',
+                data: {
+                    start: info.start.toISOString(),
+                    end: info.end.toISOString()
+                },
+                success: function(response) {
+                    const events = [];
+                    if (response.success && response.data) {
+                        response.data.forEach(function(note) {
+                            if (note.due_date) {
+                                events.push({
+                                    id: note.id,
+                                    title: note.title,
+                                    start: note.due_date,
+                                    backgroundColor: getColorForNote(note.color),
+                                    borderColor: getColorForNote(note.color),
+                                    textColor: '#fff'
+                                });
+                            }
+                        });
+                    }
+                    successCallback(events);
+                },
+                error: function() {
+                    failureCallback();
+                }
+            });
+        }
+
+        function getColorForNote(color) {
+            const colorMap = {
+                'default': '#6c757d',
+                'red': '#dc3545',
+                'green': '#28a745',
+                'blue': '#007bff',
+                'yellow': '#ffc107',
+                'purple': '#6f42c1',
+                'pink': '#e83e8c',
+                'orange': '#fd7e14',
+                'teal': '#20c997',
+                'cyan': '#17a2b8',
+                'indigo': '#6610f2',
+                'brown': '#8b4513',
+                'black': '#000000',
+                'navy': '#000080'
+            };
+            return colorMap[color] || colorMap['default'];
+        }
+
+        // Функция загрузки папок
+        function loadFolders() {
+            $.ajax({
+                url: '/api/folders',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success && response.data) {
+                        const foldersContainer = $('#folders-list');
+                        foldersContainer.empty();
+                        
+                        response.data.forEach(function(folder) {
+                            const folderItem = $(`
+                                <a href="/notes/folder/${encodeURIComponent(folder.name)}" class="folder-link d-flex justify-content-between align-items-center">
+                                    <div><i class="fas fa-folder"></i> ${folder.name}</div>
+                                    <span class="badge bg-secondary me-2">${folder.notes_count || 0}</span>
+                                </a>
+                            `);
+                            foldersContainer.append(folderItem);
+                        });
+                    }
+                },
+                error: function() {
+                    console.log('Ошибка загрузки папок');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

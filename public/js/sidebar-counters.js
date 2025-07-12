@@ -20,7 +20,7 @@ $(document).ready(function() {
                 $('#all-notes-count').text(sidebarStatsData.total || 0);
                 $('#archive-notes-count').text(sidebarStatsData.archived || 0);
                 $('#trash-notes-count').text(sidebarStatsData.trashed || 0);
-                $('#calendar-notes-count').text(sidebarStatsData.with_reminders || 0);
+                $('#calendar-notes-count').text(sidebarStatsData.calendar || 0);
             }
         }
     });
@@ -176,7 +176,7 @@ function loadSidebarStats() {
                     $('#all-notes-count').text(totalActive);
                     $('#archive-notes-count').text(sidebarStatsData.archived);
                     $('#trash-notes-count').text(sidebarStatsData.trashed);
-                    $('#calendar-notes-count').text(sidebarStatsData.with_reminders);
+                    $('#calendar-notes-count').text(sidebarStatsData.calendar);
                     updateFolderCountersFromAPI();
                 }
                 else if (currentPath === '/notes' || currentPath === '/notes/' || currentPath.includes('/notes/folder')) {
@@ -218,7 +218,7 @@ function updateSidebarCounters() {
         $('#all-notes-count').text(statsSource.total || 0);
         $('#archive-notes-count').text(statsSource.archived || 0);
         $('#trash-notes-count').text(statsSource.trashed || 0);
-        $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+        $('#calendar-notes-count').text(statsSource.calendar || 0);
     } else {
         countRealNotesOnPage();
     }
@@ -253,7 +253,7 @@ function updateCountersFromAPI(statsSource, currentPath) {
         $('#all-notes-count').text(totalNotesCount);
         $('#archive-notes-count').text(statsSource.archived || 0);
         $('#trash-notes-count').text(statsSource.trashed || 0);
-        $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+        $('#calendar-notes-count').text(statsSource.calendar || 0);
         updateFolderCountersFromAPI();
         console.log('Обновлены все счетчики из API на странице редактирования');
         return;
@@ -334,7 +334,7 @@ function updateCurrentPageCounter(pagePath, statsSource) {
                 $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
-                $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+                $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
             return;
         }
@@ -380,7 +380,7 @@ function updateCurrentPageCounter(pagePath, statsSource) {
                 }
                 $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
                 $('#trash-notes-count').text(statsSource.trashed || 0);
-                $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+                $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/trash') || pagePath.includes('/notes/new-trash')) {
             $('#trash-notes-count').text(countToUse);
@@ -393,7 +393,7 @@ function updateCurrentPageCounter(pagePath, statsSource) {
                 }
                 $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
                 $('#archive-notes-count').text(statsSource.archived || 0);
-                $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+                $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/calendar')) {
             $('#calendar-notes-count').text(countToUse);

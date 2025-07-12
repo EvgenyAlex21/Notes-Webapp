@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Note;
 use App\Models\Folder;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class NoteController extends Controller
 {
@@ -336,7 +337,15 @@ class NoteController extends Controller
         $data['done'] = false;
         $data['is_deleted'] = false;
         
-        return response()->json(['data' => Note::create($data)]);
+        $note = Note::create($data);
+        
+        // Если запрос через AJAX, возвращаем JSON
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['data' => $note]);
+        }
+        
+        // Если обычный POST запрос, делаем редирект
+        return redirect()->route('notes.show', $note->id)->with('success', 'Заметка успешно создана');
     }
 
     public function update(Request $request, Note $note)
@@ -806,6 +815,28 @@ class NoteController extends Controller
     
     public function getByDueDate(Request $request)
     {
+        // Для календаря получаем диапазон дат
+        if ($request->has('start') && $request->has('end')) {
+            $start = $request->input('start');
+            $end = $request->input('end');
+            
+            // Преобразуем ISO 8601 в дату
+            $startDate = Carbon::parse($start)->format('Y-m-d');
+            $endDate = Carbon::parse($end)->format('Y-m-d');
+            
+            $notes = Note::where('is_deleted', false)
+                       ->where(function($query) use ($startDate, $endDate) {
+                           $query->whereBetween('due_date', [$startDate, $endDate])
+                                 ->orWhereBetween('reminder_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+                       })
+                       ->orderBy('is_pinned', 'desc')
+                       ->orderBy('updated_at', 'desc')
+                       ->get();
+            
+            return response()->json(['success' => true, 'data' => $notes]);
+        }
+        
+        // Для старого API с одной датой
         $date = $request->validate([
             'date' => 'required|date_format:Y-m-d',
         ]);
@@ -829,6 +860,12 @@ class NoteController extends Controller
             'trashed' => Note::where('is_deleted', true)->count(),
             'pinned' => Note::where('is_pinned', true)->where('is_deleted', false)->count(),
             'with_reminders' => Note::where('is_deleted', false)->whereNotNull('reminder_at')->count(),
+            'calendar' => Note::where('is_deleted', false)
+                ->where(function($query) {
+                    $query->whereNotNull('due_date')
+                          ->orWhereNotNull('reminder_at');
+                })
+                ->count(),
         ];
         
         $oldFolders = Note::where('is_deleted', false)
@@ -867,7 +904,7 @@ class NoteController extends Controller
         
         $stats['by_color'] = $colorStats;
         
-        return response()->json(['data' => $stats]);
+        return response()->json(['success' => true, 'data' => $stats]);
     }
     
     protected function getFileType($extension)

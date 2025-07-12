@@ -466,6 +466,7 @@
                         <form id="create-note-form" method="POST" action="/notes" enctype="multipart/form-data">
                             <input type="hidden" name="files" value="[]">
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="due_date" value="{{ request('due_date') }}">
                             <div class="mb-3">
                                 <label for="name" class="form-label fw-bold">Название</label>
                                 <input type="text" class="form-control form-control-lg" id="name" name="name" required 
@@ -536,7 +537,8 @@
                                     </select>
                                 </div>
                                 <div id="reminder-datetime-container" style="display: none;">
-                                    <input type="datetime-local" class="form-control" id="reminder-date">
+                                    <input type="datetime-local" class="form-control" id="reminder-date" min="">
+                                    <small class="text-muted">Дата не может быть раньше сегодняшнего дня</small>
                                 </div>
                                 <div class="mt-2" id="reminder-actions" style="display: none;">
                                     <button type="button" class="btn btn-outline-danger btn-sm" id="remove-reminder">
@@ -592,10 +594,51 @@
     <script src="/js/notes.js"></script>
     <script src="/js/tags-form-improvements.js"></script>
     <script src="/js/notifications.js"></script>
-    <script src="/js/sidebar-counters.js"></script>
-    <script>
-        $(document).ready(function() {
-            // Инициализация Quill
+    <script src="/js/sidebar-counters.js"></script>        <script>
+            $(document).ready(function() {
+                // Устанавливаем минимальную дату и время для напоминаний
+                function setMinDateTime() {
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const hours = String(now.getHours()).padStart(2, '0');
+                    const minutes = String(now.getMinutes()).padStart(2, '0');
+                    
+                    const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    $('#reminder-date').attr('min', minDateTime);
+                }
+                
+                // Устанавливаем минимальную дату при загрузке страницы (сегодня)
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                
+                const minDate = `${year}-${month}-${day}T00:00`;
+                $('#reminder-date').attr('min', minDate);
+                
+                // Проверяем дату при изменении
+                $('#reminder-date').on('input', function() {
+                    const selectedDateTime = new Date($(this).val());
+                    const now = new Date();
+                    
+                    // Устанавливаем время сравнения на начало текущего дня
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    if (selectedDateTime < today) {
+                        $(this).addClass('is-invalid');
+                        if (!$(this).next('.invalid-feedback').length) {
+                            $(this).after('<div class="invalid-feedback">Дата не может быть раньше сегодняшнего дня</div>');
+                        }
+                    } else {
+                        $(this).removeClass('is-invalid');
+                        $(this).next('.invalid-feedback').remove();
+                    }
+                });
+                
+                // Инициализация Quill
             var quill = new Quill('#editor-container', {
                 modules: {
                     toolbar: [
@@ -612,12 +655,23 @@
             });
             
             // При отправке формы копируем HTML содержимое редактора в скрытое текстовое поле
-            $('#create-note-form').submit(function() {
+            $('#create-note-form').submit(function(e) {
                 var htmlContent = quill.root.innerHTML;
                 $('#description').val(htmlContent);
-                // Преобразуем дату напоминания из локального времени в UTC перед отправкой
+                
+                // Проверяем дату напоминания
                 var reminderVal = $('#reminder-date').val();
                 if (reminderVal) {
+                    var selectedDateTime = new Date(reminderVal);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0); // Начало текущего дня
+                    
+                    if (selectedDateTime < today) {
+                        e.preventDefault();
+                        alert('Дата напоминания не может быть раньше сегодняшнего дня');
+                        return false;
+                    }
+                    
                     var localDate = new Date(reminderVal);
                     var utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
                     var isoString = utcDate.toISOString().slice(0, 19).replace('T', ' ');
@@ -735,6 +789,13 @@
                 const now = new Date();
                 now.setDate(now.getDate() + daysToAdd);
                 now.setHours(9, 0, 0); // Устанавливаем время на 9:00
+                
+                // Проверяем, чтобы дата не была в прошлом
+                const currentTime = new Date();
+                if (now < currentTime) {
+                    now.setTime(currentTime.getTime());
+                    now.setHours(now.getHours() + 1); // Добавляем час для безопасности
+                }
                 
                 // Форматирование даты для input datetime-local
                 const year = now.getFullYear();

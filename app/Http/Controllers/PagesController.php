@@ -33,7 +33,9 @@ class PagesController extends Controller
     
     public function calendar()
     {
-        return view('note.calendar');
+        return view('note.calendar', [
+            'calendarMode' => true
+        ]);
     }
     
     public function folder($folderName)

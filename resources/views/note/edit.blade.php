@@ -657,7 +657,7 @@
                                     </select>
                                 </div>
                                 <div id="reminder-datetime-container" style="display: none;">
-                                    <input type="datetime-local" class="form-control" id="reminder-date">
+                                    <input type="datetime-local" class="form-control" id="reminder-date" min="">
                                     <input type="hidden" id="reminder_at" name="reminder_at">
                                 </div>
                                 <div class="mt-2" id="reminder-actions" style="display: none;">
@@ -802,6 +802,37 @@
     <script src="/js/sidebar-counters.js"></script>
     <script>
         $(document).ready(function() {
+            // Устанавливаем минимальную дату и время для напоминаний
+            function setMinDateTime() {
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                
+                const minDate = `${year}-${month}-${day}T00:00`;
+                $('#reminder-date').attr('min', minDate);
+            }
+            
+            // Устанавливаем минимальную дату при загрузке страницы
+            setMinDateTime();
+            
+            // Проверяем дату при изменении
+            $('#reminder-date').on('input', function() {
+                const selectedDateTime = new Date($(this).val());
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDateTime < today) {
+                    $(this).addClass('is-invalid');
+                    if (!$(this).next('.invalid-feedback').length) {
+                        $(this).after('<div class="invalid-feedback">Дата не может быть раньше сегодняшнего дня</div>');
+                    }
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $(this).next('.invalid-feedback').remove();
+                }
+            });
+            
             // Улучшенная инициализация редактора с дополнительными проверками
             let quill = null;
             const editorContainer = document.getElementById('editor-container');
@@ -908,7 +939,21 @@
             }
             
             // При отправке формы копируем HTML содержимое редактора в скрытое текстовое поле
-            $('#edit-note-form').submit(function() {
+            $('#edit-note-form').submit(function(e) {
+                // Проверяем дату напоминания
+                var reminderVal = $('#reminder-date').val();
+                if (reminderVal) {
+                    var selectedDateTime = new Date(reminderVal);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0); // Начало текущего дня
+                    
+                    if (selectedDateTime < today) {
+                        e.preventDefault();
+                        alert('Дата напоминания не может быть раньше сегодняшнего дня');
+                        return false;
+                    }
+                }
+                
                 updateHiddenField();
             });
             
@@ -1067,6 +1112,13 @@
                 const now = new Date();
                 now.setDate(now.getDate() + daysToAdd);
                 now.setHours(9, 0, 0); // Устанавливаем время на 9:00
+                
+                // Проверяем, чтобы дата не была в прошлом
+                const currentTime = new Date();
+                if (now < currentTime) {
+                    now.setTime(currentTime.getTime());
+                    now.setHours(now.getHours() + 1); // Добавляем час для безопасности
+                }
                 
                 // Форматирование даты для input datetime-local
                 const year = now.getFullYear();

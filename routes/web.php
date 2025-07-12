@@ -32,6 +32,7 @@ Route::post('/notes/{note}/files', [NoteController::class, 'uploadFiles']);
 
 Route::prefix('api')->group(function () {
     Route::get('/notes', [NoteController::class, 'index']);
+    Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/notes/{note}', [NoteController::class, 'show']);
     Route::post('/notes', [NoteController::class, 'store']);
     Route::put('/notes/{note}', [NoteController::class, 'update']);
@@ -62,7 +63,6 @@ Route::prefix('api')->group(function () {
     Route::post('/folders/rename', [FolderController::class, 'renameFolder']);
     Route::post('/folders/delete', [FolderController::class, 'deleteFolder']);
     Route::post('/notes/move-to-folder', [FolderController::class, 'moveNotesToFolder']);
-    Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/stats', [NoteController::class, 'getStats']);
     Route::get('/debug/note-files/{id}', function ($id) {
         $note = \App\Models\Note::find($id);
