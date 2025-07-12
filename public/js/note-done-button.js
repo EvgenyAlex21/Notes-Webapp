@@ -29,7 +29,7 @@ $('#done-button').on('click', function() {
     const noteId = $('#note-id').val();
     if (noteId) {
         $.ajax({
-            url: `/notes/${noteId}/toggle-done`,
+            url: `/api/notes/${noteId}/toggle-done`,
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -62,7 +62,7 @@ function updateDoneButtonAppearance() {
     } else {
         $button.removeClass('btn-success');
         $button.addClass('btn-outline-primary');
-        $button.html('<i class="fas fa-circle"></i> Активно');
+        $button.html('<i class="fas fa-circle"></i>');
     }
 }
 

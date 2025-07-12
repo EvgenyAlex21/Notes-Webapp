@@ -43,9 +43,22 @@
             box-shadow: 0 0 0 1px #ddd;
             transition: transform 0.2s;
         }
-        .color-option:hover, .color-option.selected {
+        .color-option:hover {
             transform: scale(1.2);
-            box-shadow: 0 0 0 2px #007bff;
+        }
+        .color-option.selected {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
+        }
+        /* Специальный стиль для серого цвета в боковой панели, чтобы он всегда выглядел выбранным */
+        .sidebar .color-option.color-default {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff !important;
+        }
+        /* Убираем выделение для всех других цветов в боковой панели */
+        .sidebar .color-option:not(.color-default) {
+            transform: scale(1.0) !important;
+            box-shadow: 0 0 0 1px #ddd !important;
         }
         .color-default { background-color: #6c757d; }
         .color-red { background-color: #dc3545; }
@@ -293,6 +306,27 @@
                         <button id="add-folder-btn" class="btn btn-sm btn-outline-secondary w-100" disabled>
                             <i class="fas fa-plus"></i> Добавить папку
                         </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Приоритет заметки</h5>
+                    <div class="color-picker d-flex flex-wrap mb-3" style="pointer-events: none; opacity: 0.7;">
+                        <div class="color-option color-default selected" data-color="default" title="Без приоритета" style="width: 20px; height: 20px; margin: 0 3px; border: 2px solid #333;"></div>
+                        <div class="color-option color-red" data-color="red" title="Критически важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Очень важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-green" data-color="green" title="Средний приоритет" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Планирование" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="w-100"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Личное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Идея" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Информация" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Обучение" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Ожидание" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-black" data-color="black" title="Архивное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Ночное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
                     </div>
                 </div>
             </div>
@@ -621,8 +655,16 @@
                             const foldersContainer = $('#folders-list');
                             foldersContainer.empty();
                             
+                            // Сортируем папки по имени (числовое упорядочивание)
+                            const sortedFolders = response.data.sort((a, b) => {
+                                // Извлекаем числа из имен папок (если они есть)
+                                const numA = parseInt(a.name.match(/\d+/)) || 0;
+                                const numB = parseInt(b.name.match(/\d+/)) || 0;
+                                return numA - numB;
+                            });
+                            
                             // Отображение папок
-                            response.data.forEach(function(folder) {
+                            sortedFolders.forEach(function(folder) {
                                 const folderName = folder.name;
                                 const count = folder.count || 0;
                                 const normalizedName = folderName.toLowerCase().trim();
@@ -673,6 +715,19 @@
                     localStorage.setItem('darkTheme', 'false');
                 }
             });
+                  // Отключаем клики на цветах в боковой панели
+        $('.sidebar .color-option').css('pointer-events', 'none');
+        
+        // Гарантируем, что серый цвет в боковой панели всегда выбран, а остальные цвета не выбраны
+        $('.sidebar .color-option.color-default').addClass('selected');
+        $('.sidebar .color-option:not(.color-default)').removeClass('selected');
+        
+        // Следим за изменением цвета в основном блоке
+        $('.col-lg-9 .color-option, .col-md-9 .color-option').on('click', function() {
+            // Убеждаемся, что в боковой панели только серый цвет выбран
+            $('.sidebar .color-option.color-default').addClass('selected');
+            $('.sidebar .color-option:not(.color-default)').removeClass('selected');
+        });
         });
     </script>
 </body>

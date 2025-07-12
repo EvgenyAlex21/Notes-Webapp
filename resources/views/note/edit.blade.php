@@ -72,9 +72,22 @@
             box-shadow: 0 0 0 1px #ddd;
             transition: transform 0.2s;
         }
-        .color-option:hover, .color-option.selected {
+        .color-option:hover {
             transform: scale(1.2);
-            box-shadow: 0 0 0 2px #007bff;
+        }
+        .color-option.selected {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
+        }
+        /* Специальный стиль для серого цвета в боковой панели, чтобы он всегда выглядел выбранным */
+        .sidebar .color-option.color-default {
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff !important;
+        }
+        /* Убираем выделение для всех других цветов в боковой панели */
+        .sidebar .color-option:not(.color-default) {
+            transform: scale(1.0) !important;
+            box-shadow: 0 0 0 1px #ddd !important;
         }
         .color-default { background-color: #6c757d; }
         .color-red { background-color: #dc3545; }
@@ -233,17 +246,27 @@
         /* Стилизация кнопок в заголовке редактирования */
         .action-buttons .btn {
             border-width: 2px;
-            font-weight: bold;
             padding: 0.375rem 0.75rem;
+            margin-right: 5px;
         }
         
-        /* Стили для кнопки статуса */
+        /* Стили для кнопок */
         #done-button.btn-success {
             border: 2px solid #198754;
         }
         
         #done-button.btn-outline-primary {
             border: 2px solid #0d6efd;
+        }
+        
+        #toggle-pin-button.active {
+            background-color: #ffc107;
+            color: #000;
+        }
+        
+        #archive-button:hover {
+            background-color: #6c757d;
+            color: #fff;
         }
         }
         .dark-theme .ql-snow .ql-stroke {
@@ -369,6 +392,27 @@
                             <i class="fas fa-plus"></i> Добавить папку
                         </button>
                     </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3">Приоритет заметки</h5>
+                    <div class="color-picker d-flex flex-wrap mb-3" style="pointer-events: none; opacity: 0.7;">
+                        <div class="color-option color-default selected" data-color="default" title="Без приоритета" style="width: 20px; height: 20px; margin: 0 3px; border: 2px solid #333;"></div>
+                        <div class="color-option color-red" data-color="red" title="Критически важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Очень важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Важно" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-green" data-color="green" title="Средний приоритет" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Стандартная задача" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Планирование" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="w-100"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Личное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Идея" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Информация" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Обучение" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Ожидание" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-black" data-color="black" title="Архивное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Ночное" style="width: 20px; height: 20px; margin: 0 3px;"></div>
+                    </div>
                 </div>
             </div>
             
@@ -387,10 +431,13 @@
                                 </div>
                                 <div class="action-buttons">
                                     <button type="button" id="done-button" class="btn btn-outline-primary btn-sm" title="Отметить как выполненное">
-                                        <i class="fas fa-check-circle"></i> Статус
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                    <button type="button" id="toggle-pin-button" class="btn btn-outline-warning btn-sm" title="Закрепить">
+                                        <i class="fas fa-thumbtack"></i>
                                     </button>
                                     <button type="button" id="archive-button" class="btn btn-outline-secondary btn-sm" title="Архивировать">
-                                        <i class="fas fa-archive"></i> Архивировать
+                                        <i class="fas fa-archive"></i>
                                     </button>
                                     <button type="button" id="delete-button" class="btn btn-outline-danger btn-sm" title="Удалить">
                                         <i class="fas fa-trash"></i>
@@ -854,7 +901,12 @@
                         updateDoneButtonAppearance();
                         updateButtonText();
                         
-                        // Код для обработки закрепления удален
+                        // Если заметка закреплена, обновляем кнопку
+                        if (note.is_pinned) {
+                            $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i>');
+                        } else {
+                            $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i>');
+                        }
                         
                         // Загружаем теги если они есть
                         if (note.tags) {
@@ -954,7 +1006,11 @@
             // Загружаем данные заметки
             loadNoteData();
             
-            // Обработчик для кнопки закрепления удален
+            // Обработчик для кнопки закрепления
+            $('#toggle-pin-button').on('click', function() {
+                const noteId = $('#note-id').val();
+                togglePin(noteId);
+            });
             
             // Обработчик для кнопки удаления
             $('#delete-button').on('click', function() {
@@ -1155,7 +1211,35 @@
         }
         
         // Функция для переключения закрепления заметки
-        // Функция togglePin удалена
+        // Функция для работы с закреплением заметки
+        function togglePin(id) {
+            const isPinned = $('#toggle-pin-button').hasClass('active');
+            const newStatus = !isPinned;
+            
+            // Отображаем индикатор загрузки
+            $('#toggle-pin-button').html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            $.ajax({
+                url: `/api/notes/${id}/pin`,
+                method: 'PUT',
+                data: { is_pinned: newStatus },
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function() {
+                    if (newStatus) {
+                        $('#toggle-pin-button').addClass('active').html('<i class="fas fa-thumbtack"></i>');
+                    } else {
+                        $('#toggle-pin-button').removeClass('active').html('<i class="fas fa-thumbtack"></i>');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Ошибка при изменении статуса закрепления:', xhr.responseText);
+                    $('#toggle-pin-button').html('<i class="fas fa-thumbtack"></i>');
+                    alert('Произошла ошибка при изменении статуса закрепления');
+                }
+            });
+        }
         
         // Функция для удаления заметки
         function deleteNote(id) {
@@ -1345,8 +1429,16 @@
                         const foldersContainer = $('#folders-list');
                         foldersContainer.empty();
                         
+                        // Сортируем папки по имени (числовое упорядочивание)
+                        const sortedFolders = response.data.sort((a, b) => {
+                            // Извлекаем числа из имен папок (если они есть)
+                            const numA = parseInt(a.name.match(/\d+/)) || 0;
+                            const numB = parseInt(b.name.match(/\d+/)) || 0;
+                            return numA - numB;
+                        });
+                        
                         // Отображение папок
-                        response.data.forEach(function(folder) {
+                        sortedFolders.forEach(function(folder) {
                             const folderName = folder.name;
                             const count = folder.count || 0;
                             const normalizedName = folderName.toLowerCase().trim();
@@ -1396,6 +1488,20 @@
                 document.body.classList.remove('dark-theme');
                 localStorage.setItem('darkTheme', 'false');
             }
+        });
+        
+        // Отключаем клики на цветах в боковой панели
+        $('.sidebar .color-option').css('pointer-events', 'none');
+        
+        // Гарантируем, что серый цвет в боковой панели всегда выбран, а остальные цвета не выбраны
+        $('.sidebar .color-option.color-default').addClass('selected');
+        $('.sidebar .color-option:not(.color-default)').removeClass('selected');
+        
+        // Следим за изменением цвета в основном блоке
+        $('.col-lg-9 .color-option, .col-md-9 .color-option').on('click', function() {
+            // Убеждаемся, что в боковой панели только серый цвет выбран
+            $('.sidebar .color-option.color-default').addClass('selected');
+            $('.sidebar .color-option:not(.color-default)').removeClass('selected');
         });
     </script>
 </body>
