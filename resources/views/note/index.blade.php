@@ -102,6 +102,14 @@
         .color-blue { background-color: #007bff; }
         .color-yellow { background-color: #ffc107; }
         .color-purple { background-color: #6f42c1; }
+        .color-pink { background-color: #e83e8c; }
+        .color-orange { background-color: #fd7e14; }
+        .color-teal { background-color: #20c997; }
+        .color-cyan { background-color: #17a2b8; }
+        .color-indigo { background-color: #6610f2; }
+        .color-brown { background-color: #8b4513; }
+        .color-black { background-color: #000000; }
+        .color-navy { background-color: #000080; }
         
         .note-actions {
             margin-top: 15px;
@@ -365,6 +373,34 @@
             overflow: hidden;
             display: inline-block;
         }
+        
+        /* Улучшенное позиционирование выпадающего меню */
+        .dropdown {
+            position: relative;
+        }
+        .dropdown-menu {
+            position: absolute;
+            z-index: 1060 !important;
+        }
+        .note-actions .dropdown-menu {
+            transform: translateY(0) !important;
+            right: 0 !important;
+            left: auto !important;
+        }
+        /* Исправление наложения выпадающих меню */
+        .note-item .dropdown-menu,
+        .folder-item .dropdown-menu {
+            position: fixed;
+            margin-top: 0;
+            z-index: 1070 !important;
+            max-width: 250px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        /* Предотвращение переполнения и обрезки выпадающих меню */
+        .dropdown-menu.show {
+            overflow: visible;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -411,15 +447,21 @@
                     
                     <h5 class="mb-3">Фильтры</h5>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="filter-pinned">
-                        <label class="form-check-label" for="filter-pinned">
-                            <i class="fas fa-thumbtack"></i> Только закрепленные
-                        </label>
-                    </div>
-                    <div class="form-check mb-2">
                         <input class="form-check-input" type="checkbox" id="filter-completed">
                         <label class="form-check-label" for="filter-completed">
                             <i class="fas fa-check-circle"></i> Только выполненные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="filter-active">
+                        <label class="form-check-label" for="filter-active">
+                            <i class="fas fa-circle"></i> Только активные
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="filter-pinned">
+                        <label class="form-check-label" for="filter-pinned">
+                            <i class="fas fa-thumbtack"></i> Только закрепленные
                         </label>
                     </div>
                     
@@ -437,12 +479,20 @@
                     
                     <h5 class="mb-3">Цвета</h5>
                     <div class="color-picker d-flex flex-wrap gap-2 mb-3">
-                        <div class="color-option color-default" data-color="default" title="По умолчанию"></div>
-                        <div class="color-option color-red" data-color="red" title="Важно"></div>
-                        <div class="color-option color-green" data-color="green" title="Выполнено"></div>
-                        <div class="color-option color-blue" data-color="blue" title="Информация"></div>
-                        <div class="color-option color-yellow" data-color="yellow" title="Предупреждение"></div>
-                        <div class="color-option color-purple" data-color="purple" title="Личное"></div>
+                        <div class="color-option color-default" data-color="default" title="Серый"></div>
+                        <div class="color-option color-red" data-color="red" title="Красный"></div>
+                        <div class="color-option color-green" data-color="green" title="Зеленый"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Синий"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Желтый"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Фиолетовый"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Розовый"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Оранжевый"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Бирюзовый"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Голубой"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Индиго"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Коричневый"></div>
+                        <div class="color-option color-black" data-color="black" title="Черный"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Темно-синий"></div>
                     </div>
                 </div>
             </div>
@@ -463,6 +513,7 @@
                         <button class="btn btn-secondary filter-btn" data-filter="all">Все</button>
                         <button class="btn btn-outline-secondary filter-btn" data-filter="active">Активные</button>
                         <button class="btn btn-outline-secondary filter-btn" data-filter="completed">Выполненные</button>
+                        <button class="btn btn-outline-secondary filter-btn" data-filter="pinned">Закрепленные</button>
                     </div>
                     
                     <div class="dropdown">

@@ -59,18 +59,78 @@ $(document).ready(function() {
     if (currentPath === '/notes' || currentPath === '/notes/trash') {
         loadAllNotes(trashMode);
         
-        // Обработчики фильтров
+        // Улучшенные обработчики фильтров
         $('#filter-pinned').on('change', function() {
+            // Устанавливаем соответствующую верхнюю кнопку фильтра
+            if ($(this).is(':checked')) {
+                // Визуально активируем кнопку
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="pinned"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+                
+                // Снимаем другие чекбоксы
+                $('#filter-completed, #filter-active').prop('checked', false);
+            } else if (!$('#filter-completed').is(':checked') && !$('#filter-active').is(':checked')) {
+                // Если ни один фильтр не выбран, активируем "Все"
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+            }
             applyFilters();
         });
         
         $('#filter-completed').on('change', function() {
+            // Устанавливаем соответствующую верхнюю кнопку фильтра
+            if ($(this).is(':checked')) {
+                // Визуально активируем кнопку
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="completed"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+                
+                // Снимаем другие чекбоксы
+                $('#filter-pinned, #filter-active').prop('checked', false);
+            } else if (!$('#filter-pinned').is(':checked') && !$('#filter-active').is(':checked')) {
+                // Если ни один фильтр не выбран, активируем "Все"
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+            }
+            applyFilters();
+        });
+        
+        $('#filter-active').on('change', function() {
+            // Устанавливаем соответствующую верхнюю кнопку фильтра
+            if ($(this).is(':checked')) {
+                // Визуально активируем кнопку
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="active"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+                
+                // Снимаем другие чекбоксы
+                $('#filter-pinned, #filter-completed').prop('checked', false);
+            } else if (!$('#filter-pinned').is(':checked') && !$('#filter-completed').is(':checked')) {
+                // Если ни один фильтр не выбран, активируем "Все"
+                $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+                $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+            }
             applyFilters();
         });
         
         $('.filter-btn').on('click', function() {
+            const filter = $(this).data('filter');
+            
+            // Обновляем визуальное состояние кнопок
             $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
             $(this).removeClass('btn-outline-secondary').addClass('btn-secondary');
+            
+            // Снимаем все боковые фильтры
+            $('#filter-pinned, #filter-completed, #filter-active').prop('checked', false);
+            
+            // Устанавливаем соответствующий чекбокс при нажатии кнопки
+            if (filter === 'pinned') {
+                $('#filter-pinned').prop('checked', true);
+            } else if (filter === 'completed') {
+                $('#filter-completed').prop('checked', true);
+            } else if (filter === 'active') {
+                $('#filter-active').prop('checked', true);
+            }
+            
+            // Применяем фильтры
             applyFilters();
         });
         
@@ -1263,29 +1323,74 @@ function togglePin(id) {
 // Фильтрация заметок
 function applyFilters() {
     // Получаем параметры фильтрации
-    const showOnlyPinned = $('#filter-pinned').is(':checked');
-    const showOnlyCompleted = $('#filter-completed').is(':checked');
     const searchQuery = $('#search-notes').val().toLowerCase();
     const activeFilter = $('.filter-btn.btn-secondary').data('filter');
     
+    // Полная двусторонняя синхронизация между верхними фильтрами и боковыми чекбоксами
+    if (activeFilter) {
+        // Сначала снимаем все боковые фильтры
+        $('#filter-pinned, #filter-completed, #filter-active').prop('checked', false);
+        
+        // Устанавливаем соответствующий чекбокс в зависимости от активного фильтра
+        if (activeFilter === 'active') {
+            $('#filter-active').prop('checked', true);
+        } else if (activeFilter === 'completed') {
+            $('#filter-completed').prop('checked', true);
+        } else if (activeFilter === 'pinned') {
+            $('#filter-pinned').prop('checked', true);
+        }
+    } else {
+        // Если нажата кнопка "Все", снимаем все чекбоксы
+        if (!$('#filter-pinned').is(':checked') && !$('#filter-completed').is(':checked') && !$('#filter-active').is(':checked')) {
+            $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+            $('.filter-btn[data-filter="all"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+        }
+    }
+    
+    // Проверяем, если какие-то чекбоксы отмечены, устанавливаем соответствующую кнопку фильтра
+    if ($('#filter-pinned').is(':checked')) {
+        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+        $('.filter-btn[data-filter="pinned"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+    } else if ($('#filter-completed').is(':checked')) {
+        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+        $('.filter-btn[data-filter="completed"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+    } else if ($('#filter-active').is(':checked')) {
+        $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
+        $('.filter-btn[data-filter="active"]').removeClass('btn-outline-secondary').addClass('btn-secondary');
+    }
+    
+    // Обновляем переменные после синхронизации для фильтрации
+    const updatedShowOnlyPinned = $('#filter-pinned').is(':checked');
+    const updatedShowOnlyCompleted = $('#filter-completed').is(':checked');
+    const updatedShowOnlyActive = $('#filter-active').is(':checked');
+    const updatedActiveFilter = $('.filter-btn.btn-secondary').data('filter');
+    
     // Перебираем все заметки и скрываем/показываем их в соответствии с фильтрами
-    $('.note-wrapper').each(function() {
+    $('.note-wrapper, .note-item').each(function() {
         let shouldShow = true;
         
         // Фильтр по закрепленным
-        if (showOnlyPinned && $(this).data('pinned') !== true) {
+        if (updatedShowOnlyPinned && $(this).data('pinned') !== true) {
             shouldShow = false;
         }
         
         // Фильтр по выполненным
-        if (showOnlyCompleted && $(this).data('done') !== true) {
+        if (updatedShowOnlyCompleted && $(this).data('done') !== true) {
             shouldShow = false;
         }
         
-        // Фильтр по активным/выполненным/всем
-        if (activeFilter === 'active' && $(this).data('done') === true) {
+        // Фильтр по активным (не выполненным)
+        if (updatedShowOnlyActive && $(this).data('done') === true) {
             shouldShow = false;
-        } else if (activeFilter === 'completed' && $(this).data('done') !== true) {
+        }
+        
+        // Фильтр по кнопкам (Все, Активные, Выполненные, Закрепленные)
+        // Используем обновленный activeFilter после синхронизации
+        if (updatedActiveFilter === 'active' && $(this).data('done') === true) {
+            shouldShow = false;
+        } else if (updatedActiveFilter === 'completed' && $(this).data('done') !== true) {
+            shouldShow = false;
+        } else if (updatedActiveFilter === 'pinned' && $(this).data('pinned') !== true) {
             shouldShow = false;
         }
         
@@ -1838,20 +1943,51 @@ function toggleDone(id, event) {
     
     // Предварительно меняем UI для немедленного отклика
     if (currentDoneState) {
+        // Меняем с "Выполнено" на "В процессе"
         noteElement.removeClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
         noteElement.find('.note-done-toggle').text('В процессе');
-        noteElement.find('.toggle-done-btn').removeClass('btn-success').addClass('btn-outline-success');
-        noteElement.find('.toggle-done-btn i').removeClass('fa-check-circle').addClass('fa-circle');
-        noteElement.find('.toggle-done-btn').attr('title', 'Отметить как выполненное');
+        
+        // Обновляем текст и иконку в контекстном меню
+        const dropdownBtn = noteElement.find('.toggle-done-btn');
+        dropdownBtn.html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
+        dropdownBtn.attr('title', 'Отметить как выполненное');
+        
+        // Обновляем значения всех элементов с одинаковым ID заметки 
+        // (может быть несколько представлений одной заметки на странице)
+        $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
+            $(this).html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
+            $(this).attr('title', 'Отметить как выполненное');
+        });
     } else {
+        // Меняем с "В процессе" на "Выполнено" 
         noteElement.addClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
         noteElement.find('.note-done-toggle').text('Выполнено');
-        noteElement.find('.toggle-done-btn').removeClass('btn-outline-success').addClass('btn-success');
-        noteElement.find('.toggle-done-btn i').removeClass('fa-circle').addClass('fa-check-circle');
-        noteElement.find('.toggle-done-btn').attr('title', 'Отметить как активное');
+        
+        // Обновляем текст и иконку в контекстном меню
+        const dropdownBtn = noteElement.find('.toggle-done-btn');
+        dropdownBtn.html('<i class="fas fa-circle"></i> Отметить как активное');
+        dropdownBtn.attr('title', 'Отметить как активное');
+        
+        // Обновляем значения всех элементов с одинаковым ID заметки
+        $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
+            $(this).html('<i class="fas fa-circle"></i> Отметить как активное');
+            $(this).attr('title', 'Отметить как активное');
+        });
     }
+    
+    // Обновляем визуальное состояние всех элементов с одинаковым ID заметки
+    $(`.note-wrapper#${id}, .note-item#${id}`).each(function() {
+        $(this).attr('data-done', newDoneState);
+        if (newDoneState) {
+            $(this).addClass('completed');
+            $(this).find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success').text('Выполнено');
+        } else {
+            $(this).removeClass('completed');
+            $(this).find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning').text('В процессе');
+        }
+    });
     
     // Обновляем атрибут данных сразу (до получения ответа с сервера)
     noteElement.attr('data-done', newDoneState);
@@ -1878,23 +2014,26 @@ function toggleDone(id, event) {
             // Обновляем счетчики на боковой панели
             loadStats();
         },
-        error: function(xhr, status, error) {
-            // В случае ошибки восстанавливаем предыдущее состояние
-            if (currentDoneState) {
-                noteElement.addClass('completed');
-                noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
-                noteElement.find('.note-done-toggle').text('Выполнено');
-                noteElement.find('.toggle-done-btn').removeClass('btn-outline-success').addClass('btn-success');
-                noteElement.find('.toggle-done-btn i').removeClass('fa-circle').addClass('fa-check-circle');
-                noteElement.find('.toggle-done-btn').attr('title', 'Отметить как активное');
-            } else {
-                noteElement.removeClass('completed');
-                noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
-                noteElement.find('.note-done-toggle').text('В процессе');
-                noteElement.find('.toggle-done-btn').removeClass('btn-success').addClass('btn-outline-success');
-                noteElement.find('.toggle-done-btn i').removeClass('fa-check-circle').addClass('fa-circle');
-                noteElement.find('.toggle-done-btn').attr('title', 'Отметить как выполненное');
-            }
+        error: function(xhr, status, error) {        // В случае ошибки восстанавливаем предыдущее состояние
+        if (currentDoneState) {
+            // Восстанавливаем состояние "Выполнено"
+            noteElement.addClass('completed');
+            noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
+            noteElement.find('.note-done-toggle').text('Выполнено');
+            
+            // Восстанавливаем текст и иконку в контекстном меню
+            noteElement.find('.toggle-done-btn').html('<i class="fas fa-circle"></i> Отметить как активное');
+            noteElement.find('.toggle-done-btn').attr('title', 'Отметить как активное');
+        } else {
+            // Восстанавливаем состояние "В процессе"
+            noteElement.removeClass('completed');
+            noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
+            noteElement.find('.note-done-toggle').text('В процессе');
+            
+            // Восстанавливаем текст и иконку в контекстном меню
+            noteElement.find('.toggle-done-btn').html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
+            noteElement.find('.toggle-done-btn').attr('title', 'Отметить как выполненное');
+        }
             
             // Восстанавливаем атрибут данных
             noteElement.attr('data-done', currentDoneState);
