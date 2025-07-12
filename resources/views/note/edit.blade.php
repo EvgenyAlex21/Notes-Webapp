@@ -37,8 +37,18 @@
         .header {
             background-color: #fff;
             border-bottom: 1px solid #e9ecef;
-            padding: 15px 0;
+            padding: 20px 0;
             margin-bottom: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        }
+        .header h1 {
+            display: flex;
+            align-items: center;
+            color: #3c4858;
+            font-weight: 600;
+        }
+        .header h1 i {
+            color: #007bff;
         }
         .card {
             border-radius: 10px;
@@ -264,7 +274,10 @@
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">Редактирование заметки</h1>
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-edit me-2"></i> 
+                    <span class="fw-bold">Редактирование заметки</span>
+                </h1>
                 <a href="/notes" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left"></i> Назад к списку
                 </a>
@@ -316,9 +329,8 @@
                                     </div>
                                 </div>
                                 <div class="action-buttons">
-                                    <button type="button" id="done-button" class="btn btn-outline-success btn-sm" title="Отметить как выполненное">
+                                    <button type="button" id="done-button" class="btn btn-sm" title="Отметить как выполненное">
                                         <i class="fas fa-check-circle"></i>
-                                        <span class="button-text ms-1 d-none d-md-inline">Отметить как выполненное</span>
                                     </button>
                                     <button type="button" id="toggle-pin-button" class="btn btn-outline-warning btn-sm" title="Закрепить">
                                         <i class="fas fa-thumbtack"></i>
@@ -775,13 +787,15 @@
                         // Если заметка завершена, отмечаем состояние кнопки и скрытого поля
                         if (note.done) {
                             $('#done').val('1');
-                            $('#done-button').removeClass('btn-outline-success').addClass('btn-success');
                             isDone = true;
                         } else {
                             $('#done').val('0');
-                            $('#done-button').removeClass('btn-success').addClass('btn-outline-success');
                             isDone = false;
                         }
+                        
+                        // Обновляем вид кнопки "Выполнено"
+                        updateDoneButtonAppearance();
+                        updateButtonText();
                         
                         // Если заметка закреплена, обновляем кнопку
                         if (note.is_pinned) {

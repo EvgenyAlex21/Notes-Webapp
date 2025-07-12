@@ -20,7 +20,6 @@ Route::get('/notes/{id}/edit', [PagesController::class, 'edit']);
 // Маршруты для создания и управления заметками
 Route::post('/notes', [NoteController::class, 'store']);
 Route::post('/notes/{note}', [NoteController::class, 'update']); // Обновление заметки
-Route::post('/notes/{note}/toggle-done', [NoteController::class, 'toggleDone']);
 Route::post('/notes/{note}/toggle-pin', [NoteController::class, 'togglePin']);
 Route::post('/notes/{note}/archive', [NoteController::class, 'archive']);
 Route::post('/notes/{note}/unarchive', [NoteController::class, 'unarchive']);

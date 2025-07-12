@@ -3,9 +3,6 @@
  */
 
 $(document).ready(function() {
-    // Отладка всех тегов на странице при загрузке
-    debugAllTags();
-    
     // Перехватываем функцию поиска
     const originalSearch = window.performSearch;
     
@@ -177,8 +174,14 @@ $(document).ready(function() {
 $(document).ready(function() {
     console.log('Проверка атрибутов data-tags на всех заметках');
     
+    // Проверка атрибутов data-tags на всех заметках
+    console.log('Проверка атрибутов data-tags на всех заметках');
+    
     // Задержка для уверенности, что DOM полностью загружен
     setTimeout(() => {
+        // Собираем и отображаем данные по всем тегам на странице
+        const allTags = new Set();
+        
         $('.note-wrapper').each(function(index) {
             const $note = $(this);
             const id = $note.attr('id');
@@ -190,38 +193,23 @@ $(document).ready(function() {
             if (tags !== undefined) {
                 $note.data('tags', tags);
                 console.log(`  Установлен data('tags') для заметки ${id}: ${tags}`);
+                
+                // Собираем все теги для отладки
+                tags.split(',').forEach(tag => {
+                    if (tag.trim()) allTags.add(tag.trim());
+                });
             } else {
                 const dataObject = $note.data();
                 console.log(`  У заметки ${id} нет атрибута data-tags, объект data:`, dataObject);
             }
         });
         
-        // Вызываем отладку всех тегов после обработки data-tags
-        debugAllTags();
-    }, 1000);
-    
-    // Функция для отладки всех тегов на странице
-    function debugAllTags() {
+        // Выводим собранные теги
         console.log('=== ОТЛАДКА ТЕГОВ НА СТРАНИЦЕ ===');
-        const allTags = new Set();
-        const allNotes = $('.note-wrapper');
-        
-        console.log(`Найдено заметок на странице: ${allNotes.length}`);
-        
-        allNotes.each(function(index) {
-            const id = $(this).attr('id');
-            const tags = $(this).data('tags') || '';
-            console.log(`Заметка #${index + 1} (ID: ${id}): data-tags="${tags}"`);
-            
-            if (tags) {
-                const noteTags = tags.split(',').map(tag => tag.trim());
-                noteTags.forEach(tag => {
-                    if (tag) allTags.add(tag);
-                });
-            }
-        });
-        
+        console.log(`Найдено заметок на странице: ${$('.note-wrapper').length}`);
         const uniqueTags = Array.from(allTags).sort();
         console.log(`Все уникальные теги на странице (${uniqueTags.length}): ${uniqueTags.join(', ')}`);
-    }
+    }, 1000);
+    
+
 });

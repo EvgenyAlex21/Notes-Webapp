@@ -426,17 +426,34 @@ class NoteController extends Controller
     }
     
     // Быстрое переключение статуса "Выполнено"
-    public function toggleDone(Note $note)
+    public function toggleDone(Request $request, Note $note)
     {
-        $note->update([
-            'done' => !$note->done
-        ]);
-        
-        return response()->json([
-            'success' => true, 
-            'data' => $note,
-            'message' => $note->done ? 'Заметка отмечена как выполненная' : 'Заметка отмечена как невыполненная'
-        ]);
+        try {
+            $done = $request->input('done', null);
+            
+            // Если параметр не передан, инвертируем текущее значение
+            if ($done === null) {
+                $done = !$note->done;
+            } else {
+                $done = (bool)$done;
+            }
+            
+            $note->update([
+                'done' => $done,
+                'completed_at' => $done ? now() : null
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $note,
+                'message' => $done ? 'Заметка отмечена как выполненная' : 'Заметка отмечена как активная'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при обновлении статуса заметки: ' . $e->getMessage()
+            ], 500);
+        }
     }
     
     // Архивация заметки
