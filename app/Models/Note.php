@@ -109,24 +109,15 @@ class Note extends Model
      */
     public function generatePlainDescription()
     {
-        if ($this->description) {
-            // Простой способ удалить HTML-теги
-            $plainText = strip_tags($this->description);
-            // Заменяем множественные пробелы и переносы строк на один пробел
-            $plainText = preg_replace('/\s+/', ' ', $plainText);
-            $this->plain_description = trim($plainText);
-        }
+        // Временно отключим эту функцию, пока не добавим колонку plain_description в БД
         return $this;
     }
     
     /**
-     * Переопределяем метод save для автоматического обновления версий и генерации plain_description
+     * Переопределяем метод save для автоматического обновления версий
      */
     public function save(array $options = [])
     {
-        // Генерируем простой текст
-        $this->generatePlainDescription();
-        
         // Если это не новая запись и были изменены важные поля, сохраняем версию
         if (!$this->isNewRecord() && 
             ($this->isDirty('name') || $this->isDirty('description') || $this->isDirty('tags'))) {

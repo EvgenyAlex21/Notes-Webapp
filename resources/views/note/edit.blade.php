@@ -7,8 +7,27 @@
     <title>Редактирование заметки</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
+    <script>
+        // Сохраняем оригинальную функцию console.warn
+        const originalWarn = console.warn;
+        
+        // Переопределяем console.warn для подавления предупреждений о DOMNodeInserted
+        console.warn = function() {
+            // Проверяем, содержит ли предупреждение упоминание DOMNodeInserted
+            if (arguments[0] && typeof arguments[0] === 'string' && 
+                arguments[0].includes('DOMNodeInserted')) {
+                // Игнорируем это предупреждение
+                return;
+            }
+            // Для всех остальных предупреждений используем оригинальную функцию
+            originalWarn.apply(console, arguments);
+        };
+    </script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -100,6 +119,142 @@
             color: #6c757d;
             font-size: 0.85rem;
         }
+        
+        /* Стили боковой панели */
+        .sidebar {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 20px;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar-link {
+            display: block;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+            color: #495057;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+        .sidebar-link:hover {
+            background-color: #f8f9fa;
+        }
+        .sidebar-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
+        .sidebar-link i {
+            margin-right: 10px;
+        }
+        .theme-switch {
+            cursor: pointer;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        /* Темная тема */
+        body.dark-theme {
+            background-color: #212529;
+            color: #f8f9fa;
+        }
+        .dark-theme .header {
+            background-color: #343a40;
+            border-bottom-color: #495057;
+        }
+        .dark-theme .card {
+            background-color: #343a40;
+            color: #f8f9fa;
+        }
+        .dark-theme .sidebar {
+            background-color: #343a40;
+            color: #f8f9fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .dark-theme .theme-switch {
+            background-color: #495057;
+        }
+        .dark-theme .text-muted {
+            color: #adb5bd !important;
+        }
+        .dark-theme .sidebar-link {
+            color: #f1f3f5;
+        }
+        .dark-theme .sidebar-link:hover {
+            background-color: #4a4f55;
+        }
+        .dark-theme .sidebar-link.active {
+            background-color: #4a4f55;
+            color: #ffffff;
+        }
+        .dark-theme .form-control, 
+        .dark-theme .form-select {
+            background-color: #2c3034;
+            color: #f8f9fa;
+            border-color: #495057;
+        }
+        .dark-theme .form-check-label {
+            color: #f1f3f5;
+        }
+        .dark-theme .ql-toolbar, 
+        .dark-theme .ql-container {
+            background-color: #2c3034;
+            color: #f1f3f5;
+            border-color: #495057;
+        }
+        .dark-theme .ql-editor.ql-blank::before {
+            color: #adb5bd;
+        }
+        .dark-theme .ql-picker,
+        .dark-theme .ql-picker-options,
+        .dark-theme .ql-picker-item,
+        .dark-theme .ql-picker-label {
+            color: #f1f3f5 !important;
+        }
+        .dark-theme .ql-snow .ql-stroke {
+            stroke: #f1f3f5;
+        }
+        .dark-theme .ql-snow .ql-fill, 
+        .dark-theme .ql-snow .ql-stroke.ql-fill {
+            fill: #f1f3f5;
+        }
+        .dark-theme .tag {
+            background-color: #495057;
+            color: #f1f3f5;
+        }
+        .dark-theme .tag-input {
+            border-color: #495057;
+            background-color: #2c3034;
+        }
+        .dark-theme #tag-input {
+            color: #f1f3f5;
+            background-color: #2c3034;
+        }
+        .dark-theme .btn-light {
+            background-color: #495057;
+            color: #f1f3f5;
+            border-color: #495057;
+        }
+        .dark-theme .btn-light:hover {
+            background-color: #5a6268;
+            color: #fff;
+            border-color: #5a6268;
+        }
+        .dark-theme .btn-outline-secondary {
+            color: #adb5bd;
+            border-color: #495057;
+        }
+        .dark-theme .btn-outline-secondary:hover {
+            background-color: #495057;
+            color: #f8f9fa;
+            border-color: #6c757d;
+        }
 
     </style>
 </head>
@@ -116,8 +271,37 @@
     </div>
     
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
+        <div class="row">
+            <!-- Боковая панель -->
+            <div class="col-md-3 mb-4">
+                <div class="sidebar">
+                    <h5 class="mb-3">Навигация</h5>
+                    <a href="/notes" class="sidebar-link">
+                        <i class="fas fa-sticky-note"></i> Все заметки
+                    </a>
+                    <a href="/notes/archive" class="sidebar-link">
+                        <i class="fas fa-archive"></i> Архив
+                    </a>
+                    <a href="/notes/trash" class="sidebar-link">
+                        <i class="fas fa-trash"></i> Корзина
+                    </a>
+                    <a href="/notes/calendar" class="sidebar-link">
+                        <i class="fas fa-calendar"></i> Календарь
+                    </a>
+                    
+                    <hr>
+                    
+                    <div class="theme-switch" id="theme-switch">
+                        <span><i class="fas fa-sun"></i> Тема</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="theme-toggle">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Основное содержимое -->
+            <div class="col-lg-9">
                 <div class="card">
                     <div class="card-body p-4">
                         <form id="edit-note-form" method="POST" action="javascript:void(0)">
@@ -146,7 +330,8 @@
                             
                             <div class="mb-4">
                                 <label for="description" class="form-label fw-bold">Описание</label>
-                                <textarea class="form-control" id="description" rows="5" required></textarea>
+                                <div id="editor-container" style="height: 200px; border-radius: 0.25rem;"></div>
+                                <textarea class="form-control d-none" id="description" name="description" required></textarea>
                             </div>
                             
                             <div class="mb-3">
@@ -197,8 +382,19 @@
                             </div>
                             
                             <div class="mb-4">
-                                <label for="reminder-date" class="form-label fw-bold">Установить напоминание</label>
-                                <input type="datetime-local" class="form-control" id="reminder-date">
+                                <label class="form-label fw-bold">Напоминание</label>
+                                <div class="mb-2">
+                                    <select class="form-select mb-2" id="reminder-type">
+                                        <option value="none">Без напоминания</option>
+                                        <option value="datetime">Указать дату и время</option>
+                                        <option value="today">Сегодня</option>
+                                        <option value="tomorrow">Завтра</option>
+                                        <option value="next-week">Через неделю</option>
+                                    </select>
+                                </div>
+                                <div id="reminder-datetime-container" style="display: none;">
+                                    <input type="datetime-local" class="form-control" id="reminder-date">
+                                </div>
                                 <div class="mt-2" id="reminder-actions" style="display: none;">
                                     <button type="button" class="btn btn-outline-danger btn-sm" id="remove-reminder">
                                         <i class="fas fa-times"></i> Удалить напоминание
@@ -222,5 +418,149 @@
     </div>
 
     <script src="/js/notes.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Инициализация Quill
+            var quill = new Quill('#editor-container', {
+                modules: {
+                    toolbar: [
+                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link', 'image'],
+                        ['clean']
+                    ]
+                },
+                placeholder: 'О чем эта заметка?',
+                theme: 'snow'
+            });
+            
+            // Когда данные заметки загрузятся, установим содержимое редактора
+            function setQuillContent(htmlContent) {
+                quill.clipboard.dangerouslyPasteHTML(htmlContent);
+            }
+            
+            // Функция для обновления содержимого скрытого текстового поля
+            function updateHiddenField() {
+                var htmlContent = quill.root.innerHTML;
+                $('#description').val(htmlContent);
+            }
+            
+            // При отправке формы копируем HTML содержимое редактора в скрытое текстовое поле
+            $('#edit-note-form').submit(function() {
+                updateHiddenField();
+            });
+            
+            // При нажатии на кнопку "Сохранить изменения"
+            $('#update-button').on('click', function(e) {
+                e.preventDefault();
+                updateHiddenField();
+                const id = $('#note-id').val();
+                updateNote(id);
+            });
+            
+            // Создаем глобальную функцию для установки содержимого редактора
+            window.setQuillContent = setQuillContent;
+        });
+    </script>
+    <script>
+        // Обработка выбора типа напоминания
+        $(document).ready(function() {
+            // Обработчик изменения типа напоминания
+            $('#reminder-type').on('change', function() {
+                const selectedType = $(this).val();
+                const dateTimeContainer = $('#reminder-datetime-container');
+                const reminderActions = $('#reminder-actions');
+                
+                switch (selectedType) {
+                    case 'none':
+                        dateTimeContainer.hide();
+                        reminderActions.hide();
+                        $('#reminder-date').val('');
+                        break;
+                    case 'datetime':
+                        dateTimeContainer.show();
+                        reminderActions.hide();
+                        break;
+                    case 'today':
+                        setQuickDate(0); // сегодня
+                        dateTimeContainer.hide();
+                        reminderActions.show();
+                        break;
+                    case 'tomorrow':
+                        setQuickDate(1); // завтра
+                        dateTimeContainer.hide();
+                        reminderActions.show();
+                        break;
+                    case 'next-week':
+                        setQuickDate(7); // через неделю
+                        dateTimeContainer.hide();
+                        reminderActions.show();
+                        break;
+                }
+            });
+            
+            // Функция для быстрой установки даты (через указанное количество дней)
+            function setQuickDate(daysToAdd) {
+                const now = new Date();
+                now.setDate(now.getDate() + daysToAdd);
+                now.setHours(9, 0, 0); // Устанавливаем время на 9:00
+                
+                // Форматирование даты для input datetime-local
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                
+                $('#reminder-date').val(`${year}-${month}-${day}T${hours}:${minutes}`);
+            }
+            
+            // Удаление напоминания
+            $('#remove-reminder').on('click', function() {
+                $('#reminder-type').val('none').trigger('change');
+            });
+        });
+    </script>
+    <script>
+        // Инициализация темной темы
+        function initTheme() {
+            // Проверяем сохраненную тему
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            
+            // Применяем сохраненную тему
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+                $('#theme-toggle').prop('checked', true);
+            } else {
+                document.body.classList.remove('dark-theme');
+                $('#theme-toggle').prop('checked', false);
+            }
+        }
+        
+        // Переключение темной темы
+        function toggleTheme() {
+            const isDarkMode = $('#theme-toggle').prop('checked');
+            
+            if (isDarkMode) {
+                document.body.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        // Инициализация темы при загрузке страницы
+        $(document).ready(function() {
+            initTheme();
+            
+            // Обработчик переключения темы
+            $('#theme-toggle').on('change', function() {
+                toggleTheme();
+            });
+        });
+    </script>
 </body>
 </html>

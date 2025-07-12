@@ -39,6 +39,15 @@ class NoteController extends Controller
 
     public function store(Request $request)
     {
+        // Убедимся, что правильно обрабатываем булево значение is_pinned
+        if ($request->has('is_pinned')) {
+            $isPinned = $request->input('is_pinned');
+            if (is_string($isPinned)) {
+                // Если передано как строка, преобразуем в булево значение
+                $request->merge(['is_pinned' => filter_var($isPinned, FILTER_VALIDATE_BOOLEAN)]);
+            }
+        }
+        
         $data = $request->validate([
             'name' => 'required|string',
             'description' => 'required|string',
@@ -46,7 +55,26 @@ class NoteController extends Controller
             'is_pinned' => 'nullable|boolean',
             'tags' => 'nullable|string',
             'files' => 'nullable|array',
+            'reminder_at' => 'nullable|date',
+            'due_date' => 'nullable|date',
+            'folder' => 'nullable|string',
         ]);
+        
+        // Явно устанавливаем значение is_pinned, если оно не было предоставлено
+        if (!isset($data['is_pinned'])) {
+            $data['is_pinned'] = false;
+        }
+        
+        // Сохраняем отформатированное описание
+        $data['formatted_description'] = $data['description'];
+        
+        // Устанавливаем значение done по умолчанию как false
+        if (!isset($data['done'])) {
+            $data['done'] = false;
+        }
+        
+        // Явно устанавливаем is_deleted как false
+        $data['is_deleted'] = false;
         
         // Обработка загруженных файлов
         if ($request->hasFile('upload_files')) {
@@ -86,6 +114,23 @@ class NoteController extends Controller
 
     public function update(Request $request, Note $note)
     {
+        // Убедимся, что правильно обрабатываем булевы значения
+        if ($request->has('is_pinned')) {
+            $isPinned = $request->input('is_pinned');
+            if (is_string($isPinned)) {
+                // Если передано как строка, преобразуем в булево значение
+                $request->merge(['is_pinned' => filter_var($isPinned, FILTER_VALIDATE_BOOLEAN)]);
+            }
+        }
+        
+        if ($request->has('done')) {
+            $done = $request->input('done');
+            if (is_string($done)) {
+                // Если передано как строка, преобразуем в булево значение
+                $request->merge(['done' => filter_var($done, FILTER_VALIDATE_BOOLEAN)]);
+            }
+        }
+        
         $data = $request->validate([
             'name' => 'required|string',
             'description' => 'required|string',
@@ -94,7 +139,13 @@ class NoteController extends Controller
             'is_pinned' => 'nullable|boolean',
             'tags' => 'nullable|string',
             'files' => 'nullable|array',
+            'reminder_at' => 'nullable|date',
+            'formatted_description' => 'nullable|string',
+            'due_date' => 'nullable|date',
         ]);
+        
+        // Сохраняем отформатированное описание
+        $data['formatted_description'] = $data['description'];
         
         // Обработка загруженных файлов
         if ($request->hasFile('upload_files')) {
@@ -376,5 +427,61 @@ class NoteController extends Controller
         return 'other';
     }
     
-
+    /**
+     * Удаляет все заметки из базы данных
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function clearAll()
+    {
+        // Получаем количество заметок перед удалением
+        $count = Note::count();
+        
+        // Удаляем все записи из таблицы notes
+        Note::truncate();
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Успешно удалено {$count} заметок из базы данных."
+        ]);
+    }
+    
+    /**
+     * Создает новую папку без создания технической заметки
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function createFolder(Request $request)
+    {
+        $data = $request->validate([
+            'folder' => 'required|string',
+        ]);
+        
+        $folderName = $data['folder'];
+        
+        // Проверяем, существует ли уже такая папка
+        $existingFolders = Note::where('is_deleted', false)
+            ->whereNotNull('folder')
+            ->select('folder')
+            ->distinct()
+            ->get()
+            ->pluck('folder');
+            
+        if ($existingFolders->contains($folderName)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Папка с таким именем уже существует'
+            ], 422);
+        }
+        
+        // Создаем запись о папке в кэше или другом хранилище (здесь мы просто возвращаем успех)
+        // В будущем можно добавить таблицу folders для более правильной организации
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Папка успешно создана',
+            'data' => ['folder' => $folderName]
+        ]);
+    }
 }

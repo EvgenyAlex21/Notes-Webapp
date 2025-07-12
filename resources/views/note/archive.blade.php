@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Список заметок' }}</title>
+    <title>Архив заметок</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -65,64 +65,6 @@
             transform: scale(1.05);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .note-item.default { border-left-color: #6c757d; }
-        .note-item.red { border-left-color: #dc3545; }
-        .note-item.green { border-left-color: #28a745; }
-        .note-item.blue { border-left-color: #007bff; }
-        .note-item.yellow { border-left-color: #ffc107; }
-        .note-item.purple { border-left-color: #6f42c1; }
-        .note-item.pink { border-left-color: #e83e8c; }
-        .note-item.orange { border-left-color: #fd7e14; }
-        .note-item.teal { border-left-color: #20c997; }
-        .note-item.cyan { border-left-color: #17a2b8; }
-        .note-item.indigo { border-left-color: #6610f2; }
-        .note-item.brown { border-left-color: #8b4513; }
-        .note-item.black { border-left-color: #000000; }
-        .note-item.navy { border-left-color: #000080; }
-        
-        .color-picker {
-            display: inline-flex;
-            margin-right: 10px;
-        }
-        .color-option {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            margin: 0 3px;
-            cursor: pointer;
-            border: 2px solid #fff;
-            box-shadow: 0 0 0 1px #ddd;
-        }
-        .color-option:hover {
-            transform: scale(1.2);
-        }
-        .color-default { background-color: #6c757d; }
-        .color-red { background-color: #dc3545; }
-        .color-green { background-color: #28a745; }
-        .color-blue { background-color: #007bff; }
-        .color-yellow { background-color: #ffc107; }
-        .color-purple { background-color: #6f42c1; }
-        
-        .note-actions {
-            margin-top: 15px;
-        }
-        .pin-badge {
-            position: absolute;
-            top: -5px;
-            right: 10px;
-            background-color: #ffc107;
-            color: #212529;
-            font-size: 0.8rem;
-        }
-        .empty-container {
-            text-align: center;
-            padding: 50px 0;
-        }
-        .empty-icon {
-            font-size: 5rem;
-            color: #ccc;
-            margin-bottom: 20px;
-        }
         .sidebar {
             background-color: #fff;
             border-radius: 8px;
@@ -131,53 +73,136 @@
             position: sticky;
             top: 20px;
         }
-        .search-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 0 0 8px 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            max-height: 300px;
-            overflow-y: auto;
-            display: none;
+        .tag {
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            padding: 3px 8px;
+            background-color: #e9ecef;
+            border-radius: 15px;
+            font-size: 0.8rem;
         }
-        .search-result-item {
-            padding: 10px 15px;
-            border-bottom: 1px solid #eee;
+        .tag .remove-tag {
             cursor: pointer;
         }
-        .search-result-item:hover {
-            background-color: #f8f9fa;
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
-        .search-result-item .title {
-            font-weight: bold;
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
         }
-        .search-result-item .description {
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        .color-option.selected {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+        .color-default { background-color: #6c757d; }
+        .color-red { background-color: #dc3545; }
+        .color-green { background-color: #28a745; }
+        .color-blue { background-color: #007bff; }
+        .color-yellow { background-color: #ffc107; }
+        .color-purple { background-color: #6f42c1; }
+        .color-pink { background-color: #e83e8c; }
+        .color-orange { background-color: #fd7e14; }
+        .color-teal { background-color: #20c997; }
+        .color-cyan { background-color: #17a2b8; }
+        .color-indigo { background-color: #6610f2; }
+        .color-brown { background-color: #8b4513; }
+        .color-black { background-color: #000000; }
+        .color-navy { background-color: #000080; }
+        .color-gray { background-color: #6c757d; }
+        .note-red {
+            border-left-color: #dc3545;
+            background-color: #fff8f8;
+        }
+        .note-yellow {
+            border-left-color: #ffc107;
+            background-color: #fffdf8;
+        }
+        .note-green {
+            border-left-color: #198754;
+            background-color: #f8fff8;
+        }
+        .note-blue {
+            border-left-color: #0d6efd;
+            background-color: #f8f8ff;
+        }
+        .note-purple {
+            border-left-color: #6f42c1;
+            background-color: #faf8ff;
+        }
+        .note-orange {
+            border-left-color: #fd7e14;
+            background-color: #fff9f8;
+        }
+        .note-brown {
+            border-left-color: #8b4513;
+            background-color: #f9f8f8;
+        }
+        .note-pink {
+            border-left-color: #d63384;
+            background-color: #fff8fa;
+        }
+        .note-gray {
+            border-left-color: #6c757d;
+            background-color: #f8f8f8;
+        }
+        .note-black {
+            border-left-color: #000;
+            background-color: #f8f8f8;
+        }
+        .note-actions .btn {
+            margin-bottom: 5px;
+        }
+        .file-link {
+            text-decoration: none;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .filter-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+        .filter-btn {
+            border-radius: 20px;
             font-size: 0.9rem;
-            color: #666;
-            white-space: nowrap;
+            padding: 5px 15px;
+        }
+        .note-description {
+            white-space: pre-line;
+            margin-top: 10px;
+            max-height: 150px;
             overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .search-result-item .highlight {
-            background-color: #ffffc0;
-        }
-        .search-container {
-            position: relative;
-            margin-bottom: 1.5rem;
-        }
-        .search-clear {
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-        .search-clear:hover {
-            opacity: 1;
         }
         
+        .formatted-content {
+            overflow: hidden;
+            white-space: normal;
+        }
+        .formatted-content h1 { font-size: 1.5rem; }
+        .formatted-content h2 { font-size: 1.4rem; }
+        .formatted-content h3 { font-size: 1.3rem; }
+        .formatted-content h4 { font-size: 1.2rem; }
+        .formatted-content h5 { font-size: 1.1rem; }
+        .formatted-content ul, .formatted-content ol { padding-left: 1.5rem; }
+        .formatted-content img { max-width: 100%; height: auto; }
+        .dropdown-menu {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 8px;
+        }
         /* Счетчики заметок */
         .note-stats {
             display: flex;
@@ -215,39 +240,6 @@
             background-color: #343a40;
             border-color: #495057;
         }
-        .dark-theme .search-result-item {
-            border-color: #495057;
-        }
-        .dark-theme .search-result-item:hover {
-            background-color: #2b3035;
-        }
-        .dark-theme .search-result-item .description {
-            color: #adb5bd;
-        }
-        
-        /* Архивные заметки */
-        .note-item.archived {
-            opacity: 0.7;
-            border-left-color: #6c757d;
-            background-color: #f1f1f1;
-        }
-        .dark-theme .note-item.archived {
-            background-color: #2c3034;
-        }
-        
-        .theme-switch {
-            cursor: pointer;
-            padding: 10px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-radius: 8px;
-            background-color: #f8f9fa;
-        }
-        .dark-theme .theme-switch {
-            background-color: #495057;
-        }
         
         .sidebar-link {
             display: block;
@@ -268,102 +260,53 @@
         .sidebar-link i {
             margin-right: 10px;
         }
-        .tag {
-            display: inline-block;
-            background-color: #e9ecef;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            color: #495057;
-            margin-right: 5px;
-            margin-bottom: 5px;
-        }
+        
         .search-container {
-            margin-bottom: 20px;
-        }
-        .filters {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-        }
-        .filter-btn {
-            border-radius: 20px;
-            font-size: 0.9rem;
-            padding: 5px 15px;
-        }
-        .note-description {
-            white-space: pre-line;
-            margin-top: 10px;
-        }
-        .dropdown-menu {
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border: none;
-            border-radius: 8px;
-        }
-        
-        /* Дополнительные стили для исправления контрастности в темной теме */
-        .dark-theme .text-muted {
-            color: #c2c7d0 !important;
-        }
-        .dark-theme .sidebar-link {
-            color: #f1f3f5;
-        }
-        .dark-theme .sidebar-link:hover {
-            background-color: #4a4f55;
-        }
-        .dark-theme .sidebar-link.active {
-            background-color: #4a4f55;
-            color: #ffffff;
-        }
-        .dark-theme .folder-link {
-            color: #f1f3f5 !important;
-        }
-        .dark-theme .dropdown-menu {
-            background-color: #343a40;
-            border-color: #495057;
-        }
-        .dark-theme .dropdown-item {
-            color: #f1f3f5;
-        }
-        .dark-theme .dropdown-item:hover {
-            background-color: #4a4f55;
-            color: #ffffff;
-        }
-        .dark-theme .btn-outline-secondary {
-            color: #c2c7d0;
-            border-color: #495057;
-        }
-        .dark-theme .btn-outline-secondary:hover {
-            background-color: #495057;
-            color: #ffffff;
-        }
-        .dark-theme .badge {
-            color: #ffffff !important;
-        }
-        .dark-theme .form-check-label {
-            color: #f1f3f5;
-        }
-        
-        /* Стили для выпадающих меню */
-        .dropdown-menu-end {
-            right: 0;
-            left: auto !important;
-        }
-        .folder-actions .dropdown-menu {
-            min-width: 200px;
-            max-width: 250px;
-            z-index: 1050;
-        }
-        /* Предотвращаем переполнение текста в меню */
-        .folder-item {
             position: relative;
+            margin-bottom: 1.5rem;
         }
-        .folder-link {
-            max-width: 180px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            display: inline-block;
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        .search-result-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+        }
+        .search-clear {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .search-clear:hover {
+            opacity: 1;
+        }
+        
+        .theme-switch {
+            cursor: pointer;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        .dark-theme .theme-switch {
+            background-color: #495057;
         }
     </style>
 </head>
@@ -371,7 +314,7 @@
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">Заметки</h1>
+                <h1 class="h3 mb-0">Архив заметок</h1>
                 <a href="/notes/create" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Создать заметку
                 </a>
@@ -385,16 +328,16 @@
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
-                    <a href="/notes" class="sidebar-link {{ !isset($trashMode) || !$trashMode ? 'active' : '' }}">
+                    <a href="/notes" class="sidebar-link">
                         <i class="fas fa-sticky-note"></i> Все заметки
                     </a>
-                    <a href="/notes/archive" class="sidebar-link {{ isset($archiveMode) && $archiveMode ? 'active' : '' }}">
+                    <a href="/notes/archive" class="sidebar-link active">
                         <i class="fas fa-archive"></i> Архив
                     </a>
-                    <a href="/notes/trash" class="sidebar-link {{ isset($trashMode) && $trashMode ? 'active' : '' }}">
+                    <a href="/notes/trash" class="sidebar-link">
                         <i class="fas fa-trash"></i> Корзина
                     </a>
-                    <a href="/notes/calendar" class="sidebar-link {{ isset($calendarMode) && $calendarMode ? 'active' : '' }}">
+                    <a href="/notes/calendar" class="sidebar-link">
                         <i class="fas fa-calendar"></i> Календарь
                     </a>
                     
@@ -438,15 +381,23 @@
                     <h5 class="mb-3">Цвета</h5>
                     <div class="color-picker d-flex flex-wrap gap-2 mb-3">
                         <div class="color-option color-default" data-color="default" title="По умолчанию"></div>
-                        <div class="color-option color-red" data-color="red" title="Важно"></div>
-                        <div class="color-option color-green" data-color="green" title="Выполнено"></div>
-                        <div class="color-option color-blue" data-color="blue" title="Информация"></div>
-                        <div class="color-option color-yellow" data-color="yellow" title="Предупреждение"></div>
-                        <div class="color-option color-purple" data-color="purple" title="Личное"></div>
+                        <div class="color-option color-red" data-color="red" title="Высокий приоритет"></div>
+                        <div class="color-option color-yellow" data-color="yellow" title="Средний приоритет"></div>
+                        <div class="color-option color-green" data-color="green" title="Низкий приоритет"></div>
+                        <div class="color-option color-blue" data-color="blue" title="Информационный"></div>
+                        <div class="color-option color-purple" data-color="purple" title="Личный"></div>
+                        <div class="color-option color-pink" data-color="pink" title="Розовый"></div>
+                        <div class="color-option color-orange" data-color="orange" title="Оранжевый"></div>
+                        <div class="color-option color-teal" data-color="teal" title="Бирюзовый"></div>
+                        <div class="color-option color-cyan" data-color="cyan" title="Голубой"></div>
+                        <div class="color-option color-indigo" data-color="indigo" title="Индиго"></div>
+                        <div class="color-option color-brown" data-color="brown" title="Коричневый"></div>
+                        <div class="color-option color-black" data-color="black" title="Черный"></div>
+                        <div class="color-option color-navy" data-color="navy" title="Темно-синий"></div>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Основное содержимое -->
             <div class="col-md-9">
                 <div class="search-container mb-4">
@@ -483,29 +434,30 @@
                 <div class="note-stats mb-3">
                     <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
                     <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
-                    <span class="badge bg-warning me-2" id="active-notes">Активно: 0</span>
-                    <span class="badge bg-info me-2" id="pinned-notes">Закреплено: 0</span>
-                </div>
-                
-                <div class="notes-container">
-                    <!-- Сюда будут добавлены заметки с помощью JavaScript -->
-                </div>
-                
-                <div class="empty-container d-none">
-                    <div class="empty-icon">
-                        <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : 'fas fa-sticky-note' }}"></i>
+                            </div>
+                        </div>
                     </div>
-                    <h3>{{ isset($trashMode) && $trashMode ? 'Корзина пуста' : 'Заметок пока нет' }}</h3>
-                    <p class="text-muted">{{ isset($trashMode) && $trashMode ? 'Удаленные заметки будут появляться здесь' : 'Создайте свою первую заметку!' }}</p>
-                    @if(!isset($trashMode) || !$trashMode)
-                    <a href="/notes/create" class="btn btn-primary mt-3">Создать заметку</a>
-                    @else
-                    <a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>
-                    @endif
+                </div>
+
+                <!-- Список заметок -->
+                <div id="notes-container" class="notes-container">
+                    <!-- Здесь будут заметки -->
+                </div>
+
+                <!-- Пустое состояние -->
+                <div class="empty-container text-center py-5 d-none" id="empty-message">
+                    <div class="empty-icon">
+                        <i class="fas fa-archive"></i>
+                    </div>
+                    <h3 class="text-muted">Архив пуст</h3>
+                    <p class="text-muted">У вас нет заархивированных заметок</p>
+                    <a href="/notes" class="btn btn-primary">Вернуться к заметкам</a>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Модальные окна и дополнительные элементы -->
 
     <script src="/js/notes.js"></script>
 </body>

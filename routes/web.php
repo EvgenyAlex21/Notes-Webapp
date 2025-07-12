@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagesController;
+use App\Http\Controllers\NoteController;
 
 Route::get('/', function () {
     return redirect('/notes');
@@ -15,8 +16,16 @@ Route::get('/notes/calendar', [PagesController::class, 'calendar']);
 Route::get('/notes/folder/{folder}', [PagesController::class, 'folder']);
 Route::get('/notes/{id}/edit', [PagesController::class, 'edit']);
 
+// Маршруты для создания и управления заметками
+Route::post('/notes', [NoteController::class, 'store']);
+Route::post('/notes/{note}', [NoteController::class, 'update']); // Обновление заметки
+Route::post('/notes/{note}/toggle-done', [NoteController::class, 'toggleDone']);
+Route::post('/notes/{note}/toggle-pin', [NoteController::class, 'togglePin']);
+Route::post('/notes/{note}/archive', [NoteController::class, 'archive']);
+Route::post('/notes/{note}/unarchive', [NoteController::class, 'unarchive']);
+Route::post('/notes/{note}/files', [NoteController::class, 'uploadFiles']); // Загрузка файлов
+
 // API routes
-use App\Http\Controllers\NoteController;
 
 Route::prefix('api')->group(function () {
     Route::get('/notes', [NoteController::class, 'index']);
@@ -24,6 +33,9 @@ Route::prefix('api')->group(function () {
     Route::post('/notes', [NoteController::class, 'store']);
     Route::put('/notes/{note}', [NoteController::class, 'update']);
     Route::delete('/notes/{note}', [NoteController::class, 'destroy']);
+    
+    // Удаление всех заметок
+    Route::delete('/notes', [NoteController::class, 'clearAll']);
     
     // Дополнительные маршруты для расширенной функциональности
     Route::post('/notes/{note}/restore', [NoteController::class, 'restore']);
@@ -42,6 +54,7 @@ Route::prefix('api')->group(function () {
     
     // Получение статистики и дополнительных данных
     Route::get('/folders', [NoteController::class, 'getFolders']);
+    Route::post('/folders', [NoteController::class, 'createFolder']);
     Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/stats', [NoteController::class, 'getStats']);
     
