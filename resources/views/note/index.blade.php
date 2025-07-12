@@ -7,6 +7,7 @@
     <title>{{ isset($trashMode) && $trashMode ? 'Корзина' : 'Список заметок' }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
@@ -338,6 +339,30 @@
         .sidebar-link i {
             margin-right: 10px;
         }
+        
+        /* Стили для папок */
+        .folder-link {
+            display: block;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.2s;
+        }
+        .folder-link:hover {
+            background-color: #f8f9fa;
+        }
+        .folder-link.active {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
+        .active-folder .folder-link {
+            background-color: #e9ecef;
+            color: #212529;
+            font-weight: bold;
+        }
         .tag {
             display: inline-block;
             background-color: #e9ecef;
@@ -515,6 +540,15 @@
         }
         .dark-theme .folder-link {
             color: #f1f3f5 !important;
+        }
+        .dark-theme .folder-link:hover {
+            background-color: #4a4f55;
+        }
+        .dark-theme .folder-link.active,
+        .dark-theme .active-folder .folder-link {
+            background-color: #4a4f55;
+            color: #ffffff !important;
+            font-weight: bold;
         }
         .dark-theme .dropdown-menu {
             background-color: #343a40;
@@ -780,7 +814,20 @@
         </div>
     </div>
 
+    <!-- Инициализация данных страницы -->
+    <script>
+        var pageData = {
+            trashMode: {{ isset($trashMode) && $trashMode ? 'true' : 'false' }},
+            archiveMode: {{ isset($archiveMode) && $archiveMode ? 'true' : 'false' }},
+            folderMode: {{ isset($folderMode) && $folderMode ? 'true' : 'false' }},
+            folderName: {{ isset($folderName) ? '"' . $folderName . '"' : 'null' }}
+        };
+        console.log('Инициализированы данные страницы:', pageData);
+    </script>
+
     <script src="/js/note-colors.js"></script>
+    <script src="/js/note-counter.js"></script>
+    <script src="/js/sidebar-active.js"></script>
     <script src="/js/notes.js"></script>
     <script src="/js/note-view.js"></script>
     <script src="/js/note-filters.js"></script>

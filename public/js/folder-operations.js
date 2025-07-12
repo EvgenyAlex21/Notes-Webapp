@@ -361,6 +361,9 @@ function deleteFolder(folderName) {
     // Получаем CSRF-токен
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
+    // Отображаем индикатор загрузки
+    showNotification('Удаление папки...', 'info', 1000);
+    
     $.ajax({
         url: '/api/folders/delete',
         method: 'POST',
@@ -374,6 +377,8 @@ function deleteFolder(folderName) {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
+                console.log('Папка успешно удалена:', response.data);
+                
                 // Удаляем папку из интерфейса
                 const folderId = 'folder-' + folderName.toLowerCase().replace(/[^a-z0-9]/g, '-');
                 $(`#${folderId}`).fadeOut(300, function() {
@@ -383,10 +388,39 @@ function deleteFolder(folderName) {
                 // Обновляем счетчики
                 loadStats();
                 
-                showNotification('Папка успешно удалена', 'success');
+                // Если удаляется папка, ее заметки нужно добавить на главную страницу
+                if (response.data && response.data.count > 0) {
+                    console.log('Было высвобождено заметок из папки:', response.data.count);
+                    
+                    // Уведомляем о возвращении заметок
+                    showNotification(`${response.data.count} заметок возвращено в общий список`, 'info');
+                    
+                    // Всегда обновляем список заметок независимо от текущей страницы
+                    if (window.location.pathname === '/notes') {
+                        console.log('Мы на главной странице, обновляем список заметок');
+                        loadAllNotes(false);
+                    } else if (window.location.pathname === '/notes/trash') {
+                        loadAllNotes(true); // режим корзины
+                    } else if (window.location.pathname === '/notes/archive') {
+                        loadAllNotes(false, null, true); // режим архива
+                    } else if (window.location.pathname.startsWith('/notes/folder/')) {
+                        // Если мы в другой папке, обновляем текущий список
+                        const currentFolderEncoded = window.location.pathname.split('/').pop();
+                        const currentFolder = decodeURIComponent(currentFolderEncoded);
+                        loadAllNotes(false, currentFolder);
+                    }
+                    
+                    // Обновляем счетчики
+                    if (typeof updatePageCounters === 'function') {
+                        setTimeout(updatePageCounters, 500);
+                    }
+                } else {
+                    showNotification('Папка успешно удалена', 'success');
+                }
                 
                 // Перенаправляем на главную страницу, если мы находимся в удаленной папке
                 if (window.location.pathname === `/notes/folder/${encodeURIComponent(folderName)}`) {
+                    console.log('Мы находились в удаленной папке, перенаправляем на главную');
                     window.location.href = '/notes';
                 }
             } else {
@@ -492,8 +526,10 @@ function activateNotesSelectionMode(targetFolder) {
     // Находим заметки с разной структурой - учитываем все возможные варианты классов
     let noteElements = $('.note-wrapper, .note-card, .note-item, .card').filter(function() {
         // Фильтруем только элементы, которые действительно являются заметками
-        // Проверяем наличие ID или других атрибутов, характерных для заметок
-        const isNoteElement = $(this).attr('id') || $(this).data('id') || 
+        // Проверяем наличие ID или data-id для заметок
+        const noteId = $(this).attr('id') ? ($(this).attr('id').startsWith('note-') ? $(this).attr('id').replace('note-', '') : $(this).attr('id')) : null;
+        const dataId = $(this).data('id');
+        const isNoteElement = noteId || dataId || 
                ($(this).find('h4').length > 0 && !$(this).parents('.note-wrapper, .note-card, .note-item').length);
         
         // Проверяем наличие вложенной структуры заметок, чтобы избежать дублирования
@@ -553,21 +589,49 @@ function activateNotesSelectionMode(targetFolder) {
             } else {
                 $(this).addClass('selectable-note');
                 
-                // Найдем заголовок заметки или другой подходящий элемент
-                const headerElement = $(this).find('.card-header, .card-title, .note-header, h4').first();
-                if (headerElement.length > 0) {
-                    headerElement.prepend(`
-                        <div class="form-check note-selection-checkbox">
-                            <input class="form-check-input note-select" type="checkbox" value="${noteId}" id="select-${noteId}">
-                        </div>
-                    `);
-                } else {
-                    $(this).prepend(`
-                        <div class="form-check note-selection-checkbox">
-                            <input class="form-check-input note-select" type="checkbox" value="${noteId}" id="select-${noteId}">
-                        </div>
-                    `);
-                }
+                // Добавляем чекбокс в контейнер заметки, но не внутрь заголовка
+                // Это позволит избежать наложения на заголовок
+                $(this).addClass('note-with-checkbox');
+                
+                // Получаем правильный ID заметки для значения чекбокса
+                const dataId = $(this).data('id');
+                const idForCheckbox = dataId || noteId;
+                
+                // Добавляем стилизованный чекбокс в верхний левый угол карточки заметки
+                $(this).prepend(`
+                    <div class="form-check note-selection-checkbox">
+                        <input class="form-check-input note-select" type="checkbox" value="${idForCheckbox}" id="select-${idForCheckbox}">
+                    </div>
+                `);
+                
+                // Добавляем стили для корректного позиционирования
+                $("<style>")
+                    .prop("type", "text/css")
+                    .html(`
+                        .note-with-checkbox {
+                            position: relative !important;
+                        }
+                        .note-selection-checkbox {
+                            position: absolute !important;
+                            top: 10px !important;
+                            left: 10px !important;
+                            z-index: 100 !important;
+                            margin: 0 !important;
+                            background-color: rgba(255, 255, 255, 0.8) !important;
+                            border-radius: 50% !important;
+                            width: 24px !important;
+                            height: 24px !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                        }
+                        .note-with-checkbox .card-header,
+                        .note-with-checkbox h4,
+                        .note-with-checkbox .note-title {
+                            padding-left: 30px !important;
+                        }
+                    `)
+                    .appendTo("head");
                 
                 // Делаем всю карточку кликабельной для выбора
                 $(this).off('click.noteSelect').on('click.noteSelect', function(e) {
@@ -617,7 +681,22 @@ function activateNotesSelectionMode(targetFolder) {
     $('.move-selected-notes').on('click', function() {
         const targetFolder = $(this).data('target-folder');
         const selectedNotes = $('.note-select:checked').map(function() {
-            return $(this).val();
+            // Получаем ID заметки из разных возможных атрибутов
+            const noteWrapper = $(this).closest('.note-wrapper, .note-card, .note-item');
+            let noteId = noteWrapper.data('id');
+            
+            // Если data-id не найден, пробуем получить из id атрибута
+            if (!noteId && noteWrapper.attr('id')) {
+                const idAttr = noteWrapper.attr('id');
+                if (idAttr.startsWith('note-')) {
+                    noteId = idAttr.replace('note-', '');
+                } else {
+                    noteId = idAttr;
+                }
+            }
+            
+            console.log('Выбранная заметка:', { noteId, wrapper: noteWrapper.attr('id') });
+            return noteId;
         }).get();
         
         if (selectedNotes.length === 0) {
@@ -713,43 +792,11 @@ function moveNotesToFolder(noteIds, folderName) {
                 console.log('Успешно перемещено заметок:', response.data?.count);
                 console.log('Целевая папка:', response.data?.folder);
                 
+                // Обрабатываем успешное перемещение заметок
+                handleSuccessfulNoteMove(noteIds, folderName, window.location.pathname.startsWith('/notes/folder/' + encodeURIComponent(folderName)));
+                
                 // Выходим из режима выбора
                 exitSelectionMode();
-                
-                // Обновляем счетчики
-                if (typeof loadStats === 'function') {
-                    console.log('Вызываем функцию loadStats для обновления счетчиков');
-                    loadStats();
-                }
-                
-                // Обновляем список заметок
-                if (typeof loadAllNotes === 'function') {
-                    console.log('Обновляем список заметок');
-                    // Проверяем, находимся ли в режиме отображения папки
-                    if (window.location.pathname.startsWith('/notes/folder/')) {
-                        const currentFolder = window.location.pathname.split('/').pop();
-                        console.log('Текущая папка:', currentFolder);
-                        
-                        if (currentFolder === targetFolder) {
-                            // Если мы уже в целевой папке, обновляем с указанием папки
-                            console.log('Обновляем заметки в текущей папке:', targetFolder);
-                            loadAllNotes(false, targetFolder);
-                        } else {
-                            // Если мы в другой папке, используем стандартное обновление
-                            console.log('Обновляем заметки в текущей папке:', currentFolder);
-                            loadAllNotes(false, currentFolder);
-                        }
-                    } else if (window.location.pathname === '/notes/trash') {
-                        loadAllNotes(true); // режим корзины
-                    } else {
-                        loadAllNotes(false); // обычный режим
-                    }
-                } else {
-                    console.log('Функция loadAllNotes не найдена, перезагружаем страницу');
-                    setTimeout(function() {
-                        window.location.reload();
-                    }, 1000);
-                }
             } else {
                 showNotification(response.message || 'Ошибка при перемещении заметок', 'warning');
             }
@@ -763,4 +810,45 @@ function moveNotesToFolder(noteIds, folderName) {
             showNotification(errorMessage, 'danger');
         }
     });
+}
+
+/**
+ * Обработчик успешного перемещения заметок в папку
+ * @param {Array} noteIds - идентификаторы перемещенных заметок
+ * @param {string} targetFolder - целевая папка
+ * @param {boolean} isCurrentFolder - true, если текущая открытая папка совпадает с целевой
+ */
+function handleSuccessfulNoteMove(noteIds, targetFolder, isCurrentFolder) {
+    console.log('Обработка успешного перемещения заметок в папку:', 
+                { noteIds, targetFolder, isCurrentFolder });
+    
+    // Если не в текущей папке, скрываем заметки с анимацией
+    if (!isCurrentFolder) {
+        noteIds.forEach(id => {
+            $(`#note-${id}`).fadeOut(300, function() {
+                $(this).remove();
+            });
+        });
+    }
+    
+    // Обновляем счетчик папки
+    if (typeof updateFolderCounter === 'function') {
+        updateFolderCounter(targetFolder, noteIds.length);
+        console.log('Обновлен счетчик папки:', targetFolder, '+', noteIds.length);
+    }
+    
+    // Обновляем счетчики заметок на текущей странице
+    if (typeof updatePageCounters === 'function') {
+        setTimeout(updatePageCounters, 350);
+    }
+    
+    // Обновляем статистику
+    if (typeof loadStats === 'function') {
+        setTimeout(loadStats, 500);
+    }
+    
+    // Обновляем подсветку активной папки
+    if (typeof updateActiveSidebar === 'function') {
+        setTimeout(updateActiveSidebar, 350);
+    }
 }

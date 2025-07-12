@@ -1,0 +1,147 @@
+/**
+ * Стили для выбора заметок с чекбоксами
+ */
+
+.note-with-checkbox {
+    position: relative !important;
+    padding-top: 5px !important;
+}
+
+.note-selection-checkbox {
+    position: absolute !important;
+    top: 10px !important;
+    left: 10px !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 50% !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.note-with-checkbox .card-header,
+.note-with-checkbox h4,
+.note-with-checkbox .note-title {
+    padding-left: 35px !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.note-with-checkbox .form-check-input {
+    cursor: pointer !important;
+}
+
+.note-select:checked {
+    background-color: #007bff !important;
+    border-color: #007bff !important;
+}
+
+/* Улучшение отображения заголовка заметки */
+.note-wrapper h4 {
+    padding: 3px 5px !important;
+    margin-top: 5px !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Стили для бэйджа "Уже в папке" */
+.note-selection-badge {
+    position: absolute !important;
+    top: 10px !important;
+    left: 10px !important;
+    z-index: 100 !important;
+    font-size: 0.7rem !important;
+}
+
+/* Стили для индикатора папки */
+.folder-badge {
+    font-size: 0.7rem;
+    margin-right: 5px;
+    font-weight: normal;
+}
+
+.note-status-priority {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.note-status-priority .badge {
+    margin-right: 0;
+}
+
+/* Стили для активной папки в боковом меню */
+.active-folder {
+    background-color: rgba(0, 123, 255, 0.15) !important;
+    border-radius: 5px !important;
+    box-shadow: inset 0 0 3px rgba(0, 123, 255, 0.3) !important;
+}
+
+.folder-link.active {
+    color: #0d6efd !important;
+    font-weight: bold !important;
+}
+
+/* Улучшаем стили для боковой панели папок */
+#folders-list .folder-item {
+    padding: 3px 5px;
+    border-radius: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+#folders-list .folder-item:hover {
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+/* Улучшаем стили для индикатора папки в карточке заметки */
+.folder-badge {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 0.85em;
+    padding: 3px 8px;
+    border-radius: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+    vertical-align: middle;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Улучшенная подсветка активного элемента в навигации */
+.nav-item .nav-link.active {
+    font-weight: bold;
+    background-color: rgba(13, 110, 253, 0.1);
+    border-radius: 0.25rem;
+}
+
+/* Счетчики заметок */
+.visible-counter {
+    display: inline-block;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-size: 0.85em;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.folder-link.active i {
+    color: #0d6efd;
+}
+
+/* Стили для индикатора папки */
+.folder-indicator {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    font-size: 0.8rem;
+    margin-right: 5px;
+    color: #6c757d;
+}

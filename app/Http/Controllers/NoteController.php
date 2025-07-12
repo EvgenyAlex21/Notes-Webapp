@@ -25,6 +25,44 @@ class NoteController extends Controller
             } else {
                 $query->where('is_archived', false);
             }
+            
+            // Фильтр по папке
+            if ($request->has('folder')) {
+                $folder = $request->get('folder');
+                \Log::info('Запрос заметок с фильтром по папке', [
+                    'folder' => $folder,
+                    'decoded_folder' => urldecode($folder)
+                ]);
+                
+                // Выполняем полное декодирование имени папки (на случай двойного кодирования)
+                try {
+                    $decodedFolder = $folder;
+                    // Продолжаем декодировать, пока результат меняется
+                    while ($decodedFolder !== urldecode($decodedFolder)) {
+                        $decodedFolder = urldecode($decodedFolder);
+                    }
+                    
+                    $query->where('folder', $decodedFolder);
+                    \Log::info('Применяем фильтр по папке с полным декодированием', [
+                        'original' => $folder,
+                        'fully_decoded' => $decodedFolder
+                    ]);
+                    
+                    // Проверим, какие заметки существуют для этой папки
+                    $notesInFolder = Note::where('folder', $decodedFolder)->get();
+                    \Log::info('Найденные заметки в папке', [
+                        'folder' => $decodedFolder,
+                        'notes_count' => $notesInFolder->count(),
+                        'notes' => $notesInFolder->toArray()
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Ошибка при декодировании имени папки', [
+                        'error' => $e->getMessage(),
+                        'folder' => $folder
+                    ]);
+                    $query->where('folder', $folder);
+                }
+            }
         }
         
         // Сортировка: сначала закрепленные

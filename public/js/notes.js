@@ -70,8 +70,16 @@ $(document).ready(function() {
     });
     
     // Получение списка всех заметок
-    if (currentPath === '/notes' || currentPath === '/notes/trash') {
-        loadAllNotes(trashMode);
+    if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath.match(/\/notes\/folder\//)) {
+        // Проверяем, находимся ли мы в режиме папки
+        const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
+        if (folderMatch) {
+            console.log('Загружаем заметки для папки из URL:', folderMatch[1]);
+            // В этом случае loadAllNotes сам определит папку из URL
+            loadAllNotes(trashMode);
+        } else {
+            loadAllNotes(trashMode);
+        }
         
         // Обработчики фильтров вынесены в отдельный файл note-filters.js
         
@@ -217,6 +225,44 @@ $(document).ready(function() {
     loadStats();
 });
 
+// Функция для подсчета видимых заметок на странице
+function countVisibleNotes() {
+    // Сначала проверяем, есть ли сохраненные счетчики из фактических данных
+    if (window.currentNotesCount) {
+        return window.currentNotesCount;
+    }
+    
+    // Если нет, подсчитываем по DOM
+    const visibleNotes = $('.note-wrapper:visible, .note-item:visible').length;
+    const activeNotes = $('.note-wrapper:visible:not(.completed), .note-item:visible:not(.completed)').length;
+    const completedNotes = $('.note-wrapper:visible.completed, .note-item:visible.completed').length;
+    const pinnedNotes = $('.note-wrapper:visible.pinned, .note-item:visible.pinned').length;
+    
+    return {
+        total: visibleNotes,
+        active: activeNotes,
+        completed: completedNotes,
+        pinned: pinnedNotes
+    };
+}
+
+// Функция обновления счетчиков на текущей странице
+function updatePageCounters() {
+    const counts = countVisibleNotes();
+    
+    // Обновляем счетчики на странице
+    $('#visible-total-notes').text(`Всего: ${counts.total}`);
+    $('#visible-completed-notes').text(`Выполнено: ${counts.completed}`);
+    $('#visible-active-notes').text(`Активно: ${counts.active}`);
+    $('#visible-pinned-notes').text(`Закреплено: ${counts.pinned}`);
+    
+    // Обновляем счетчики вверху страницы
+    $('.counter-total').text(counts.total);
+    $('.counter-completed').text(counts.completed);
+    $('.counter-active').text(counts.active);
+    $('.counter-pinned').text(counts.pinned);
+}
+
 // Загрузка всех заметок
 function loadAllNotes(trashMode = false, folder = null) {
     let url = `/api/notes`;
@@ -226,8 +272,123 @@ function loadAllNotes(trashMode = false, folder = null) {
     
     // Проверяем, находимся ли в режиме папки
     const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
-    const folderMode = folderMatch !== null || folder !== null;
-    let folderName = folder || (folderMode ? decodeURIComponent(folderMatch[1]) : null);
+    
+    // Определяем режим папки
+    let folderMode = false;
+    let folderName = null;
+    
+    // Получаем имя папки с разных источников
+    // 1. Приоритет: из переданного параметра
+    if (folder) {
+        folderMode = true;
+        folderName = folder;
+        console.log('Имя папки получено из параметра функции:', folderName);
+    } 
+    // 2. Из URL
+    else if (folderMatch) {
+        folderMode = true;
+        try {
+            folderName = decodeURIComponent(folderMatch[1]);
+            // Полное декодирование (на случай, если имя закодировано несколько раз)
+            while (folderName !== decodeURIComponent(folderName)) {
+                folderName = decodeURIComponent(folderName);
+            }
+            console.log('Полностью декодированное имя папки из URL:', folderName);
+        } catch (e) {
+            console.warn('Ошибка при декодировании имени папки из URL:', e);
+            folderName = folderMatch[1]; // Используем как есть, если ошибка декодирования
+        }
+    }
+    // 3. Из данных страницы, если они есть
+    else if (typeof pageData !== 'undefined' && pageData.folderMode && pageData.folderName) {
+        folderMode = true;
+        folderName = pageData.folderName;
+        console.log('Имя папки получено из данных страницы:', folderName);
+    }
+    
+    console.log('Режим папки:', folderMode, 'Имя папки:', folderName);
+    
+    // Подсвечиваем текущую папку в боковом меню, если мы в режиме папки
+    if (folderMode && folderName) {
+        // Снимаем подсветку со всех элементов
+        $('.folder-link').removeClass('active');
+        $('.folder-link').parent().removeClass('active-folder');
+        $('.nav-link').removeClass('active');
+        
+        console.log('Активируем папку в меню:', folderName);
+        
+        // Пытаемся найти папку разными способами
+        const normalizedName = folderName.toLowerCase().trim();
+        const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+        
+        // 1. Пытаемся найти по ID
+        let foundFolder = false;
+        const folderElement = $(`#${folderId}`);
+        if (folderElement.length > 0) {
+            console.log('Найден элемент папки по ID, активируем:', folderId);
+            folderElement.addClass('active-folder');
+            folderElement.find('.folder-link').addClass('active');
+            foundFolder = true;
+        }
+        
+        // 2. Пытаемся найти по data-атрибуту folder-name
+        if (!foundFolder) {
+            const folderByData = $(`[data-folder-name="${normalizedName}"]`);
+            if (folderByData.length > 0) {
+                console.log('Найден элемент папки по data-атрибуту, активируем');
+                folderByData.addClass('active-folder');
+                folderByData.find('.folder-link').addClass('active');
+                foundFolder = true;
+            }
+        }
+        
+        // 3. Пытаемся найти по data-атрибуту в ссылке
+        if (!foundFolder) {
+            const linkByData = $(`.folder-link[data-folder="${folderName}"]`);
+            if (linkByData.length > 0) {
+                console.log('Найден элемент папки по data-атрибуту ссылки, активируем');
+                linkByData.addClass('active');
+                linkByData.parent().addClass('active-folder');
+                foundFolder = true;
+            }
+        }
+        
+        // 4. В крайнем случае ищем по тексту
+        if (!foundFolder) {
+            $(`.folder-item`).each(function() {
+                const linkText = $(this).find('.folder-link').text().trim().replace(/\s*\d+\s*$/, ''); // Удаляем счетчик из текста
+                const folderTextMatch = linkText === folderName || 
+                                      linkText.includes(folderName) || 
+                                      folderName.includes(linkText);
+                
+                if (folderTextMatch) {
+                    console.log('Нашли папку по тексту ссылки:', linkText);
+                    $(this).addClass('active-folder');
+                    $(this).find('.folder-link').addClass('active');
+                    foundFolder = true;
+                    return false; // Останавливаем цикл
+                }
+            });
+        }
+    } else if (currentPath === '/notes/trash') {
+        // Если мы в корзине, подсвечиваем соответствующий пункт меню
+        $('.nav-link').removeClass('active');
+        $('.folder-link').removeClass('active');
+        $('.folder-link').parent().removeClass('active-folder');
+        $('.trash-link').addClass('active');
+    } else if (archiveMode) {
+        // Если мы в архиве, подсвечиваем соответствующий пункт меню
+        $('.nav-link').removeClass('active');
+        $('.folder-link').removeClass('active');
+        $('.folder-link').parent().removeClass('active-folder');
+        $('.archive-link').addClass('active');
+    } else {
+        // Если мы на главной странице
+        $('.nav-link').removeClass('active');
+        $('.folder-link').removeClass('active');
+        $('.folder-link').parent().removeClass('active-folder');
+        $('.all-notes-link').addClass('active');
+    }
     
     console.log('Загрузка заметок:', { 
         currentPath,
@@ -242,12 +403,28 @@ function loadAllNotes(trashMode = false, folder = null) {
     } else if (archiveMode) {
         url += '?archive=true';
     } else if (folderMode && folderName) {
-        url += `?folder=${encodeURIComponent(folderName)}`;
+        // Явно декодируем имя папки (на случай, если оно уже закодировано)
+        try {
+            // Используем уже декодированное имя папки
+            url += `?folder=${encodeURIComponent(folderName)}`;
+            console.log('Используем имя папки для API запроса:', folderName);
+            console.log('URL параметр для API:', `?folder=${encodeURIComponent(folderName)}`);
+            console.log('ОТЛАДКА: Отображение заметок для папки', {
+                folderMode,
+                folderName,
+                encodedParam: encodeURIComponent(folderName),
+                url: url + `?folder=${encodeURIComponent(folderName)}`
+            });
+        } catch (e) {
+            console.error('Ошибка кодирования имени папки:', e);
+            url += `?folder=${encodeURIComponent(folderName)}`;
+        }
     }
     
     // Обновляем статистику
     loadStats();
     
+    console.log('Делаем запрос на:', url);
     $.ajax({
         url: url,
         method: 'GET',
@@ -256,12 +433,106 @@ function loadAllNotes(trashMode = false, folder = null) {
             const notes = response.data;
             console.log('Загружено заметок:', notes.length, notes);
             console.log('URL запроса:', url);
-            console.log('Режим архива:', archiveMode, 'Режим корзины:', trashMode);
+            console.log('Режим архива:', archiveMode, 'Режим корзины:', trashMode, 'Режим папки:', folderMode);
             $('.notes-container').empty();
             
-            if (!notes || notes.length === 0) {
+            // Фильтрация заметок в зависимости от режима отображения
+            let filteredNotes = notes;
+            
+            // Если мы на главной странице и не в режиме корзины или архива,
+            // отфильтруем заметки, чтобы не показывать те, которые принадлежат папкам
+            if (!trashMode && !archiveMode && !folderMode) {
+                console.log('Фильтруем заметки, скрывая те, что в папках');
+                filteredNotes = notes.filter(note => !note.folder);
+                console.log('Отфильтровано заметок:', filteredNotes.length);
+            } else if (folderMode && folderName) {
+                // Если мы в режиме папки, показываем только заметки из этой папки
+                console.log('Фильтруем заметки для папки:', folderName);
+                filteredNotes = notes.filter(note => note.folder === folderName);
+                console.log('Найдено заметок в папке:', filteredNotes.length);
+            }
+            
+            // Обновляем счётчики видимых заметок немедленно
+            console.log('Количество заметок после фильтрации:', filteredNotes.length);
+            
+            // Запоминаем фактическое количество заметок в текущем представлении
+            window.currentNotesCount = {
+                total: filteredNotes.length,
+                completed: filteredNotes.filter(note => note.done).length,
+                active: filteredNotes.filter(note => !note.done).length,
+                pinned: filteredNotes.filter(note => note.is_pinned).length
+            };
+            
+            // Обновляем счётчики верхней панели на основе фактических данных
+            // Только если есть такие элементы на странице
+            if ($('.counter-total').length) {
+                $('.counter-total').text(window.currentNotesCount.total);
+            }
+            if ($('.counter-completed').length) {
+                $('.counter-completed').text(window.currentNotesCount.completed);
+            }
+            if ($('.counter-active').length) {
+                $('.counter-active').text(window.currentNotesCount.active);
+            }
+            if ($('.counter-pinned').length) {
+                $('.counter-pinned').text(window.currentNotesCount.pinned);
+            }
+            
+            // Обновляем табы с правильными счетчиками
+            if ($('#counter-all').length) {
+                $('#counter-all').text(window.currentNotesCount.total);
+            }
+            if ($('#counter-done').length) {
+                $('#counter-done').text(window.currentNotesCount.completed);
+            }
+            if ($('#counter-active-tab').length) {
+                $('#counter-active-tab').text(window.currentNotesCount.active);
+            }
+            if ($('#counter-pinned-tab').length) {
+                $('#counter-pinned-tab').text(window.currentNotesCount.pinned);
+            }
+            
+            if (!filteredNotes || filteredNotes.length === 0) {
                 $('.notes-container').hide();
                 $('.empty-container').removeClass('d-none');
+                
+                // Обновляем текст пустого состояния в зависимости от режима
+                let emptyMessage = 'Нет заметок';
+                let emptyIcon = 'fa-sticky-note';
+                let emptyButtonText = 'Создать заметку';
+                let emptySubtext = 'Создайте свою первую заметку';
+                
+                if (trashMode) {
+                    emptyMessage = 'Корзина пуста';
+                    emptyIcon = 'fa-trash';
+                    emptyButtonText = '';
+                    emptySubtext = 'Здесь будут отображаться удаленные заметки';
+                } else if (archiveMode) {
+                    emptyMessage = 'Архив пуст';
+                    emptyIcon = 'fa-archive';
+                    emptyButtonText = '';
+                    emptySubtext = 'Здесь будут отображаться архивированные заметки';
+                } else if (folderMode) {
+                    emptyMessage = `В папке "${folderName}" нет заметок`;
+                    emptyIcon = 'fa-folder-open';
+                    emptyButtonText = 'Создать заметку в этой папке';
+                    emptySubtext = 'Вы можете переместить существующие заметки в эту папку или создать новые';
+                }
+                
+                // Обновляем содержимое блока пустого состояния
+                $('.empty-container h3').html(`<i class="fas ${emptyIcon} me-2"></i>${emptyMessage}`);
+                $('.empty-container p').text(emptySubtext);
+                
+                if (emptyButtonText) {
+                    if ($('.empty-container .btn').length === 0) {
+                        $('.empty-container').append(`<a href="/notes/create" class="btn btn-primary mt-3"><i class="fas fa-plus me-1"></i>${emptyButtonText}</a>`);
+                    } else {
+                        $('.empty-container .btn').html(`<i class="fas fa-plus me-1"></i>${emptyButtonText}`);
+                    }
+                } else {
+                    $('.empty-container .btn').remove();
+                }
+                
                 return;
             }
             
@@ -269,8 +540,8 @@ function loadAllNotes(trashMode = false, folder = null) {
             $('.empty-container').addClass('d-none');
             
             // Сначала добавляем закрепленные заметки
-            const pinnedNotes = notes.filter(note => note.is_pinned);
-            const regularNotes = notes.filter(note => !note.is_pinned);
+            const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
+            const regularNotes = filteredNotes.filter(note => !note.is_pinned);
             
             // Функция для генерации HTML заметки
             const generateNoteHTML = (note, isPinned = false) => {
@@ -296,9 +567,9 @@ function loadAllNotes(trashMode = false, folder = null) {
                 
                 return `
                     <div class="note-item note-wrapper ${note.color} ${note.done ? 'completed' : ''} ${isPinned ? 'pinned' : ''}" 
-                         id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
+                         id="note-${note.id}" data-id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
                          data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}" 
-                         data-raw-tags="${note.tags || ''}"
+                         data-raw-tags="${note.tags || ''}" data-folder="${note.folder || ''}"
                          data-updated-at="${note.updated_at}">
                          
                         ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
@@ -309,6 +580,9 @@ function loadAllNotes(trashMode = false, folder = null) {
                                 <div class="note-header">
                                     <h4>${note.name}</h4>
                                     <div class="note-status-priority">
+                                        ${note.folder ? `<span class="badge bg-info folder-badge" title="В папке: ${note.folder}">
+                                            <i class="fas fa-folder me-1"></i>${note.folder}
+                                        </span>` : ''}
                                         <span class="badge" style="background-color: ${getNoteColorHex(note.color)}; font-weight: 400;">
                                             ${getPriorityName(note.color)}
                                         </span>
@@ -522,8 +796,11 @@ function loadAllNotes(trashMode = false, folder = null) {
                 });
             }
             
-            // Применяем текущие фильтры
+            // Применяем текущие фильтры и обновляем счетчики
             applyFilters();
+            
+            // Дополнительно обновляем счетчики видимых заметок
+            updatePageCounters();
         },
         error: function(error) {
             console.error('Ошибка при загрузке заметок:', error);
@@ -1278,9 +1555,6 @@ function updateNote(id) {
         formData.append('files', JSON.stringify(window.currentNoteFiles));
     } else {
         console.log('Нет существующих файлов или они в неправильном формате');
-        if (window.currentNoteFiles) {
-            console.log('Тип currentNoteFiles:', typeof window.currentNoteFiles);
-        }
         // Всегда передаем пустой массив для корректного обновления
         formData.append('files', JSON.stringify([]));
     }
@@ -1383,10 +1657,25 @@ function updateNote(id) {
 
 // Удаление заметки (перемещение в корзину)
 function deleteNote(id) {
-    if (!confirm('Вы действительно хотите переместить эту заметку в корзину?')) {
-        return;
-    }
+    // Создаем и показываем модальное окно подтверждения
+    const modal = createConfirmationModal({
+        id: `deleteNoteModal_${id}`,
+        title: 'Подтвердите действие на сайте',
+        message: 'Вы действительно хотите переместить эту заметку в корзину?',
+        confirmButtonText: 'Да',
+        cancelButtonText: 'Нет',
+        confirmButtonClass: 'btn-danger',
+        icon: 'fa-trash',
+        onConfirm: function() {
+            executeDeleteNote(id);
+        }
+    });
     
+    modal.show();
+}
+
+// Выполнение удаления заметки
+function executeDeleteNote(id) {
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
@@ -1418,8 +1707,16 @@ function deleteNote(id) {
                     }
                 });
                 
-                // Обновляем статистику
-                loadStats();
+                // Обновляем список заметок и статистику
+                // Проверяем, находимся ли в режиме отображения папки
+                if (window.location.pathname.startsWith('/notes/folder/')) {
+                    const currentFolder = window.location.pathname.split('/').pop();
+                    console.log('Обновляем заметки в текущей папке:', currentFolder);
+                    loadAllNotes(false, decodeURIComponent(currentFolder));
+                } else {
+                    // Обновляем статистику
+                    loadStats();
+                }
             }
         },
         error: function(error) {
@@ -1465,10 +1762,25 @@ function restoreNote(id) {
 
 // Окончательное удаление заметки
 function forceDeleteNote(id) {
-    if (!confirm('Вы действительно хотите удалить эту заметку навсегда? Это действие нельзя отменить.')) {
-        return;
-    }
+    // Создаем и показываем модальное окно подтверждения
+    const modal = createConfirmationModal({
+        id: `forceDeleteNoteModal_${id}`,
+        title: 'Подтвердите действие на сайте',
+        message: 'Вы действительно хотите удалить эту заметку навсегда? Это действие нельзя отменить.',
+        confirmButtonText: 'Удалить навсегда',
+        cancelButtonText: 'Отмена',
+        confirmButtonClass: 'btn-danger',
+        icon: 'fa-trash-alt',
+        onConfirm: function() {
+            executeForceDeleteNote(id);
+        }
+    });
     
+    modal.show();
+}
+
+// Выполнение окончательного удаления заметки
+function executeForceDeleteNote(id) {
     // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
@@ -1514,6 +1826,25 @@ function emptyTrash() {
         return;
     }
     
+    // Создаем и показываем модальное окно подтверждения
+    const modal = createConfirmationModal({
+        id: 'emptyTrashModal',
+        title: 'Подтвердите действие на сайте',
+        message: `Вы действительно хотите очистить корзину? Будет удалено ${noteIds.length} заметок. Это действие нельзя отменить.`,
+        confirmButtonText: 'Очистить корзину',
+        cancelButtonText: 'Отмена',
+        confirmButtonClass: 'btn-danger',
+        icon: 'fa-trash-alt',
+        onConfirm: function() {
+            executeEmptyTrash(noteIds);
+        }
+    });
+    
+    modal.show();
+}
+
+// Выполнение очистки корзины
+function executeEmptyTrash(noteIds) {
     // Последовательно удаляем каждую заметку
     let deletedCount = 0;
     
@@ -1600,6 +1931,8 @@ function applyFilters() {
     $(`.filter-btn[data-filter="${activeFilter}"]`).removeClass('btn-outline-secondary').addClass('btn-secondary');
     $(`#filter-${activeFilter}`).prop('checked', true);
     
+    console.log('Применяем фильтры:', { searchQuery, activeFilter });
+    
     // Перебираем все заметки и скрываем/показываем их в соответствии с фильтрами
     $('.note-wrapper, .note-item').each(function() {
         let shouldShow = true;
@@ -1647,6 +1980,9 @@ function applyFilters() {
     setTimeout(() => {
         const visibleNotes = $('.note-wrapper:visible').length;
         
+        // Обновляем счетчики видимых заметок на странице
+        updatePageCounters();
+        
         if (visibleNotes === 0) {
             // Показываем сообщение о том, что ничего не найдено
             if ($('.no-results').length === 0) {
@@ -1665,6 +2001,8 @@ function applyFilters() {
                 $(this).remove();
             });
         }
+        
+        console.log('Видимые заметки после применения фильтров:', visibleNotes);
     }, 350);
 }
 
@@ -1697,7 +2035,7 @@ function loadStats() {
 function updateStatsDisplay() {
     if (statsData) {
         console.log('Обновляем статистику:', statsData);
-        // Обновляем основные счетчики
+        // Обновляем основные счетчики в боковой панели
         $('#total-notes').text(`Всего: ${statsData.total || 0}`);
         $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
         $('#active-notes').text(`Активно: ${statsData.active || 0}`);
@@ -1705,6 +2043,9 @@ function updateStatsDisplay() {
         $('#archived-notes').text(`В архиве: ${statsData.archived || 0}`);
         $('#trashed-notes').text(`В корзине: ${statsData.trashed || 0}`);
         $('#reminders-notes').text(`С напоминаниями: ${statsData.with_reminders || 0}`);
+        
+        // Также обновляем счетчики на текущей странице
+        updatePageCounters();
         
         // Обновляем папки в боковой панели
         if (statsData.by_folder) {
@@ -1847,7 +2188,7 @@ function setReminder(id, dateTime) {
             'X-CSRF-TOKEN': csrfToken,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
-        },
+               },
         data: JSON.stringify({ reminder_at: dateTime }),
         success: function() {
             showNotification('Напоминание установлено', 'success');
@@ -1951,22 +2292,50 @@ function addFolder(folderName) {
 // Добавление папки в боковую панель
 function addFolderToSidebar(folderName, count, customId = null) {
     // Создаем ID для папки, заменяя пробелы и специальные символы
-    const folderId = customId || ('folder-' + folderName.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+    // Используем data-атрибуты для точной идентификации папок по имени
+    const normalizedName = folderName.toLowerCase().trim();
+    const folderId = customId || ('folder-' + normalizedName.replace(/[^a-z0-9]/g, '-'));
     
     console.log('Добавление папки в сайдбар:', folderName, 'ID:', folderId);
     
     // Проверяем, существует ли уже такая папка в sidebar
-    if (!customId && $('#' + folderId).length > 0) {
-        // Если да, просто обновляем счетчик
-        $('#' + folderId + ' .badge').text(count);
-        console.log('Папка уже существует, обновляем счетчик:', count);
-        return;
+    if (!customId) {
+        // Проверяем по ID и по data-folder-name
+        const existingFolder = $(`#${folderId}, [data-folder-name="${normalizedName}"]`);
+        if (existingFolder.length > 0) {
+            // Если да, просто обновляем счетчик
+            existingFolder.find('.badge').text(count);
+            console.log('Папка уже существует, обновляем счетчик:', count);
+            return;
+        }
     }
     
-    // Добавляем папку в интерфейс
+    // Добавляем папку в интерфейс с сохранением оригинального имени в data-атрибуте
+    // Проверяем, является ли эта папка текущей для правильной подсветки
+    const currentPath = window.location.pathname;
+    const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
+    let isActive = false;
+    
+    if (folderMatch) {
+        try {
+            let currentFolderName = decodeURIComponent(folderMatch[1]);
+            while (currentFolderName !== decodeURIComponent(currentFolderName)) {
+                currentFolderName = decodeURIComponent(currentFolderName);
+            }
+            isActive = (currentFolderName === folderName);
+        } catch (e) {
+            console.error('Ошибка при определении активной папки:', e);
+        }
+    }
+    
     $('#folders-list').append(`
-        <div class="d-flex justify-content-between align-items-center mb-2 folder-item" id="${folderId}">
-            <a href="/notes/folder/${encodeURIComponent(folderName)}" class="text-decoration-none text-dark folder-link">
+        <div class="d-flex justify-content-between align-items-center mb-2 folder-item ${isActive ? 'active-folder' : ''}" 
+             id="${folderId}" 
+             data-folder-name="${normalizedName}" 
+             data-folder-original="${folderName}">
+            <a href="/notes/folder/${encodeURIComponent(folderName)}" 
+               class="text-decoration-none text-dark folder-link ${isActive ? 'active' : ''}" 
+               data-folder="${folderName}">
                 <i class="fas fa-folder me-1"></i> ${folderName}
             </a>
             <div class="d-flex align-items-center">
@@ -2060,10 +2429,34 @@ function applySorting(sortType) {
             });
             break;
         case 'color':
+            // Определяем порядок приоритетов цветов (как они расположены в интерфейсе)
+            const colorOrder = [
+                'red', 'orange', 'yellow', 'green', 'blue', 'light-blue',  
+                'purple', 'pink', 'teal', 'cyan', 'indigo', 'brown', 
+                'black', 'dark-blue', 'default'
+            ];
+            
             notesArray.sort((a, b) => {
                 const colorA = $(a).data('color') || 'default';
                 const colorB = $(b).data('color') || 'default';
-                return colorA.localeCompare(colorB);
+                
+                // Получаем индексы цветов в нашем порядке
+                const indexA = colorOrder.indexOf(colorA);
+                const indexB = colorOrder.indexOf(colorB);
+                
+                // Если оба цвета одинаковы, сортируем по дате обновления
+                if (indexA === indexB) {
+                    const dateA = new Date($(a).data('updated-at') || 0);
+                    const dateB = new Date($(b).data('updated-at') || 0);
+                    return dateB - dateA; // Сначала новые
+                }
+                
+                // Если какой-то из цветов не найден, отправляем его в конец
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                
+                // Иначе сортируем по индексу в массиве colorOrder
+                return indexA - indexB;
             });
             break;
     }
@@ -2087,6 +2480,9 @@ function applySorting(sortType) {
     
     // Анимация для обновленного списка
     $('.note-wrapper').hide().fadeIn(300);
+    
+    // Обновляем счетчики заметок на странице
+    setTimeout(updatePageCounters, 350);
 }
 
 // Глобальный поиск с мгновенными результатами
@@ -2382,6 +2778,110 @@ function safeInitBootstrap() {
             console.warn('Ошибка инициализации выпадающего меню:', e);
         }
     });
+}
+
+/**
+ * Создает модальное окно подтверждения действия в едином стиле
+ * 
+ * @param {Object} options - Настройки модального окна
+ * @param {string} options.id - Идентификатор модального окна
+ * @param {string} options.title - Заголовок окна
+ * @param {string} options.message - Текст сообщения
+ * @param {string} options.confirmButtonText - Текст кнопки подтверждения
+ * @param {string} options.cancelButtonText - Текст кнопки отмены
+ * @param {string} options.confirmButtonClass - Класс кнопки подтверждения (например, btn-danger)
+ * @param {string} options.icon - Иконка для заголовка (например, fa-trash)
+ * @param {Function} options.onConfirm - Функция, выполняемая при подтверждении
+ * @returns {bootstrap.Modal} - Экземпляр модального окна
+ */
+function createConfirmationModal(options) {
+    // Настройки по умолчанию
+    const defaults = {
+        id: 'confirmationModal_' + new Date().getTime(),
+        title: 'Подтвердите действие',
+        message: 'Вы уверены, что хотите выполнить это действие?',
+        confirmButtonText: 'Да',
+        cancelButtonText: 'Нет',
+        confirmButtonClass: 'btn-primary',
+        icon: 'fa-question-circle',
+        onConfirm: null,
+        size: 'modal-md', // Размер модального окна: modal-sm, modal-md, modal-lg
+        animation: true, // Анимация появления
+        centered: true // Центрирование по вертикали
+    };
+    
+    // Объединяем настройки по умолчанию с переданными параметрами
+    const settings = {...defaults, ...options};
+    
+    // Удаляем предыдущее модальное окно с таким же ID, если оно существует
+    $(`#${settings.id}`).remove();
+    
+    // Определяем дополнительные классы для модального окна
+    const modalClasses = [
+        'modal fade',
+        settings.animation ? 'animate__animated animate__fadeIn' : '',
+    ].filter(Boolean).join(' ');
+    
+    // Определяем классы для диалога
+    const dialogClasses = [
+        'modal-dialog',
+        settings.size,
+        settings.centered ? 'modal-dialog-centered' : '',
+        'modal-dialog-scrollable'
+    ].filter(Boolean).join(' ');
+    
+    // Создаем HTML модального окна с улучшенным дизайном
+    const modalHTML = `
+        <div class="${modalClasses}" id="${settings.id}" tabindex="-1" aria-labelledby="${settings.id}Label" aria-hidden="true">
+            <div class="${dialogClasses}">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light border-bottom-0">
+                        <h5 class="modal-title" id="${settings.id}Label">
+                            <i class="fas ${settings.icon} me-2"></i>${settings.title}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        ${settings.message}
+                    </div>
+                    <div class="modal-footer bg-light border-top-0">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>${settings.cancelButtonText}
+                        </button>
+                        <button type="button" class="btn ${settings.confirmButtonClass}" id="${settings.id}Confirm">
+                            <i class="fas fa-check me-1"></i>${settings.confirmButtonText}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Добавляем модальное окно в DOM
+    $('body').append(modalHTML);
+    
+    // Создаем экземпляр модального окна
+    const modalElement = document.getElementById(settings.id);
+    const modal = new bootstrap.Modal(modalElement);
+    
+    // Добавляем обработчик события для кнопки подтверждения
+    $(`#${settings.id}Confirm`).on('click', function() {
+        // Вызываем функцию обратного вызова, если она задана
+        if (typeof settings.onConfirm === 'function') {
+            settings.onConfirm();
+        }
+        
+        // Скрываем модальное окно
+        modal.hide();
+    });
+    
+    // Обработчик события скрытия модального окна
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        // Удаляем модальное окно из DOM после скрытия
+        $(modalElement).remove();
+    });
+    
+    return modal;
 }
 
 
