@@ -28,8 +28,8 @@ $(document).ready(function() {
             // Обновляем кнопки в контекстном меню
             const dropdownBtn = noteElement.find('.toggle-done-btn');
             if (dropdownBtn.length) {
-                dropdownBtn.html('<i class="fas fa-circle"></i> Отметить как активное');
-                dropdownBtn.attr('title', 'Отметить как активное');
+                dropdownBtn.html('<i class="fas fa-circle"></i> Активно');
+                dropdownBtn.attr('title', 'Активно');
             }
         } else {
             noteElement.removeClass('completed');
@@ -38,8 +38,8 @@ $(document).ready(function() {
             // Обновляем кнопки в контекстном меню
             const dropdownBtn = noteElement.find('.toggle-done-btn');
             if (dropdownBtn.length) {
-                dropdownBtn.html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-                dropdownBtn.attr('title', 'Отметить как выполненное');
+                dropdownBtn.html('<i class="fas fa-check-circle"></i> Выполнено');
+                dropdownBtn.attr('title', 'Выполнено');
             }
         }
     }

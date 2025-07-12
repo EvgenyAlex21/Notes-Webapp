@@ -790,19 +790,21 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                     }
                                 })()}
                                 
-                                <!-- Кнопка "Посмотреть" всегда должна быть видна -->
-                                <div class="mt-2 view-button-container">
-                                    <span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}" style="display: inline-block !important; visibility: visible !important;">
-                                        <i class="fas fa-eye me-1"></i> Посмотреть
-                                    </span>
-                                </div>
-                            </div>
-                            <!-- Кнопки действий (справа) -->
-                            <div class="col-12 text-end note-actions mt-2" style="display: block !important; visibility: visible !important;">
-                                <div class="dropdown d-inline-block" style="display: inline-block !important; visibility: visible !important;">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: inline-block !important; visibility: visible !important;">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </button>
+                                <!-- Контейнер для кнопки просмотра и меню действий -->
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <!-- Кнопка "Посмотреть" (слева) -->
+                                    <div class="view-button-container">
+                                        <span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}" style="display: inline-block !important; visibility: visible !important;">
+                                            <i class="fas fa-eye me-1"></i> Посмотреть
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Кнопки действий (справа) -->
+                                    <div class="note-actions">
+                                        <div class="dropdown d-inline-block" style="display: inline-block !important; visibility: visible !important;">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: inline-block !important; visibility: visible !important;">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow">
                                         ${trashMode ? `
                                             <li><a class="dropdown-item restore-btn" href="#" data-id="${note.id}">
@@ -813,7 +815,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                             </a></li>
                                         ` : `
                                             <li><a class="dropdown-item toggle-done-btn" href="#" data-id="${note.id}">
-                                                <i class="fas ${note.done ? 'fa-circle' : 'fa-check-circle'}"></i> ${note.done ? 'Отметить как активное' : 'Отметить как выполненное'}
+                                                <i class="fas ${note.done ? 'fa-circle' : 'fa-check-circle'}"></i> ${note.done ? 'Активно' : 'Выполнено'}
                                             </a></li>
                                             <li><a class="dropdown-item toggle-pin-btn" href="#" data-id="${note.id}">
                                                 <i class="fas fa-thumbtack"></i> ${note.is_pinned ? 'Открепить' : 'Закрепить'}
@@ -840,6 +842,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                             </div>
                         </div>
                     </div>
+                </div>
                 `;
             };
             
@@ -900,13 +903,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                         // Иначе архивируем
                         archiveNote(noteId);
                     }
-                });
-                
-                // Переключение статуса "Выполнено"
-                $('.toggle-done-btn').on('click', function(e) {
-                    e.preventDefault();
-                    const noteId = $(this).data('id');
-                    toggleDone(noteId);
                 });
                 
                 // Просмотр заметки
@@ -1416,26 +1412,31 @@ function createNote() {
                 console.error('Ошибка при обработке ответа:', e);
             }
             
-            showNotification('Ошибка при создании заметки: ' + errorMessage, 'danger');
-            
-            // Отображаем модальное окно с деталями ошибки, если они есть
-            if (errorDetails) {
-                if ($('#errorModal').length > 0) {
-                    $('#errorModalText').text(errorMessage);
-                    $('#errorModalDetails').text(errorDetails);
-                    
-                    // Настраиваем обработчик повторной отправки
-                    $('#retryButton').one('click', function() {
-                        $('#errorModal').modal('hide');
-                        setTimeout(() => createNote(), 500);
-                    });
-                    
-                    // Показываем модальное окно
-                    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-                    errorModal.show();
-                } else {
-                    // Если модального окна нет, показываем обычное сообщение
-                    alert('Ошибка при создании заметки:\n' + errorMessage + '\n\nДетали:\n' + errorDetails);
+            // Проверяем, является ли это ошибкой размера файла
+            if (xhr.status === 413 || errorMessage.includes('размер') || errorMessage.includes('превышает') || errorMessage.includes('большой')) {
+                showErrorModal('Превышен размер файла', errorMessage + (errorDetails ? '\n\nДетали:\n' + errorDetails : ''));
+            } else {
+                showNotification('Ошибка при создании заметки: ' + errorMessage, 'danger');
+                
+                // Отображаем модальное окно с деталями ошибки, если они есть
+                if (errorDetails) {
+                    if ($('#errorModal').length > 0) {
+                        $('#errorModalText').text(errorMessage);
+                        $('#errorModalDetails').text(errorDetails);
+                        
+                        // Настраиваем обработчик повторной отправки
+                        $('#retryButton').one('click', function() {
+                            $('#errorModal').modal('hide');
+                            setTimeout(() => createNote(), 500);
+                        });
+                        
+                        // Показываем модальное окно
+                        const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                        errorModal.show();
+                    } else {
+                        // Если модального окна нет, показываем обычное сообщение
+                        alert('Ошибка при создании заметки:\n' + errorMessage + '\n\nДетали:\n' + errorDetails);
+                    }
                 }
             }
         }
@@ -1542,7 +1543,7 @@ function handleFileUpload() {
         
         // Проверка на превышение лимита файлов
         if (files.length > 10) {
-            showNotification('Можно загрузить максимум 10 файлов за раз', 'warning');
+            showErrorModal('Превышено количество файлов', 'Можно загрузить максимум 10 файлов за раз.');
             $(this).val(''); // Очистить выбор
             return;
         }
@@ -1552,8 +1553,11 @@ function handleFileUpload() {
         for (let i = 0; i < files.length; i++) {
             totalSize += files[i].size;
             
+            console.log(`Проверка файла ${i+1}: "${files[i].name}", размер: ${files[i].size} байт (${formatFileSize(files[i].size)})`);
+            
             if (files[i].size > 15 * 1024 * 1024) { // 15 МБ
-                showNotification(`Файл "${files[i].name}" слишком большой. Максимальный размер - 15МБ`, 'warning');
+                console.log('Файл превышает лимит 15 МБ, показываем модальное окно');
+                showErrorModal('Превышен размер файла', `Файл "${files[i].name}" имеет размер ${formatFileSize(files[i].size)}. Максимально допустимый размер - 15 МБ.`);
                 $(this).val(''); // Очистить выбор
                 $('#file-preview').empty();
                 return;
@@ -1565,7 +1569,7 @@ function handleFileUpload() {
         
         // Проверка общего размера
         if (totalSize > 50 * 1024 * 1024) { // 50 МБ
-            showNotification('Общий размер файлов не должен превышать 50МБ', 'warning');
+            showErrorModal('Превышен общий размер файлов', `Общий размер выбранных файлов составляет ${formatFileSize(totalSize)}. Максимально допустимый размер - 50 МБ.`);
             $(this).val(''); // Очистить выбор
             $('#file-preview').empty();
             return;
@@ -3110,14 +3114,14 @@ function toggleDone(id, event) {
         // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
         if (dropdownBtn.length) {
-            dropdownBtn.html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-            dropdownBtn.attr('title', 'Отметить как выполненное');
+            dropdownBtn.html('<i class="fas fa-check-circle"></i> Выполнено');
+            dropdownBtn.attr('title', 'Выполнено');
             
             // Обновляем значения всех элементов с одинаковым ID заметки 
             // (может быть несколько представлений одной заметки на странице)
             $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
-                $(this).html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-                $(this).attr('title', 'Отметить как выполненное');
+                $(this).html('<i class="fas fa-check-circle"></i> Выполнено');
+                $(this).attr('title', 'Выполнено');
             });
         }
     } else {
@@ -3129,13 +3133,13 @@ function toggleDone(id, event) {
         // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
         if (dropdownBtn.length) {
-            dropdownBtn.html('<i class="fas fa-circle"></i> Отметить как активное');
-            dropdownBtn.attr('title', 'Отметить как активное');
+            dropdownBtn.html('<i class="fas fa-circle"></i> Активно');
+            dropdownBtn.attr('title', 'Активно');
             
             // Обновляем значения всех элементов с одинаковым ID заметки
             $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
-                $(this).html('<i class="fas fa-circle"></i> Отметить как активное');
-                $(this).attr('title', 'Отметить как активное');
+                $(this).html('<i class="fas fa-circle"></i> Активно');
+                $(this).attr('title', 'Активно');
             });
         }
     }
@@ -3201,8 +3205,8 @@ function toggleDone(id, event) {
             noteElement.find('.note-done-toggle').text('Выполнено');
             
             // Восстанавливаем текст и иконку в контекстном меню
-            noteElement.find('.toggle-done-btn').html('<i class="fas fa-circle"></i> Отметить как активное');
-            noteElement.find('.toggle-done-btn').attr('title', 'Отметить как активное');
+            noteElement.find('.toggle-done-btn').html('<i class="fas fa-circle"></i> Активно');
+            noteElement.find('.toggle-done-btn').attr('title', 'Активно');
         } else {
             // Восстанавливаем состояние "Активно"
             noteElement.removeClass('completed');
@@ -3210,8 +3214,8 @@ function toggleDone(id, event) {
             noteElement.find('.note-done-toggle').text('Активно');
             
             // Восстанавливаем текст и иконку в контекстном меню
-            noteElement.find('.toggle-done-btn').html('<i class="fas fa-check-circle"></i> Отметить как выполненное');
-            noteElement.find('.toggle-done-btn').attr('title', 'Отметить как выполненное');
+            noteElement.find('.toggle-done-btn').html('<i class="fas fa-check-circle"></i> Выполнено');
+            noteElement.find('.toggle-done-btn').attr('title', 'Выполнено');
         }
             
             // Восстанавливаем атрибут данных
@@ -3341,6 +3345,25 @@ function createConfirmationModal(options) {
         $(modalElement).remove();
     });
     
+    return modal;
+}
+
+// Функция для показа модального окна об ошибке
+function showErrorModal(title, message) {
+    const modal = createConfirmationModal({
+        title: title,
+        message: message,
+        confirmButtonText: 'Закрыть',
+        cancelButtonText: '',
+        confirmButtonClass: 'btn-primary',
+        icon: 'fa-exclamation-triangle',
+        size: 'modal-md'
+    });
+    
+    // Скрываем кнопку отмены, так как нужна только кнопка "Закрыть"
+    modal._element.querySelector('.btn-secondary').style.display = 'none';
+    
+    modal.show();
     return modal;
 }
 

@@ -522,6 +522,35 @@ class NoteController extends Controller
         if ($uploadFiles) {
             \Log::info('Количество загруженных файлов: ' . count($uploadFiles));
             
+            // Проверяем общее количество файлов (существующие + новые)
+            $existingFilesCount = is_array($uploadedFiles) ? count($uploadedFiles) : 0;
+            $newFilesCount = count($uploadFiles);
+            $totalFiles = $existingFilesCount + $newFilesCount;
+            $maxFiles = 10; // Максимальное количество файлов
+            
+            \Log::info("Проверка лимита файлов: существующих=$existingFilesCount, новых=$newFilesCount, итого=$totalFiles, лимит=$maxFiles");
+            
+            if ($totalFiles > $maxFiles) {
+                \Log::error("Превышен лимит файлов: $totalFiles > $maxFiles");
+                return response()->json([
+                    'error' => "Превышен лимит файлов! Максимум $maxFiles файлов, а пытаетесь загрузить $totalFiles. Удалите " . ($totalFiles - $maxFiles) . " файл(ов)."
+                ], 422);
+            }
+            
+            // Проверяем размер каждого файла
+            foreach ($uploadFiles as $file) {
+                if (!is_string($file) && $file->isValid()) {
+                    $maxSize = 100 * 1024 * 1024; // 100 MB в байтах
+                    if ($file->getSize() > $maxSize) {
+                        $sizeMB = round($file->getSize() / (1024 * 1024), 1);
+                        \Log::error("Файл {$file->getClientOriginalName()} превышает лимит размера: {$sizeMB} MB");
+                        return response()->json([
+                            'error' => "Файл \"{$file->getClientOriginalName()}\" имеет размер {$sizeMB} МБ. Максимально допустимый размер - 100 МБ."
+                        ], 422);
+                    }
+                }
+            }
+            
             // Создаем символическую ссылку для storage, если её нет
             if (!file_exists(public_path('storage'))) {
                 \Artisan::call('storage:link');

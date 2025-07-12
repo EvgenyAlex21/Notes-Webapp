@@ -31,6 +31,8 @@
 
 .note-actions .dropdown-menu {
     min-width: 180px !important;
+    top: auto !important;
+    bottom: 100% !important;
 }
 
 /* Обязательное отображение кнопки просмотра */
@@ -81,4 +83,66 @@
 /* Делаем заметку кликабельной */
 .note-content-text {
     cursor: pointer;
+}
+
+/* Исправление выпадающего меню */
+.note-actions .dropdown-menu {
+    top: auto !important;
+    bottom: 100% !important;
+}
+
+/* Улучшение внешнего вида карточек заметок */
+.note-item h4 {
+    font-weight: 600 !important;
+    color: #333 !important;
+    margin: 0 0 12px 0 !important;
+    font-size: 1.35rem !important;
+}
+
+.dark-theme .note-item h4 {
+    color: #f1f3f5 !important;
+}
+
+.note-item .note-meta {
+    font-size: 0.85rem !important;
+    margin-bottom: 12px !important;
+}
+
+.note-item .tags-container {
+    margin-bottom: 15px !important;
+}
+
+.note-item .note-content-preview {
+    margin-top: 0 !important;
+    margin-bottom: 12px !important;
+    padding-top: 0 !important;
+    border-top: none !important;
+}
+
+.note-item .note-footer {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: none !important;
+}
+
+.note-item .note-actions {
+    margin-top: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.view-more-badge {
+    margin-top: 0 !important;
+}
+
+/* Стили для плашки папки */
+.folder-badge {
+    border-radius: 20px !important;
+    padding: 4px 12px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.folder-badge i {
+    margin-right: 4px !important;
 }

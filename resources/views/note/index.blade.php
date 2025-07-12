@@ -60,19 +60,19 @@
             color: #007bff;
         }
         .note-item {
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             background-color: #fff;
-            border-left: none;
+            border-left: 5px solid #6c757d; /* Цвет по умолчанию */
             position: relative;
-            border-top: 4px solid #6c757d; /* Цвет по умолчанию */
+            border-top: none;
         }
         .note-item:hover {
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            transform: translateY(-3px);
         }
         .note-item.pinned {
             background-color: #fffdf7;
@@ -89,22 +89,22 @@
             transform: scale(1.05);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        /* Индикатор приоритета (цветная полоска сверху) */
-        .note-item.default { border-top-color: #6c757d; }
-        .note-item.red { border-top-color: #dc3545; }
-        .note-item.green { border-top-color: #28a745; }
-        .note-item.blue { border-top-color: #007bff; }
-        .note-item.yellow { border-top-color: #ffc107; }
-        .note-item.purple { border-top-color: #6f42c1; }
-        .note-item.pink { border-top-color: #e83e8c; }
-        .note-item.orange { border-top-color: #fd7e14; }
-        .note-item.teal { border-top-color: #20c997; }
-        .note-item.cyan { border-top-color: #17a2b8; }
-        .note-item.indigo { border-top-color: #6610f2; }
-        .note-item.brown { border-top-color: #8b4513; }
-        .note-item.black { border-top-color: #000000; }
-        .note-item.navy { border-top-color: #000080; }
-        
+        /* Индикатор приоритета (цветная полоска слева) */
+        .note-item.default { border-left-color: #6c757d; }
+        .note-item.red { border-left-color: #dc3545; }
+        .note-item.green { border-left-color: #28a745; }
+        .note-item.blue { border-left-color: #007bff; }
+        .note-item.yellow { border-left-color: #ffc107; }
+        .note-item.purple { border-left-color: #6f42c1; }
+        .note-item.pink { border-left-color: #e83e8c; }
+        .note-item.orange { border-left-color: #fd7e14; }
+        .note-item.teal { border-left-color: #20c997; }
+        .note-item.cyan { border-left-color: #17a2b8; }
+        .note-item.indigo { border-left-color: #6610f2; }
+        .note-item.brown { border-left-color: #8b4513; }
+        .note-item.black { border-left-color: #000000; }
+        .note-item.navy { border-left-color: #000080; }
+
         /* Стили для выбранных цветов в фильтрации */
         .color-option.selected {
             transform: scale(1.3);
@@ -417,19 +417,19 @@
         .note-item h4 {
             font-weight: 600;
             color: #333;
-            margin: 0;
-            font-size: 1.2rem;
+            margin: 0 0 12px 0;
+            font-size: 1.35rem;
         }
         .dark-theme .note-item h4 {
             color: #f1f3f5;
         }
         .note-item .note-meta {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             color: #6c757d;
         }
         .note-item .note-meta .meta-item {
@@ -456,20 +456,36 @@
             flex-wrap: wrap;
             gap: 5px;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
         .dark-theme .note-item .tag {
             background-color: #444;
             color: #ccc;
         }
         .note-item .note-content-preview {
-            max-height: 150px;
+            max-height: 250px;
             overflow: hidden;
             position: relative;
-            border-top: 1px solid #f0f0f0;
-            padding-top: 10px;
-            margin-top: 5px;
-            font-size: 0.9rem;
+            padding-top: 0;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .note-item .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+        }
+        .dark-theme .note-item .note-footer {
+            border-top-color: #444;
+        }
+        .note-item .note-actions {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
         }
         .dark-theme .note-item .note-content-preview {
             border-top-color: #444;

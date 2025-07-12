@@ -755,6 +755,21 @@
                 updateHiddenField();
                 const id = $('#note-id').val();
                 
+                // Проверяем общее количество файлов перед отправкой
+                const existingFilesCount = (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) ? window.currentNoteFiles.length : 0;
+                const newFilesCount = uploadedFiles ? uploadedFiles.length : 0;
+                const totalFilesCount = existingFilesCount + newFilesCount;
+                
+                console.log(`Проверка файлов перед сохранением:`);
+                console.log(`- Существующих файлов: ${existingFilesCount}`);
+                console.log(`- Новых файлов: ${newFilesCount}`);
+                console.log(`- Общее количество: ${totalFilesCount}`);
+                
+                if (totalFilesCount > maxFiles) {
+                    showErrorMessage(`Превышен лимит файлов! Максимум ${maxFiles} файлов, а у вас ${totalFilesCount}. Удалите ${totalFilesCount - maxFiles} файл(ов) перед сохранением.`);
+                    return;
+                }
+                
                 // Проверяем выбранные файлы перед отправкой
                 const fileInput = $('#upload-files')[0];
                 console.log('Кнопка "Сохранить изменения" нажата');
@@ -1496,14 +1511,25 @@
             
             // Общая функция обработки файлов
             function handleFiles(files) {
-                // Проверка на количество файлов
-                if (uploadedFiles.length + files.length > maxFiles) {
-                    showErrorMessage(`Можно загрузить максимум ${maxFiles} файлов. Сейчас выбрано: ${uploadedFiles.length + files.length}`);
+                // Преобразуем FileList в массив для обработки
+                const filesArray = Array.from(files);
+                
+                // Проверка на количество выбранных файлов за раз
+                if (filesArray.length > maxFiles) {
+                    showErrorMessage(`Можно выбрать максимум ${maxFiles} файлов за раз. Выбрано: ${filesArray.length}`);
                     return;
                 }
                 
-                // Преобразуем FileList в массив для обработки
-                const filesArray = Array.from(files);
+                // Подсчитываем существующие файлы
+                const existingFilesCount = (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) ? window.currentNoteFiles.length : 0;
+                const currentNewFilesCount = uploadedFiles.length;
+                const totalAfterAdd = existingFilesCount + currentNewFilesCount + filesArray.length;
+                
+                // Проверка общего количества файлов после добавления
+                if (totalAfterAdd > maxFiles) {
+                    showErrorMessage(`Можно загрузить максимум ${maxFiles} файлов. Существующих: ${existingFilesCount}, уже выбранных новых: ${currentNewFilesCount}, пытаетесь добавить: ${filesArray.length}. Общее: ${totalAfterAdd}`);
+                    return;
+                }
                 
                 // Проверка размера каждого файла
                 for (let i = 0; i < filesArray.length; i++) {
@@ -1531,8 +1557,19 @@
             
             // Показывает сообщение об ошибке
             function showErrorMessage(message) {
-                alert(message);
-                // Здесь можно реализовать более красивое отображение ошибки
+                // Создаем красивое модальное окно
+                createConfirmationModal({
+                    title: 'Ошибка загрузки файла',
+                    message: message,
+                    confirmButtonText: 'Понятно',
+                    cancelButtonText: '', // Пустая строка = кнопка не отображается
+                    confirmButtonClass: 'btn-primary',
+                    icon: 'fa-exclamation-triangle',
+                    size: 'modal-md',
+                    onConfirm: function() {
+                        // Просто закрываем модальное окно
+                    }
+                });
             }
             
             // Обновляет превью для всех загруженных файлов
@@ -1672,17 +1709,27 @@
                 
                 // Обработчик для удаления изображения
                 modal.find('#removeImageBtn').off('click').on('click', function() {
-                    // Удаляем файл из массива
-                    uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
-                    
-                    // Удаляем превью из DOM
-                    $(`#file-item-${fileId}`).fadeOut(300, function() {
-                        $(this).remove();
+                    createConfirmationModal({
+                        title: 'Удаление файла',
+                        message: `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                        confirmButtonText: 'Удалить',
+                        cancelButtonText: 'Отмена',
+                        confirmButtonClass: 'btn-danger',
+                        icon: 'fa-trash',
+                        onConfirm: function() {
+                            // Удаляем файл из массива
+                            uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
+                            
+                            // Удаляем превью из DOM
+                            $(`#file-item-${fileId}`).fadeOut(300, function() {
+                                $(this).remove();
+                            });
+                            
+                            // Закрываем модальное окно
+                            const bsModal = bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal'));
+                            bsModal.hide();
+                        }
                     });
-                    
-                    // Закрываем модальное окно
-                    const bsModal = bootstrap.Modal.getInstance(document.getElementById('imagePreviewModal'));
-                    bsModal.hide();
                 });
                 
                 // Открываем модальное окно
@@ -1780,7 +1827,7 @@
                                     <a href="${fileUrl}" target="_blank" class="btn btn-outline-primary" title="Открыть файл">
                                         <i class="fas fa-external-link-alt"></i>
                                     </a>
-                                    <button type="button" class="btn btn-outline-danger remove-file" data-file-path="${file.path}" title="Удалить файл">
+                                    <button type="button" class="btn btn-outline-danger remove-file" data-file-path="${file.path}" data-file-name="${file.name}" title="Удалить файл">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -1792,29 +1839,62 @@
                 $('#existing-files .row').append(fileElement);
             });
             
-            // Обработчик для кнопки удаления файла
-            $('.remove-file').off('click').on('click', function() {
-                const filePath = $(this).data('file-path');
-                const fileCard = $(this).closest('.col-md-3');
-                
-                if (confirm('Удалить этот файл?')) {
-                    console.log('Удаление файла с путем:', filePath);
+            // Привязываем обработчики событий после добавления всех элементов
+            setTimeout(function() {
+                // Обработчик для кнопки удаления файла
+                $('.remove-file').off('click').on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
                     
-                    // Удаляем файл из массива
-                    window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
-                    console.log('Оставшиеся файлы:', window.currentNoteFiles);
+                    const filePath = $(this).data('file-path');
+                    const fileCard = $(this).closest('.col-md-3');
+                    const fileName = $(this).data('file-name') || 'файл';
                     
-                    // Удаляем визуальное представление
-                    fileCard.fadeOut(300, function() {
-                        $(this).remove();
-                        
-                        // Если файлов не осталось, скрываем контейнер
-                        if (window.currentNoteFiles.length === 0) {
-                            $('#existing-files').hide();
+                    console.log('Кнопка удаления нажата для файла:', fileName);
+                    
+                    // Создаем модальное окно для подтверждения удаления
+                    try {
+                        createConfirmationModal({
+                            title: 'Удаление файла',
+                            message: `Вы уверены, что хотите удалить файл "${fileName}"?`,
+                            confirmButtonText: 'Удалить',
+                            cancelButtonText: 'Отмена',
+                            confirmButtonClass: 'btn-danger',
+                            icon: 'fa-trash',
+                            onConfirm: function() {
+                                console.log('Подтверждено удаление файла:', fileName);
+                                
+                                // Удаляем файл из массива
+                                window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
+                                
+                                // Удаляем визуальное представление
+                                fileCard.fadeOut(300, function() {
+                                    $(this).remove();
+                                    
+                                    // Если файлов не осталось, скрываем контейнер
+                                    if (window.currentNoteFiles.length === 0) {
+                                        $('#existing-files').hide();
+                                    }
+                                });
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Ошибка при вызове createConfirmationModal:', error);
+                        if (confirm(`Удалить файл "${fileName}"?`)) {
+                            // Fallback - используем стандартный confirm
+                            window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
+                            fileCard.fadeOut(300, function() {
+                                $(this).remove();
+                                if (window.currentNoteFiles.length === 0) {
+                                    $('#existing-files').hide();
+                                }
+                            });
                         }
-                    });
-                }
-            });
+                    }
+                });
+                
+                console.log('Обработчики удаления файлов привязаны для', $('.remove-file').length, 'кнопок');
+            }, 100);
         }
         
         // Загрузка списка папок
@@ -1904,6 +1984,100 @@
         
         // Инициализируем просмотрщик файлов
         initFileViewer();
+        
+        // Функция для создания модального окна подтверждения
+        function createConfirmationModal(options) {
+            // Настройки по умолчанию
+            const defaults = {
+                id: 'confirmationModal_' + new Date().getTime(),
+                title: 'Подтвердите действие',
+                message: 'Вы уверены, что хотите выполнить это действие?',
+                confirmButtonText: 'Да',
+                cancelButtonText: 'Нет',
+                confirmButtonClass: 'btn-primary',
+                icon: 'fa-question-circle',
+                onConfirm: null,
+                size: 'modal-md',
+                animation: true,
+                centered: true
+            };
+            
+            // Объединяем настройки по умолчанию с переданными параметрами
+            const settings = {...defaults, ...options};
+            
+            // Удаляем предыдущее модальное окно с таким же ID, если оно существует
+            $(`#${settings.id}`).remove();
+            
+            // Определяем дополнительные классы для модального окна
+            const modalClasses = [
+                'modal fade',
+                settings.animation ? 'animate__animated animate__fadeIn' : '',
+            ].filter(Boolean).join(' ');
+            
+            // Определяем классы для диалога
+            const dialogClasses = [
+                'modal-dialog',
+                settings.size,
+                settings.centered ? 'modal-dialog-centered' : '',
+                'modal-dialog-scrollable'
+            ].filter(Boolean).join(' ');
+            
+            // Создаем HTML модального окна с улучшенным дизайном
+            const modalHTML = `
+                <div class="${modalClasses}" id="${settings.id}" tabindex="-1" aria-labelledby="${settings.id}Label}" role="dialog">
+                    <div class="${dialogClasses}">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-light border-bottom-0">
+                                <h5 class="modal-title" id="${settings.id}Label">
+                                    <i class="fas ${settings.icon} me-2"></i>${settings.title}
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                ${settings.message}
+                            </div>
+                            <div class="modal-footer bg-light border-top-0">
+                                ${settings.cancelButtonText ? `<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="fas fa-times me-1"></i>${settings.cancelButtonText}
+                                </button>` : ''}
+                                <button type="button" class="btn ${settings.confirmButtonClass}" id="${settings.id}Confirm">
+                                    <i class="fas fa-check me-1"></i>${settings.confirmButtonText}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Добавляем модальное окно в DOM
+            $('body').append(modalHTML);
+            
+            // Создаем экземпляр модального окна
+            const modalElement = document.getElementById(settings.id);
+            const modal = new bootstrap.Modal(modalElement);
+            
+            // Добавляем обработчик события для кнопки подтверждения
+            $(`#${settings.id}Confirm`).on('click', function() {
+                // Вызываем функцию обратного вызова, если она задана
+                if (typeof settings.onConfirm === 'function') {
+                    settings.onConfirm();
+                }
+                
+                // Скрываем модальное окно
+                modal.hide();
+            });
+            
+            // Обработчик события скрытия модального окна
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                // Удаляем модальное окно из DOM после скрытия
+                $(modalElement).remove();
+            });
+            
+            // Показываем модальное окно
+            modal.show();
+            
+            return modal;
+        }
     </script>
 
     <!-- Модальное окно для просмотра файлов -->
