@@ -1,5 +1,4 @@
-php-8.4.8-Win32-vs17-x64/
-composer/
+PHP_COMPOSER/
 *.log
 .DS_Store
 .env
