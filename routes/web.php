@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\TagController;
 
 Route::get('/', function () {
     return redirect('/notes');
@@ -34,6 +35,9 @@ Route::prefix('api')->group(function () {
     Route::put('/notes/{note}', [NoteController::class, 'update']);
     Route::delete('/notes/{note}', [NoteController::class, 'destroy']);
     
+    // API для работы с тегами
+    Route::get('/tags', [TagController::class, 'index']);
+    
     // Удаление всех заметок
     Route::delete('/notes', [NoteController::class, 'clearAll']);
     
@@ -58,5 +62,66 @@ Route::prefix('api')->group(function () {
     Route::get('/notes/by-date', [NoteController::class, 'getByDueDate']);
     Route::get('/stats', [NoteController::class, 'getStats']);
     
-
+    // Временный маршрут для отладки файлов заметок
+    Route::get('/debug/note-files/{id}', function ($id) {
+        $note = \App\Models\Note::find($id);
+        if (!$note) {
+            return response()->json(['error' => 'Заметка не найдена'], 404);
+        }
+        
+        return response()->json([
+            'note_id' => $note->id,
+            'files' => $note->files,
+            'files_type' => gettype($note->files),
+            'has_files' => isset($note->files),
+            'files_count' => is_array($note->files) ? count($note->files) : 'not an array'
+        ]);
+    });
+    
+    // Тестовый маршрут для отладки загрузки файлов
+    Route::post('/test-upload', function(Request $request) {
+        \Log::info('Тестовая загрузка файлов');
+        \Log::info('Все файлы в запросе: ' . json_encode($request->allFiles()));
+        
+        $result = [
+            'success' => false,
+            'message' => 'Нет файлов для обработки',
+            'files' => []
+        ];
+        
+        if ($request->hasFile('upload_files')) {
+            $result['success'] = true;
+            $result['message'] = 'Файлы получены';
+            
+            $files = [];
+            foreach ($request->file('upload_files') as $file) {
+                if ($file->isValid()) {
+                    $fileName = $file->getClientOriginalName();
+                    $fileExt = $file->getClientOriginalExtension();
+                    $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
+                    
+                    // Сохраняем файл в storage/app/public/uploads
+                    $path = $file->storeAs('uploads', $uniqueFileName, 'public');
+                    
+                    $files[] = [
+                        'name' => $fileName,
+                        'path' => $path,
+                        'url' => asset('storage/' . $path),
+                        'size' => $file->getSize()
+                    ];
+                    
+                    \Log::info('Файл сохранен: ' . $fileName . ' -> ' . $path);
+                } else {
+                    \Log::error('Невалидный файл: ' . $file->getClientOriginalName());
+                }
+            }
+            
+            $result['files'] = $files;
+        } else {
+            \Log::warning('Запрос не содержит файлов upload_files');
+            \Log::info('Доступные поля: ' . json_encode($request->all()));
+        }
+        
+        return response()->json($result);
+    });
 });

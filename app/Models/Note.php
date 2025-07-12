@@ -22,7 +22,7 @@ class Note extends Model
         'archived_at' => 'datetime',
         'reminder_at' => 'datetime',
         'due_date' => 'datetime',
-        'files' => 'array',
+        'files' => 'json',
         'compatibility_settings' => 'array',
         'version_history' => 'array',
     ];

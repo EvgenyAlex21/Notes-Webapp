@@ -183,6 +183,23 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .search-result-item .search-result-tags {
+            margin-top: 5px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .search-result-item .tag {
+            font-size: 0.75rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background-color: #f0f0f0;
+            color: #666;
+            cursor: pointer;
+        }
+        .search-result-item .tag:hover {
+            background-color: #e0e0e0;
+        }
         .search-result-item .highlight {
             background-color: #ffffc0;
         }
@@ -734,6 +751,9 @@
     <script src="/js/notes.js"></script>
     <script src="/js/note-view.js"></script>
     <script src="/js/note-filters.js"></script>
+    <script src="/js/tags-improvements.js"></script>
+    <script src="/js/debug-search.js"></script>
+    <script src="/js/robust-search.js"></script>
     
     <!-- Модальное окно для просмотра полной заметки -->
     <div class="modal fade" id="viewNoteModal" tabindex="-1" aria-labelledby="viewNoteModalLabel" aria-hidden="true">

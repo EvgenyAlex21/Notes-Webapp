@@ -282,7 +282,8 @@ function loadAllNotes(trashMode = false) {
                 return `
                     <div class="note-item note-wrapper ${note.color} ${note.done ? 'completed' : ''} ${isPinned ? 'pinned' : ''}" 
                          id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
-                         data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}"
+                         data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}" 
+                         data-raw-tags="${note.tags || ''}"
                          data-updated-at="${note.updated_at}">
                          
                         ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
@@ -333,22 +334,64 @@ function loadAllNotes(trashMode = false) {
                                 </div>
                                 
                                 <!-- Прикрепленные файлы -->
-                                ${note.files && note.files.length > 0 ? `
-                                    <div class="note-files mt-3">
-                                        <div class="small text-muted mb-2">Прикрепленные файлы (${note.files.length}):</div>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            ${note.files.map(file => `
-                                                <a href="${file.url}" target="_blank" 
-                                                   class="file-link badge bg-light text-dark d-flex align-items-center">
-                                                    <i class="fas fa-${file.type === 'image' ? 'image' : 
-                                                                       file.type === 'video' ? 'video' : 
-                                                                       file.type === 'document' ? 'file-alt' : 'file'} me-1"></i>
-                                                    ${file.name}
-                                                </a>
-                                            `).join('')}
-                                        </div>
-                                    </div>
-                                ` : ''}
+                                ${(function() {
+                                    try {
+                                        // Проверяем файлы и их формат
+                                        if (!note.files) return '';
+                                        
+                                        // Пробуем преобразовать строку в массив, если это необходимо
+                                        let filesArray = note.files;
+                                        if (typeof filesArray === 'string') {
+                                            try {
+                                                filesArray = JSON.parse(filesArray);
+                                                console.log('Преобразовали строку файлов в массив для заметки:', note.id);
+                                            } catch(e) {
+                                                console.error('Ошибка при преобразовании строки файлов:', e);
+                                                filesArray = [];
+                                            }
+                                        }
+                                        
+                                        // Если это не массив или массив пустой, возвращаем пустую строку
+                                        if (!Array.isArray(filesArray) || filesArray.length === 0) return '';
+                                        
+                                        // Фильтруем только валидные файлы
+                                        const validFiles = filesArray.filter(file => file && file.name);
+                                        if (validFiles.length === 0) return '';
+                                        
+                                        return `
+                                            <div class="note-files mt-3">
+                                                <div class="small text-muted mb-2">Прикрепленные файлы (${validFiles.length}):</div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    ${validFiles.map(file => {
+                                                        // Если нет url, но есть path - генерируем url
+                                                        let fileUrl = file.url || '';
+                                                        if (!fileUrl && file.path) {
+                                                            fileUrl = `/storage/${file.path}`;
+                                                        }
+                                                        
+                                                        // Если нет ни url, ни path, используем заглушку
+                                                        if (!fileUrl) {
+                                                            fileUrl = '#';
+                                                        }
+                                                        
+                                                        return `
+                                                        <a href="${fileUrl}" target="_blank" 
+                                                           class="file-link badge bg-light text-dark d-flex align-items-center">
+                                                            <i class="fas fa-${file.type === 'image' ? 'image' : 
+                                                                               file.type === 'video' ? 'video' : 
+                                                                               file.type === 'document' ? 'file-alt' : 'file'} me-1"></i>
+                                                            ${file.name || 'Файл без имени'}
+                                                        </a>
+                                                        `;
+                                                    }).join('')}
+                                                </div>
+                                            </div>
+                                        `;
+                                    } catch (e) {
+                                        console.error('Ошибка при обработке файлов заметки:', e, note);
+                                        return '';
+                                    }
+                                })()}
                             </div>
                             <!-- Кнопки действий (справа) -->
                             <div class="col-12 text-end note-actions mt-2">
@@ -574,39 +617,112 @@ function loadNote(id) {
             });
             
             // Отображаем существующие файлы
-            if (note.files && note.files.length > 0) {
-                const existingFilesContainer = $('#existing-files');
-                existingFilesContainer.empty();
+            console.log('Файлы заметки:', note.files);
+            console.log('Тип файлов:', typeof note.files, Array.isArray(note.files));
+            
+            // Обработка разных форматов файлов
+            if (typeof note.files === 'string') {
+                try {
+                    note.files = JSON.parse(note.files);
+                    console.log('Преобразовали файлы из строки в массив:', note.files);
+                } catch (e) {
+                    console.error('Ошибка при парсинге строки файлов:', e);
+                    note.files = [];
+                }
+            } else if (note.files === null || note.files === undefined) {
+                note.files = [];
+                console.log('Файлы были null или undefined, преобразовали в пустой массив');
+            } else if (!Array.isArray(note.files)) {
+                console.error('Файлы не являются массивом:', typeof note.files);
+                note.files = [];
+            }
+            
+            // Обработка файлов заметки
+            if (note.files && Array.isArray(note.files)) {
+                // Фильтруем только корректные файлы
+                let validFiles = note.files.filter(file => 
+                    file && typeof file === 'object' && file.name && 
+                    (file.url || file.path) // Должен быть либо url, либо path
+                );
                 
-                existingFilesContainer.append('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6>');
+                console.log('Проверенные файлы для отображения:', validFiles.length, 'из', note.files.length);
                 
-                note.files.forEach(file => {
-                    let fileIcon, filePreview;
-                    
-                    if (file.type === 'image') {
-                        filePreview = `<img src="${file.url}" class="img-thumbnail" style="max-height: 100px; max-width: 100%;" alt="${file.name}">`;
-                    } else if (file.type === 'video') {
-                        fileIcon = '<i class="fas fa-film fa-2x text-secondary"></i>';
-                    } else if (file.type === 'document') {
-                        fileIcon = '<i class="fas fa-file-alt fa-2x text-secondary"></i>';
-                    } else {
-                        fileIcon = '<i class="fas fa-file fa-2x text-secondary"></i>';
+                // Для файлов, у которых есть path, но нет url, добавляем url
+                validFiles = validFiles.map(file => {
+                    if (!file.url && file.path) {
+                        file.url = `/storage/${file.path}`;
+                    } else if (!file.url && !file.path) {
+                        // Если нет ни url, ни path - ставим плейсхолдер
+                        file.url = 'https://placehold.co/200?text=Файл+недоступен';
+                        console.warn('У файла нет ни URL, ни path:', file);
                     }
-                    
-                    existingFilesContainer.append(`
-                        <div class="col-md-3 mb-3">
-                            <div class="card">
-                                <div class="card-body text-center">
-                                    ${filePreview || fileIcon || ''}
-                                    <p class="mt-2 mb-0 text-truncate">${file.name}</p>
-                                    <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
-                                        Открыть
-                                    </a>
+                    return file;
+                });
+                
+                // Сохраняем файлы в глобальной переменной для использования при обновлении
+                window.currentNoteFiles = validFiles;
+                console.log('Сохранили валидные файлы в window.currentNoteFiles:', window.currentNoteFiles);
+                
+                // Проверим наличие контейнера для существующих файлов
+                const existingFilesContainer = $('#existing-files');
+                if (existingFilesContainer.length === 0) {
+                    console.warn('Элемент #existing-files не найден в DOM, создаем его');
+                    // Создаем контейнер, если его нет
+                    $('#files-container').append('<div id="existing-files" class="mt-3"></div>');
+                }
+                
+                // Получаем контейнер и очищаем его
+                const filesContainer = $('#existing-files');
+                filesContainer.empty();
+                
+                // Если есть валидные файлы - отображаем их
+                if (validFiles.length > 0) {
+                    filesContainer.append('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6>');
+                    let filesHtml = '';
+                    validFiles.forEach(file => {
+                        let preview = '';
+                        if (file.type === 'image') {
+                            preview = `<img src="${file.url}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}" onerror="this.onerror=null;this.src='https://placehold.co/200?text=Изображение+недоступно';this.style='height:100px;object-fit:cover;'">`;
+                        } else if (file.type === 'video') {
+                            preview = `<video src="${file.url}" controls style="width: 100%; height: 100px; object-fit: cover; background: #f8f9fa;" onerror="this.onerror=null;this.outerHTML='<div class=\\'d-flex align-items-center justify-content-center\\' style=\\'height:100px;background:#f8f9fa;\\'><i class=\\'fas fa-film fa-2x text-danger\\'></i></div>'"></video>`;
+                        } else {
+                            // Документы и прочее
+                            let iconClass = 'fa-file';
+                            if (file.extension && typeof file.extension === 'string') {
+                                if (file.extension.match(/pdf/i)) iconClass = 'fa-file-pdf';
+                                else if (file.extension.match(/docx?/i)) iconClass = 'fa-file-word';
+                                else if (file.extension.match(/xlsx?/i)) iconClass = 'fa-file-excel';
+                                else if (file.extension.match(/pptx?/i)) iconClass = 'fa-file-powerpoint';
+                                else if (file.extension.match(/zip|rar|tar|gz/i)) iconClass = 'fa-file-archive';
+                                else if (file.extension.match(/txt|rtf/i)) iconClass = 'fa-file-alt';
+                            }
+                            preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
+                        }
+                        filesHtml += `
+                            <div class="col-md-3 col-sm-4 col-6 mb-3">
+                                <div class="card h-100">
+                                    ${preview}
+                                    <div class="card-body p-2 text-center">
+                                        <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                        <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">Открыть</a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `);
-                });
+                        `;
+                    });
+                    filesContainer.append(`<div class="row g-2">${filesHtml}</div>`);
+                } else {
+                    console.log('Нет валидных файлов для отображения');
+                }
+            } else {
+                console.log('Нет файлов для отображения или формат неверный:', typeof note.files);
+                window.currentNoteFiles = [];
+                
+                // Очищаем контейнер для существующих файлов, если он есть
+                const existingFilesContainer = $('#existing-files');
+                if (existingFilesContainer.length > 0) {
+                    existingFilesContainer.empty();
+                }
             }
         },
         error: function(error) {
@@ -818,6 +934,27 @@ function showNotification(message, type = 'info', duration = 3000) {
 
 // Обработка загрузки файлов
 function handleFileUpload() {
+    // Проверяем наличие элементов в DOM и на какой странице мы находимся
+    const currentPath = window.location.pathname;
+    
+    // Если мы не на странице создания или редактирования заметки, пропускаем
+    if (!currentPath.match(/\/notes\/create/) && !currentPath.match(/\/notes\/\d+\/edit/)) {
+        console.log('Не страница создания/редактирования заметки, пропуск инициализации загрузки файлов');
+        return;
+    }
+    
+    // Проверяем наличие элемента #upload-files
+    if ($('#upload-files').length === 0) {
+        console.log('Элемент #upload-files не найден, пропуск инициализации загрузки файлов');
+        return;
+    }
+    
+    // Проверяем существование контейнера для превью
+    if ($('#file-preview').length === 0) {
+        console.log('Контейнер #file-preview не найден, создаем его');
+        $('#files-container').append('<div id="file-preview" class="row g-2 mt-2"></div>');
+    }
+    
     // Для страницы создания и редактирования заметки
     $('#upload-files').on('change', function() {
         const files = this.files;
@@ -1003,6 +1140,12 @@ function updateNote(id) {
     const fileInput = $('#upload-files')[0];
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     
+    console.log('Проверка наличия файлов в updateNote:');
+    console.log('- fileInput существует:', !!fileInput);
+    console.log('- fileInput.files существует:', fileInput ? !!fileInput.files : false);
+    console.log('- количество файлов:', fileInput && fileInput.files ? fileInput.files.length : 0);
+    console.log('- hasFiles =', hasFiles);
+    
     // Создаем FormData для отправки файлов
     const formData = new FormData();
     formData.append('name', $('#name').val());
@@ -1027,11 +1170,28 @@ function updateNote(id) {
         formData.append('tags', currentTags.join(','));
     }
     
+    // Проверяем наличие существующих файлов
+    if (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) {
+        console.log('Сохраняем существующие файлы:', window.currentNoteFiles);
+        formData.append('files', JSON.stringify(window.currentNoteFiles));
+    } else {
+        console.log('Нет существующих файлов или они в неправильном формате');
+        if (window.currentNoteFiles) {
+            console.log('Тип currentNoteFiles:', typeof window.currentNoteFiles);
+        }
+        // Всегда передаем пустой массив для корректного обновления
+        formData.append('files', JSON.stringify([]));
+    }
+    
     // Добавляем файлы, если они есть
     if (hasFiles) {
+        console.log('Добавляем новые файлы в FormData:', fileInput.files.length, 'файлов');
         for (let i = 0; i < fileInput.files.length; i++) {
+            console.log(`Добавление файла ${i+1}/${fileInput.files.length}: ${fileInput.files[i].name} (${formatFileSize(fileInput.files[i].size)})`);
             formData.append('upload_files[]', fileInput.files[i]);
         }
+    } else {
+        console.log('Новых файлов для загрузки нет');
     }
     
     if (!$('#name').val() || !$('#description').val()) {
@@ -1053,6 +1213,19 @@ function updateNote(id) {
     
     console.log('CSRF-токен получен:', csrfToken);
     
+    // Вывод отладочной информации о формируемых данных
+    console.log('Отправляемые данные:');
+    let hasUploadFiles = false;
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ':', pair[1]);
+        if (pair[0] === 'upload_files[]') {
+            hasUploadFiles = true;
+            console.log('>>> Найден файл для загрузки:', pair[1].name);
+        }
+    }
+    
+    console.log('Проверка наличия файлов в FormData: ' + (hasUploadFiles ? 'ЕСТЬ' : 'НЕТ'));
+
     $.ajax({
         url: `/notes/${id}`,
         type: 'POST', // Используем POST для FormData с методом PUT
@@ -1680,7 +1853,7 @@ function addFolderToSidebar(folderName, count) {
                             <i class="fas fa-edit me-1"></i> Переименовать
                         </a></li>
                         <li><a class="dropdown-item delete-folder" href="#" data-folder="${folderName}">
-                            <i class="fas fa-trash me-1"></i> Удалить папку
+                            <i class="fas fa-trash me-1"></i> Удалить
                         </a></li>
                         <li><a class="dropdown-item move-notes-to-folder" href="#" data-folder="${folderName}">
                             <i class="fas fa-arrow-right me-1"></i> Переместить заметки сюда
@@ -1803,21 +1976,67 @@ function performSearch(query) {
     const notes = $('.note-wrapper');
     const results = [];
     
+    // Проверяем, ищем ли мы по тегу
+    const isTagSearch = query.startsWith('#');
+    const tagQuery = isTagSearch ? query.substring(1).toLowerCase() : '';
+    
     notes.each(function() {
         const title = $(this).find('h4').text().toLowerCase();
         const description = $(this).find('.note-description').text().toLowerCase();
-        const tags = $(this).data('tags') || '';
+        // Получаем теги как атрибут для надежности
+        const tags = $(this).attr('data-tags') || $(this).data('tags') || '';
         const id = $(this).attr('id');
         
-        if (title.includes(query.toLowerCase()) || 
+        // Отладочная информация для каждой заметки
+        console.log(`[DEBUG] Проверка заметки ID: ${id}, Теги: "${tags}"`)
+        
+        // Если это поиск по тегу, специальная проверка
+        if (isTagSearch) {
+            // Проверяем, есть ли у заметки теги
+            if (tags) {
+                const noteTags = tags.split(',').map(tag => tag.trim().toLowerCase());
+                // Выводим для отладки
+                console.log(`Заметка ID: ${id}, Название: ${title}, Теги: ${noteTags.join(', ')}`);
+                console.log(`Ищем: '${tagQuery}', Есть: ${noteTags.some(tag => tag.includes(tagQuery))}`);
+                
+                // Проверяем, содержит ли какой-либо тег искомую строку
+                // Улучшенный поиск с учетом всех возможных вариантов совпадения
+                const found = noteTags.some(tag => {
+                    // 1. Точное совпадение всего тега
+                    if (tag === tagQuery) return true;
+                    // 2. Тег начинается с запроса
+                    if (tag.startsWith(tagQuery)) return true;
+                    // 3. Тег содержит запрос (для обратной совместимости)
+                    if (tag.includes(tagQuery)) return true;
+                    // 4. Запрос содержит тег (когда тег - часть более длинного запроса)
+                    if (tagQuery.includes(tag)) return true;
+                    // Ничего не совпало
+                    return false;
+                });
+                
+                if (found) {
+                    results.push({
+                        id: id,
+                        title: title,
+                        description: description,
+                        color: $(this).data('color'),
+                        tags: tags
+                    });
+                }
+            }
+        } 
+        // Обычный поиск
+        else if (
+            title.includes(query.toLowerCase()) || 
             description.includes(query.toLowerCase()) || 
-            tags.includes(query.toLowerCase())) {
-            
+            tags.toLowerCase().includes(query.toLowerCase())
+        ) {
             results.push({
                 id: id,
                 title: title,
                 description: description,
-                color: $(this).data('color')
+                color: $(this).data('color'),
+                tags: tags
             });
         }
     });
@@ -1830,16 +2049,31 @@ function performSearch(query) {
             const highlightedTitle = highlightText(result.title, query);
             const highlightedDesc = highlightText(result.description, query);
             
+            // Формируем HTML для тегов, если они есть
+            let tagsHTML = '';
+            if (result.tags) {
+                const tagsArray = result.tags.split(',');
+                tagsHTML = `<div class="search-result-tags">
+                    ${tagsArray.map(tag => `<span class="tag">#${tag.trim()}</span>`).join(' ')}
+                </div>`;
+            }
+            
             $('#search-results').append(`
                 <div class="search-result-item" data-id="${result.id}">
                     <div class="title">${highlightedTitle}</div>
                     <div class="description">${highlightedDesc}</div>
+                    ${tagsHTML}
                 </div>
             `);
         });
         
         // Добавляем обработчик клика на результаты поиска
-        $('.search-result-item').on('click', function() {
+        $('.search-result-item').on('click', function(e) {
+            // Если клик был по тегу, не обрабатываем клик по всему элементу
+            if ($(e.target).hasClass('tag')) {
+                return;
+            }
+            
             const noteId = $(this).data('id');
             
             // Прокручиваем к заметке и подсвечиваем ее
@@ -1859,6 +2093,13 @@ function performSearch(query) {
                     noteElement.removeClass('highlight-note');
                 }, 3000);
             }
+        });
+        
+        // Добавляем обработчик клика на теги в результатах поиска
+        $('.search-result-item .tag').on('click', function(e) {
+            e.stopPropagation(); // Останавливаем всплытие события
+            const tagText = $(this).text().trim();
+            searchByTag(tagText);
         });
     } else {
         $('#search-results').html('<div class="p-3 text-center">Ничего не найдено</div>');

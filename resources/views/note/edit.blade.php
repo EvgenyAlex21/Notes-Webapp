@@ -306,7 +306,7 @@
             <div class="col-lg-9">
                 <div class="card">
                     <div class="card-body p-4">
-                        <form id="edit-note-form" method="POST" action="javascript:void(0)">
+                        <form id="edit-note-form" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
                             <input type="hidden" id="note-id" value="{{ $id }}">
                             
                             <div class="edit-header mb-4">
@@ -316,10 +316,14 @@
                                     </div>
                                 </div>
                                 <div class="action-buttons">
-                                    <button type="button" id="toggle-pin-button" class="btn btn-outline-warning btn-sm">
+                                    <button type="button" id="done-button" class="btn btn-outline-success btn-sm" title="Отметить как выполненное">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span class="button-text ms-1 d-none d-md-inline">Отметить как выполненное</span>
+                                    </button>
+                                    <button type="button" id="toggle-pin-button" class="btn btn-outline-warning btn-sm" title="Закрепить">
                                         <i class="fas fa-thumbtack"></i>
                                     </button>
-                                    <button type="button" id="delete-button" class="btn btn-outline-danger btn-sm">
+                                    <button type="button" id="delete-button" class="btn btn-outline-danger btn-sm" title="Удалить">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </div>
@@ -366,7 +370,7 @@
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Прикрепить файлы</label>
-                                <input type="file" class="form-control" id="upload-files" multiple>
+                                <input type="file" class="form-control" id="upload-files" name="upload_files[]" multiple onchange="console.log('Выбраны файлы:', this.files.length, 'шт.')">
                                 <small class="text-muted">Можно загружать до 10 файлов, каждый размером до 100 МБ. Поддерживаются изображения, документы и другие типы файлов</small>
                                 <div id="file-preview" class="mt-2 row g-2"></div>
                                 <div id="existing-files" class="mt-2 row g-2">
@@ -374,14 +378,7 @@
                                 </div>
                             </div>
                             
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="done">
-                                    <label class="form-check-label" for="done">
-                                        <i class="fas fa-check-circle"></i> Отметить как выполненное
-                                    </label>
-                                </div>
-                            </div>
+                            <input type="hidden" id="done" name="done" value="0">
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Напоминание</label>
@@ -448,33 +445,113 @@
 
     <script src="/js/note-colors.js"></script>
     <script src="/js/notes.js"></script>
+    <script src="/js/tags-form-improvements.js"></script>
+    <script src="/js/note-done-button.js"></script>
     <script>
         $(document).ready(function() {
-            // Инициализация Quill
-            var quill = new Quill('#editor-container', {
-                modules: {
-                    toolbar: [
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        ['bold', 'italic', 'underline', 'strike'],
-                        [{ 'color': [] }, { 'background': [] }],
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        ['link', 'image'],
-                        ['clean']
-                    ]
-                },
-                placeholder: 'О чем эта заметка?',
-                theme: 'snow'
-            });
+            // Улучшенная инициализация редактора с дополнительными проверками
+            let quill = null;
+            const editorContainer = document.getElementById('editor-container');
+            
+            try {
+                if (!editorContainer) {
+                    console.error('Контейнер редактора не найден!');
+                    return;
+                }
+                
+                // Проверяем, не инициализирован ли уже редактор
+                if (editorContainer.classList.contains('ql-container')) {
+                    console.log('Редактор Quill уже был инициализирован, получаем существующий экземпляр');
+                    quill = Quill.find(editorContainer);
+                    if (!quill) {
+                        console.warn('Не удалось найти существующий экземпляр Quill, создаем новый');
+                    }
+                }
+                
+                // Если редактор не был инициализирован, создаем новый
+                if (!quill) {
+                    console.log('Инициализация нового редактора Quill');
+                    quill = new Quill('#editor-container', {
+                        modules: {
+                            toolbar: [
+                                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'color': [] }, { 'background': [] }],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                ['link', 'image'],
+                                ['clean']
+                            ]
+                        },
+                        placeholder: 'О чем эта заметка?',
+                        theme: 'snow'
+                    });
+                }
+                
+                console.log('Редактор Quill успешно инициализирован:', !!quill);
+            } catch (error) {
+                console.error('Ошибка при инициализации редактора Quill:', error);
+                
+                // Запасной вариант - простой textarea
+                if (editorContainer && !quill) {
+                    console.warn('Создаем запасной textarea вместо Quill');
+                    editorContainer.innerHTML = '<textarea id="fallback-editor" class="form-control" style="min-height: 300px;"></textarea>';
+                    
+                    // Устанавливаем значение из скрытого поля
+                    const fallbackEditor = document.getElementById('fallback-editor');
+                    const descriptionField = document.getElementById('description');
+                    if (fallbackEditor && descriptionField) {
+                        fallbackEditor.value = descriptionField.value;
+                        
+                        // Обновляем скрытое поле при вводе
+                        fallbackEditor.addEventListener('input', function() {
+                            descriptionField.value = fallbackEditor.value;
+                        });
+                    }
+                }
+            }
             
             // Когда данные заметки загрузятся, установим содержимое редактора
             function setQuillContent(htmlContent) {
-                quill.clipboard.dangerouslyPasteHTML(htmlContent);
+                try {
+                    if (!quill) {
+                        console.error('Невозможно установить содержимое - редактор Quill не инициализирован');
+                        
+                        // Запасной вариант - установка в textarea, если он есть
+                        const fallbackEditor = document.getElementById('fallback-editor');
+                        if (fallbackEditor) {
+                            fallbackEditor.value = htmlContent.replace(/<[^>]*>/g, ''); // Удаляем HTML-теги
+                            $('#description').val(htmlContent);
+                        }
+                        return;
+                    }
+                    
+                    console.log('Устанавливаем HTML содержимое в редактор Quill');
+                    quill.clipboard.dangerouslyPasteHTML(htmlContent);
+                } catch (error) {
+                    console.error('Ошибка при установке содержимого в Quill:', error);
+                    $('#description').val(htmlContent); // На всякий случай сохраняем в скрытом поле
+                }
             }
             
             // Функция для обновления содержимого скрытого текстового поля
             function updateHiddenField() {
-                var htmlContent = quill.root.innerHTML;
-                $('#description').val(htmlContent);
+                try {
+                    if (!quill) {
+                        console.error('Невозможно получить содержимое - редактор Quill не инициализирован');
+                        
+                        // Запасной вариант - получаем из textarea, если он есть
+                        const fallbackEditor = document.getElementById('fallback-editor');
+                        if (fallbackEditor) {
+                            $('#description').val(fallbackEditor.value);
+                        }
+                        return;
+                    }
+                    
+                    var htmlContent = quill.root.innerHTML;
+                    $('#description').val(htmlContent);
+                } catch (error) {
+                    console.error('Ошибка при получении содержимого из Quill:', error);
+                }
             }
             
             // При отправке формы копируем HTML содержимое редактора в скрытое текстовое поле
@@ -487,6 +564,41 @@
                 e.preventDefault();
                 updateHiddenField();
                 const id = $('#note-id').val();
+                
+                // Проверяем выбранные файлы перед отправкой
+                const fileInput = $('#upload-files')[0];
+                console.log('Кнопка "Сохранить изменения" нажата');
+                
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    console.log(`Выбрано ${fileInput.files.length} новых файлов для загрузки:`);
+                    for (let i = 0; i < fileInput.files.length; i++) {
+                        const file = fileInput.files[i];
+                        console.log(`- ${file.name} (${file.size} байт, ${file.type})`);
+                    }
+                } else {
+                    console.log('Новые файлы не выбраны');
+                }
+                
+                // Проверяем существующие файлы
+                if (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) {
+                    console.log(`Существующие файлы: ${window.currentNoteFiles.length}`);
+                } else {
+                    console.log('Существующие файлы отсутствуют или некорректны:', window.currentNoteFiles);
+                }
+                
+                // Финальная проверка формы и файлов перед отправкой
+                const form = document.getElementById('edit-note-form');
+                console.log('Форма имеет правильный enctype?', form.enctype === 'multipart/form-data');
+                
+                // Проверка загрузки файлов через чистый JavaScript для исключения jQuery-ошибок
+                const fileInputNative = document.getElementById('upload-files');
+                if (fileInputNative && fileInputNative.files && fileInputNative.files.length > 0) {
+                    console.log('>> NATIVE JS: Выбрано файлов:', fileInputNative.files.length);
+                    console.log('>> NATIVE JS: Имена файлов:', Array.from(fileInputNative.files).map(f => f.name));
+                } else {
+                    console.log('>> NATIVE JS: Файлы не выбраны');
+                }
+                
                 updateNote(id);
             });
             
@@ -620,7 +732,34 @@
                         
                         // Установка описания в Quill редактор
                         if (note.description) {
-                            window.setQuillContent(note.description);
+                            // Сначала убедимся, что редактор инициализирован
+                            const editorContainer = document.getElementById('editor-container');
+                            if (editorContainer) {
+                                const quill = Quill.find(editorContainer);
+                                if (quill) {
+                                    quill.clipboard.dangerouslyPasteHTML(note.description);
+                                    console.log('Содержимое редактора установлено');
+                                } else {
+                                    console.error('Экземпляр Quill не найден');
+                                    // Запасной вариант - инициализируем редактор заново
+                                    setTimeout(function() {
+                                        const newQuill = new Quill('#editor-container', {
+                                            modules: {
+                                                toolbar: [
+                                                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                                                    ['bold', 'italic', 'underline', 'strike'],
+                                                    [{ 'color': [] }, { 'background': [] }],
+                                                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                                    ['link', 'image'],
+                                                    ['clean']
+                                                ]
+                                            },
+                                            theme: 'snow'
+                                        });
+                                        newQuill.clipboard.dangerouslyPasteHTML(note.description);
+                                    }, 500);
+                                }
+                            }
                         }
                         
                         // Выбор цвета
@@ -633,8 +772,16 @@
                         const dateString = formatDate(createdAt);
                         $('#note-date').text(`Создано: ${dateString}`);
                         
-                        // Если заметка завершена, отмечаем чекбокс
-                        $('#done-checkbox').prop('checked', note.done);
+                        // Если заметка завершена, отмечаем состояние кнопки и скрытого поля
+                        if (note.done) {
+                            $('#done').val('1');
+                            $('#done-button').removeClass('btn-outline-success').addClass('btn-success');
+                            isDone = true;
+                        } else {
+                            $('#done').val('0');
+                            $('#done-button').removeClass('btn-success').addClass('btn-outline-success');
+                            isDone = false;
+                        }
                         
                         // Если заметка закреплена, обновляем кнопку
                         if (note.is_pinned) {
@@ -649,6 +796,31 @@
                             tags.forEach(tag => {
                                 addTag(tag.trim());
                             });
+                        }
+                        
+                        // Загружаем файлы, если они есть
+                        if (note.files) {
+                            console.log('Загружаем файлы заметки:', note.files);
+                            // Убедимся, что файлы в формате массива
+                            let filesArray = note.files;
+                            if (typeof filesArray === 'string') {
+                                try {
+                                    filesArray = JSON.parse(filesArray);
+                                    console.log('Файлы преобразованы из строки в массив');
+                                } catch (e) {
+                                    console.error('Ошибка при парсинге строки файлов:', e);
+                                    filesArray = [];
+                                }
+                            }
+                            
+                            // Сохраняем для дальнейшего использования
+                            window.currentNoteFiles = Array.isArray(filesArray) ? filesArray : [];
+                            
+                            console.log('Файлы сохранены в currentNoteFiles:', window.currentNoteFiles);
+                            displayExistingFiles(window.currentNoteFiles);
+                        } else {
+                            console.log('У заметки нет файлов или они в неправильном формате');
+                            window.currentNoteFiles = [];
                         }
                         
                         // Восстанавливаем кнопку сохранения
@@ -971,6 +1143,93 @@
                 mimeType.includes('document') || 
                 mimeType.includes('sheet')) return 'document';
             return 'file';
+        }
+    </script>
+    <script>
+        // Функция для отображения существующих файлов
+        function displayExistingFiles(files) {
+            if (!Array.isArray(files) || files.length === 0) {
+                console.log('Нет файлов для отображения');
+                return;
+            }
+            
+            console.log(`Отображение ${files.length} существующих файлов`);
+            
+            // Проверяем существование контейнера
+            if ($('#existing-files').length === 0) {
+                console.log('Создаем контейнер для существующих файлов');
+                $('#files-container').append('<div id="existing-files" class="mt-3"><h6>Прикрепленные файлы:</h6><div class="row g-2"></div></div>');
+            } else {
+                // Очищаем контейнер если он существует
+                $('#existing-files .row').empty();
+            }
+            
+            // Добавляем файлы в контейнер
+            files.forEach(file => {
+                let preview = '';
+                if (file.type === 'image') {
+                    preview = `<img src="${file.url}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}" onerror="this.onerror=null;this.src='https://placehold.co/200?text=Ошибка+изображения';">`;
+                } else if (file.type === 'video') {
+                    preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-film fa-2x text-secondary"></i></div>`;
+                } else {
+                    // Документы и прочее
+                    let iconClass = 'fa-file';
+                    if (file.extension && typeof file.extension === 'string') {
+                        if (file.extension.match(/pdf/i)) iconClass = 'fa-file-pdf';
+                        else if (file.extension.match(/docx?/i)) iconClass = 'fa-file-word';
+                        else if (file.extension.match(/xlsx?/i)) iconClass = 'fa-file-excel';
+                        else if (file.extension.match(/pptx?/i)) iconClass = 'fa-file-powerpoint';
+                        else if (file.extension.match(/zip|rar|tar|gz/i)) iconClass = 'fa-file-archive';
+                        else if (file.extension.match(/txt|rtf/i)) iconClass = 'fa-file-alt';
+                    }
+                    preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
+                }
+                
+                const fileElement = `
+                    <div class="col-md-3 col-sm-4 col-6 mb-2">
+                        <div class="card h-100">
+                            ${preview}
+                            <div class="card-body p-2 text-center">
+                                <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
+                                <div class="btn-group btn-group-sm w-100">
+                                    <a href="${file.url}" target="_blank" class="btn btn-outline-primary" title="Открыть файл">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger remove-file" data-file-path="${file.path}" title="Удалить файл">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('#existing-files .row').append(fileElement);
+            });
+            
+            // Обработчик для кнопки удаления файла
+            $('.remove-file').off('click').on('click', function() {
+                const filePath = $(this).data('file-path');
+                const fileCard = $(this).closest('.col-md-3');
+                
+                if (confirm('Удалить этот файл?')) {
+                    console.log('Удаление файла с путем:', filePath);
+                    
+                    // Удаляем файл из массива
+                    window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
+                    console.log('Оставшиеся файлы:', window.currentNoteFiles);
+                    
+                    // Удаляем визуальное представление
+                    fileCard.fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Если файлов не осталось, скрываем контейнер
+                        if (window.currentNoteFiles.length === 0) {
+                            $('#existing-files').hide();
+                        }
+                    });
+                }
+            });
         }
     </script>
 </body>

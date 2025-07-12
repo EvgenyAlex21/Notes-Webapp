@@ -258,7 +258,7 @@
             <div class="col-lg-9">
                 <div class="card">
                     <div class="card-body p-4">
-                        <form id="create-note-form" method="POST" action="javascript:void(0)">
+                        <form id="create-note-form" method="POST" action="javascript:void(0)" enctype="multipart/form-data">
                             <div class="mb-3">
                                 <label for="name" class="form-label fw-bold">Название</label>
                                 <input type="text" class="form-control form-control-lg" id="name" required 
@@ -301,7 +301,7 @@
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Прикрепить файлы</label>
-                                <input type="file" class="form-control" id="upload-files" multiple>
+                                <input type="file" class="form-control" id="upload-files" name="upload_files[]" multiple>
                                 <small class="text-muted">Можно загружать до 10 файлов, каждый размером до 100 МБ. Поддерживаются изображения, документы и другие типы файлов</small>
                                 <div id="file-preview" class="mt-2 row g-2"></div>
                             </div>
@@ -353,6 +353,7 @@
 
     <script src="/js/note-colors.js"></script>
     <script src="/js/notes.js"></script>
+    <script src="/js/tags-form-improvements.js"></script>
     <script>
         $(document).ready(function() {
             // Инициализация Quill

@@ -35,11 +35,75 @@ class NoteController extends Controller
 
     public function show(Note $note)
     {
+        $filesArray = $note->files;
+        $needsUpdate = false;
+        
+        // Убедимся, что files всегда массив
+        if ($filesArray === null) {
+            $filesArray = [];
+            $needsUpdate = true;
+            \Log::info('Файлы заметки были null, преобразованы в пустой массив');
+        }
+        
+        // Если файлы в формате строки, преобразуем в массив
+        if (is_string($filesArray)) {
+            \Log::info('Файлы заметки в виде строки: ' . $filesArray);
+            try {
+                $decoded = json_decode($filesArray, true);
+                if (is_array($decoded)) {
+                    $filesArray = $decoded;
+                    $needsUpdate = true;
+                    \Log::info('Строка успешно преобразована в массив файлов');
+                } else {
+                    $filesArray = [];
+                    $needsUpdate = true;
+                    \Log::error('Строка не преобразована в массив, результат: ' . gettype($decoded));
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при декодировании файлов в методе show: ' . $e->getMessage());
+                $filesArray = [];
+                $needsUpdate = true;
+            }
+        }
+        
+        // Даже если files уже массив, убедимся что он действительно массив
+        if (!is_array($filesArray)) {
+            \Log::error('files не является массивом после обработки: ' . gettype($filesArray));
+            $filesArray = [];
+            $needsUpdate = true;
+        }
+        
+        \Log::info('Показ заметки: ' . $note->id);
+        \Log::info('Файлы заметки (до обработки): ' . json_encode($filesArray));
+        
+        // Убедимся, что все файлы имеют URL для отображения
+        if (is_array($filesArray)) {
+            foreach ($filesArray as $key => $file) {
+                if (is_array($file) && isset($file['path']) && !isset($file['url'])) {
+                    $filesArray[$key]['url'] = asset('storage/' . $file['path']);
+                    \Log::info('Добавлен URL для файла: ' . $file['name']);
+                    $needsUpdate = true;
+                }
+            }
+        }
+        
+        // Если были изменения, обновляем запись в БД
+        if ($needsUpdate) {
+            \Log::info('Обновляем поле files в БД для заметки ' . $note->id);
+            $note->update(['files' => $filesArray]);
+            // Перезагружаем заметку после обновления
+            $note = Note::find($note->id);
+        }
+        
+        \Log::info('Файлы заметки (окончательно): ' . json_encode($note->files));
         return response()->json(['data' => $note]);
     }
 
     public function store(Request $request)
     {
+        \Log::info('Создание новой заметки');
+        \Log::info('Входящие данные: ' . json_encode($request->all()));
+        
         // Убедимся, что правильно обрабатываем булево значение is_pinned
         if ($request->has('is_pinned')) {
             $isPinned = $request->input('is_pinned');
@@ -80,8 +144,16 @@ class NoteController extends Controller
         $data['is_deleted'] = false;
         
         // Обработка загруженных файлов
+        $uploadedFiles = [];
+        
         if ($request->hasFile('upload_files')) {
-            $uploadedFiles = [];
+            \Log::info('Обнаружены файлы для загрузки: ' . count($request->file('upload_files')));
+            
+            // Создаем символическую ссылку для storage, если её нет
+            if (!file_exists(public_path('storage'))) {
+                \Artisan::call('storage:link');
+                \Log::info('Создана символическая ссылка на storage');
+            }
             
             foreach ($request->file('upload_files') as $file) {
                 if ($file->isValid()) {
@@ -89,24 +161,44 @@ class NoteController extends Controller
                     $fileExt = $file->getClientOriginalExtension();
                     $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
                     
-                    // Сохраняем файл в public/uploads
-                    $path = $file->storeAs('uploads', $uniqueFileName, 'public');
-                    
-                    // Определяем тип файла
-                    $fileType = $this->getFileType($fileExt);
-                    
-                    $uploadedFiles[] = [
-                        'name' => $fileName,
-                        'path' => $path,
-                        'url' => asset('storage/' . $path),
-                        'size' => $file->getSize(),
-                        'type' => $fileType,
-                        'extension' => $fileExt
-                    ];
+                    try {
+                        // Сохраняем файл в public/uploads
+                        $path = $file->storeAs('uploads', $uniqueFileName, 'public');
+                        
+                        // Проверяем, что файл существует
+                        $fullPath = storage_path('app/public/' . $path);
+                        if (!file_exists($fullPath)) {
+                            \Log::error('Файл не был сохранен по пути: ' . $fullPath);
+                        } else {
+                            \Log::info('Файл успешно сохранен: ' . $fullPath);
+                        }
+                        
+                        // Определяем тип файла
+                        $fileType = $this->getFileType($fileExt);
+                        
+                        $fileData = [
+                            'name' => $fileName,
+                            'path' => $path,
+                            'url' => asset('storage/' . $path),
+                            'size' => $file->getSize(),
+                            'type' => $fileType,
+                            'extension' => $fileExt
+                        ];
+                        
+                        \Log::info('Сохранен файл: ' . json_encode($fileData));
+                        $uploadedFiles[] = $fileData;
+                    } catch (\Exception $e) {
+                        \Log::error('Ошибка при сохранении файла: ' . $e->getMessage());
+                    }
                 }
             }
             
+            \Log::info('Всего загружено файлов: ' . count($uploadedFiles));
             $data['files'] = $uploadedFiles;
+        } else {
+            \Log::info('Файлы для загрузки не обнаружены');
+            // Устанавливаем пустой массив для файлов
+            $data['files'] = [];
         }
         
         $data['done'] = false; // По умолчанию задача не выполнена
@@ -117,6 +209,20 @@ class NoteController extends Controller
 
     public function update(Request $request, Note $note)
     {
+        \Log::info('Обновление заметки ' . $note->id);
+        \Log::info('Входящие данные: ' . json_encode($request->all()));
+        \Log::info('Метод запроса: ' . $request->method());
+        \Log::info('Content-Type заголовок: ' . $request->header('Content-Type'));
+        
+        // Подробная информация о файлах
+        \Log::info('Проверка файлов в запросе через $request->hasFile("upload_files"): ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
+        \Log::info('Проверка файлов в запросе через $request->file("upload_files"): ' . ($request->file('upload_files') ? 'ДА' : 'НЕТ'));
+        \Log::info('Все файлы в запросе ($request->allFiles()): ' . json_encode($request->allFiles()));
+        \Log::info('Все входящие поля запроса: ' . json_encode($request->all()));
+        
+        // Проверка наличия файлов через $_FILES
+        \Log::info('Содержимое $_FILES: ' . json_encode($_FILES));
+        
         // Убедимся, что правильно обрабатываем булевы значения
         if ($request->has('is_pinned')) {
             $isPinned = $request->input('is_pinned');
@@ -152,11 +258,68 @@ class NoteController extends Controller
             $data['formatted_description'] = $data['description'];
         }
         
-        // Обработка загруженных файлов
+        // Инициализация массива файлов (всегда начинаем с пустого массива для безопасности)
+        $uploadedFiles = [];
+        
+        // Получаем текущие файлы заметки
+        $currentFiles = $note->files;
+        \Log::info('Текущие файлы заметки (тип: ' . gettype($currentFiles) . '): ' . json_encode($currentFiles));
+        
+        // Если текущие файлы существуют и они в правильном формате, используем их как базу
+        if (is_array($currentFiles)) {
+            $uploadedFiles = $currentFiles;
+            \Log::info('Использую существующие файлы как базу (массив)');
+        } elseif (is_string($currentFiles)) {
+            try {
+                $decoded = json_decode($currentFiles, true);
+                if (is_array($decoded)) {
+                    $uploadedFiles = $decoded;
+                    \Log::info('Существующие файлы декодированы из строки');
+                }
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при декодировании существующих файлов: ' . $e->getMessage());
+            }
+        }
+        
+        // Проверяем, были ли переданы файлы в запросе
+        if ($request->has('files')) {
+            \Log::info('Получены файлы из запроса. Тип: ' . gettype($request->input('files')));
+            $filesData = $request->input('files');
+            
+            // Обработка разных форматов входящих данных
+            if (is_string($filesData)) {
+                \Log::info('Содержимое files (строка): ' . $filesData);
+                try {
+                    $existingFiles = json_decode($filesData, true);
+                    if (is_array($existingFiles)) {
+                        \Log::info('Декодированные файлы: ' . json_encode($existingFiles));
+                        $uploadedFiles = $existingFiles;
+                    } else {
+                        \Log::error('Не удалось декодировать JSON файлов (результат не массив): ' . json_last_error_msg());
+                        // Сохраняем существующие файлы (если они уже установлены выше)
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Ошибка при обработке JSON файлов: ' . $e->getMessage());
+                }
+            } elseif (is_array($filesData)) {
+                \Log::info('Файлы уже в формате массива: ' . json_encode($filesData));
+                $uploadedFiles = $filesData;
+            } else {
+                \Log::error('files не является строкой или массивом: ' . gettype($filesData));
+            }
+        } else {
+            \Log::info('Поле files отсутствует в запросе - используем текущие файлы');
+        }
+        
+        // Обработка новых загруженных файлов
+        \Log::info('Проверка наличия загруженных файлов: ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
+        \Log::info('Все входящие файлы: ' . json_encode($request->allFiles()));
+        
         if ($request->hasFile('upload_files')) {
-            $uploadedFiles = $note->files ?? [];
+            \Log::info('Количество загруженных файлов: ' . count($request->file('upload_files')));
             
             foreach ($request->file('upload_files') as $file) {
+                \Log::info('Обработка файла: ' . $file->getClientOriginalName() . ' (' . $file->getSize() . ' байт)');
                 if ($file->isValid()) {
                     $fileName = $file->getClientOriginalName();
                     $fileExt = $file->getClientOriginalExtension();
@@ -178,11 +341,34 @@ class NoteController extends Controller
                     ];
                 }
             }
-            
-            $data['files'] = $uploadedFiles;
         }
         
+        // Добавляем файлы к данным заметки
+        $data['files'] = $uploadedFiles; // Всегда сохраняем массив, даже пустой
+        \Log::info('Финальные файлы для сохранения: ' . json_encode($data['files']));
+        
         $note->update($data);
+        
+        // Перезагрузим заметку, чтобы получить актуальные данные
+        $note = Note::find($note->id);
+        
+        // Убедимся, что files всегда массив
+        if ($note->files === null) {
+            $note->update(['files' => []]);
+            $note = Note::find($note->id);
+        } else if (is_string($note->files)) {
+            try {
+                $filesArray = json_decode($note->files, true) ?: [];
+                $note->update(['files' => $filesArray]);
+                $note = Note::find($note->id);
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при декодировании файлов в методе update: ' . $e->getMessage());
+                $note->update(['files' => []]);
+                $note = Note::find($note->id);
+            }
+        }
+        
+        \Log::info('Обновленная заметка возвращена: ' . json_encode($note->files));
         
         return response()->json(['data' => $note]);
     }
