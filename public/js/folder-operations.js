@@ -822,29 +822,35 @@ function handleSuccessfulNoteMove(noteIds, targetFolder, isCurrentFolder) {
     console.log('Обработка успешного перемещения заметок в папку:', 
                 { noteIds, targetFolder, isCurrentFolder });
     
-    // Если не в текущей папке, скрываем заметки с анимацией
-    if (!isCurrentFolder) {
-        noteIds.forEach(id => {
-            $(`#note-${id}`).fadeOut(300, function() {
-                $(this).remove();
+    // Используем универсальную функцию обновления интерфейса, если она доступна
+    if (typeof updateNoteInterface === 'function') {
+        updateNoteInterface('move', noteIds, { folder: targetFolder });
+    } else {
+        // Запасной вариант, если универсальная функция недоступна
+        // Если не в текущей папке, скрываем заметки с анимацией
+        if (!isCurrentFolder) {
+            noteIds.forEach(id => {
+                $(`#note-${id}`).fadeOut(300, function() {
+                    $(this).remove();
+                });
             });
-        });
-    }
-    
-    // Обновляем счетчик папки
-    if (typeof updateFolderCounter === 'function') {
-        updateFolderCounter(targetFolder, noteIds.length);
-        console.log('Обновлен счетчик папки:', targetFolder, '+', noteIds.length);
-    }
-    
-    // Обновляем счетчики заметок на текущей странице
-    if (typeof updatePageCounters === 'function') {
-        setTimeout(updatePageCounters, 350);
-    }
-    
-    // Обновляем статистику
-    if (typeof loadStats === 'function') {
-        setTimeout(loadStats, 500);
+        }
+        
+        // Обновляем счетчик папки
+        if (typeof updateFolderCounter === 'function') {
+            updateFolderCounter(targetFolder, noteIds.length);
+            console.log('Обновлен счетчик папки:', targetFolder, '+', noteIds.length);
+        }
+        
+        // Обновляем счетчики заметок на текущей странице
+        if (typeof updatePageCounters === 'function') {
+            setTimeout(updatePageCounters, 350);
+        }
+        
+        // Обновляем статистику
+        if (typeof loadStats === 'function') {
+            setTimeout(loadStats, 500);
+        }
     }
     
     // Обновляем подсветку активной папки

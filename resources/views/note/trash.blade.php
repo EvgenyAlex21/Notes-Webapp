@@ -74,6 +74,7 @@
         </div>
     </div>
 
+    <script src="/js/note-update-handler.js"></script>
     <script src="/js/notes.js"></script>
 </body>
 </html>

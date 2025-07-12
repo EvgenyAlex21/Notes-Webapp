@@ -128,9 +128,7 @@ $(document).ready(function() {
         
         // Очистка корзины
         $('#empty-trash').on('click', function() {
-            if (confirm('Вы уверены, что хотите окончательно удалить все заметки из корзины?')) {
-                emptyTrash();
-            }
+            emptyTrash();
         });
     }
     
@@ -445,7 +443,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 folderMode,
                 folderName,
                 encodedParam: encodeURIComponent(folderName),
-                url: url + `?folder=${encodeURIComponent(folderName)}`
+                url: url
             });
         } catch (e) {
             console.error('Ошибка кодирования имени папки:', e);
@@ -1891,6 +1889,7 @@ function executeForceDeleteNote(id) {
 
 // Очистка корзины (удаление всех заметок)
 function emptyTrash() {
+    console.log('Функция emptyTrash вызвана');
     // Получаем все идентификаторы заметок в корзине
     const noteIds = Array.from($('.note-wrapper')).map(el => $(el).attr('id'));
     
@@ -1899,21 +1898,59 @@ function emptyTrash() {
         return;
     }
     
-    // Создаем и показываем модальное окно подтверждения
-    const modal = createConfirmationModal({
-        id: 'emptyTrashModal',
-        title: 'Подтвердите действие на сайте',
-        message: `Вы действительно хотите очистить корзину? Будет удалено ${noteIds.length} заметок. Это действие нельзя отменить.`,
-        confirmButtonText: 'Очистить корзину',
-        cancelButtonText: 'Отмена',
-        confirmButtonClass: 'btn-danger',
-        icon: 'fa-trash-alt',
-        onConfirm: function() {
-            executeEmptyTrash(noteIds);
-        }
+    // Создаем фиксированный диалог в стиле примера с удалением папки
+    const overlay = $('<div></div>').css({
+        'position': 'fixed',
+        'top': 0,
+        'left': 0,
+        'width': '100%',
+        'height': '100%',
+        'background-color': 'rgba(0, 0, 0, 0.5)',
+        'z-index': 1050,
+        'display': 'flex',
+        'align-items': 'center',
+        'justify-content': 'center'
+    }).attr('id', 'confirmTrashOverlay');
+    
+    const dialogBox = $(`
+        <div style="width: 400px; background-color: #fff; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+            <div style="padding: 15px 20px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font-size: 18px; color: #dc3545;">
+                    <i class="fas fa-trash" style="margin-right: 8px; color: #dc3545;"></i>Удаление корзины
+                </h5>
+                <span id="closeTrashBtn" style="cursor: pointer; font-size: 20px; color: #6c757d;">&times;</span>
+            </div>
+            <div style="padding: 20px;">
+                <div style="display: flex; align-items: flex-start;">
+                    <i class="fas fa-info-circle" style="color: #6c757d; margin-right: 10px; font-size: 18px;"></i>
+                    <p style="margin: 0;">Вы уверены, что хотите удалить все заметки из корзины?</p>
+                </div>
+                <p style="color: #6c757d; margin-top: 10px; margin-bottom: 0; margin-left: 28px;">Заметки будут удалены безвозвратно.</p>
+            </div>
+            <div style="display: flex; justify-content: flex-end; padding: 15px 20px; gap: 10px; border-top: 1px solid #e9ecef;">
+                <button id="cancelTrashBtn" class="btn btn-secondary" style="min-width: 100px;">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+                <button id="confirmTrashBtn" class="btn btn-danger" style="min-width: 100px;">
+                    <i class="fas fa-trash"></i> Удалить
+                </button>
+            </div>
+        </div>
+    `);
+    
+    // Добавляем диалог в DOM
+    overlay.append(dialogBox);
+    $('body').append(overlay);
+    
+    // Обработчики кнопок
+    $('#cancelTrashBtn, #closeTrashBtn').on('click', function() {
+        overlay.remove();
     });
     
-    modal.show();
+    $('#confirmTrashBtn').on('click', function() {
+        overlay.remove();
+        executeEmptyTrash(noteIds);
+    });
 }
 
 // Выполнение очистки корзины
@@ -2129,6 +2166,14 @@ function updateStatsDisplay() {
     if (statsData) {
         console.log('Обновляем статистику:', statsData);
         
+        // Всегда используем только видимые заметки на текущей странице для счетчиков
+        const visibleNotes = {
+            total: $('.note-wrapper:visible').length, 
+            active: $('.note-wrapper:visible:not(.completed)').length,
+            completed: $('.note-wrapper:visible.completed').length,
+            pinned: $('.note-wrapper:visible.pinned').length
+        };
+        
         // Проверяем, находимся ли мы в режиме папки
         const folderMode = window.location.pathname.match(/\/notes\/folder\/(.+)/) !== null;
         const currentFolderName = folderMode ? getCurrentFolderNameFromUrl() : null;
@@ -2137,50 +2182,30 @@ function updateStatsDisplay() {
         const trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || window.location.pathname === '/notes/trash';
         const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || window.location.pathname === '/notes/archive';
         
-        // Если мы в режиме папки, используем статистику для конкретной папки
-        if (folderMode && currentFolderName && statsData.by_folder && statsData.by_folder[currentFolderName]) {
-            // Количество заметок в текущей папке
-            const folderNotes = window.currentNotesCount || {
-                total: $('.note-wrapper:visible').length, 
-                active: $('.note-wrapper:visible:not(.completed)').length,
-                completed: $('.note-wrapper:visible.completed').length,
-                pinned: $('.note-wrapper:visible.pinned').length
-            };
-            
-            $('#total-notes').text(`Всего: ${folderNotes.total}`);
-            $('#completed-notes').text(`Выполнено: ${folderNotes.completed}`);
-            $('#active-notes').text(`Активно: ${folderNotes.active}`);
-            $('#pinned-notes').text(`Закреплено: ${folderNotes.pinned}`);
-            
-            console.log('Отображается статистика для текущей папки:', currentFolderName, folderNotes);
-        } else if (trashMode || archiveMode) {
-            // В режиме корзины или архива считаем видимые заметки
-            const visibleNotes = {
-                total: $('.note-wrapper:visible').length, 
-                active: $('.note-wrapper:visible:not(.completed)').length,
-                completed: $('.note-wrapper:visible.completed').length,
-                pinned: $('.note-wrapper:visible.pinned').length
-            };
-            
-            $('#total-notes').text(`Всего: ${visibleNotes.total}`);
-            $('#completed-notes').text(`Выполнено: ${visibleNotes.completed}`);
-            $('#active-notes').text(`Активно: ${visibleNotes.active}`);
-            $('#pinned-notes').text(`Закреплено: ${visibleNotes.pinned}`);
-            
-            console.log('Отображается статистика для ' + (trashMode ? 'корзины' : 'архива') + ':', visibleNotes);
-            
-            // Обновляем также счетчики в новом формате, если они есть
-            $('.counter-total').text(visibleNotes.total);
-            $('.counter-completed').text(visibleNotes.completed);
-            $('.counter-active').text(visibleNotes.active);
-            $('.counter-pinned').text(visibleNotes.pinned);
+        // Обновляем счетчики на основе видимых заметок на текущей странице
+        $('#total-notes').text(`Всего: ${visibleNotes.total}`);
+        $('#completed-notes').text(`Выполнено: ${visibleNotes.completed}`);
+        $('#active-notes').text(`Активно: ${visibleNotes.active}`);
+        $('#pinned-notes').text(`Закреплено: ${visibleNotes.pinned}`);
+        
+        // Обновляем также счетчики в новом формате, если они есть
+        $('.counter-total').text(visibleNotes.total);
+        $('.counter-completed').text(visibleNotes.completed);
+        $('.counter-active').text(visibleNotes.active);
+        $('.counter-pinned').text(visibleNotes.pinned);
+        
+        // Выводим информацию в консоль о текущем режиме
+        if (folderMode && currentFolderName) {
+            console.log('Отображается статистика для текущей папки:', currentFolderName, visibleNotes);
+        } else if (trashMode) {
+            console.log('Отображается статистика для корзины:', visibleNotes);
+        } else if (archiveMode) {
+            console.log('Отображается статистика для архива:', visibleNotes);
         } else {
-            // Если не в папке, показываем общую статистику
-            $('#total-notes').text(`Всего: ${statsData.total || 0}`);
-            $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
-            $('#active-notes').text(`Активно: ${statsData.active || 0}`);
-            $('#pinned-notes').text(`Закреплено: ${statsData.pinned || 0}`);
+            console.log('Отображается статистика для всех заметок:', visibleNotes);
         }
+        
+        // Глобальные счетчики в боковой панели (не меняем)
         $('#archived-notes').text(`В архиве: ${statsData.archived || 0}`);
         $('#trashed-notes').text(`В корзине: ${statsData.trashed || 0}`);
         $('#reminders-notes').text(`С напоминаниями: ${statsData.with_reminders || 0}`);
@@ -2242,32 +2267,27 @@ function archiveNote(id) {
             console.log('Ответ сервера при архивации:', response);
             showNotification('Заметка архивирована', 'info');
             
-            // Если мы на обычной странице (не архив), удаляем заметку из представления
-            if (window.location.pathname === '/notes') {
-                $(`.note-wrapper#${id}`).fadeOut(300, function() {
-                    $(this).remove();
-                    
-                    // Проверим, остались ли ещё заметки
-                    if ($('.note-wrapper:visible').length === 0) {
-                        $('.notes-container').hide();
-                        $('.empty-container').removeClass('d-none');
-                    }
-                });
+            // Используем универсальную функцию обновления интерфейса
+            if (typeof updateNoteInterface === 'function') {
+                updateNoteInterface('archive', id);
+            } else {
+                // Запасной вариант, если универсальная функция недоступна
+                if (window.location.pathname === '/notes') {
+                    $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Проверим, остались ли ещё заметки
+                        if ($('.note-wrapper:visible').length === 0) {
+                            $('.notes-container').hide();
+                            $('.empty-container').removeClass('d-none');
+                        }
+                    });
+                } else {
+                    loadAllNotes(window.location.pathname === '/notes/trash');
+                }
                 
                 // Обновляем статистику
                 loadStats();
-            } else {
-                // В других случаях обновляем весь список
-                loadAllNotes(window.location.pathname === '/notes/trash');
-            }
-            
-            // Перенаправляем на страницу архива, если указано
-            if (window.location.pathname === '/notes') {
-                setTimeout(function() {
-                    if (confirm('Заметка архивирована. Хотите перейти в архив?')) {
-                        window.location.href = '/notes/archive';
-                    }
-                }, 500);
             }
         },
         error: function(error) {
@@ -2288,26 +2308,33 @@ function unarchiveNote(id) {
         headers: {
             'X-CSRF-TOKEN': csrfToken
         },
-        success: function() {
+        success: function(response) {
             showNotification('Заметка извлечена из архива', 'info');
             
-            // Если мы на странице архива, удаляем заметку из представления
-            if (window.location.pathname === '/notes/archive') {
-                $(`.note-wrapper#${id}`).fadeOut(300, function() {
-                    $(this).remove();
-                    
-                    // Проверим, остались ли ещё заметки
-                    if ($('.note-wrapper:visible').length === 0) {
-                        $('.notes-container').hide();
-                        $('.empty-container').removeClass('d-none');
-                    }
-                });
+            // Используем универсальную функцию обновления интерфейса
+            if (typeof updateNoteInterface === 'function') {
+                updateNoteInterface('unarchive', id);
+            } else {
+                // Запасной вариант, если универсальная функция недоступна
+                if (window.location.pathname === '/notes/archive') {
+                    $(`.note-wrapper#${id}`).fadeOut(300, function() {
+                        $(this).remove();
+                        
+                        // Проверим, остались ли ещё заметки
+                        if ($('.note-wrapper:visible').length === 0) {
+                            $('.notes-container').hide();
+                            $('.empty-container').removeClass('d-none');
+                        }
+                    });
+                }
                 
                 // Обновляем статистику
                 loadStats();
-            } else {
-                // В других случаях обновляем весь список
-                loadAllNotes(window.location.pathname === '/notes/trash');
+                
+                // Если мы на главной странице, обновляем список
+                if (window.location.pathname === '/notes') {
+                    loadAllNotes(false);
+                }
             }
         },
         error: function(error) {

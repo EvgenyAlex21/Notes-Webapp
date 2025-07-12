@@ -552,9 +552,9 @@ class NoteController extends Controller
                 $done = (bool)$done;
             }
             
+            // Обновляем только поле done, так как completed_at не существует в таблице
             $note->update([
-                'done' => $done,
-                'completed_at' => $done ? now() : null
+                'done' => $done
             ]);
             
             return response()->json([
