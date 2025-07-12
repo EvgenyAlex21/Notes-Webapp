@@ -153,6 +153,9 @@ class NoteController extends Controller
             $note = Note::find($note->id);
         }
         
+        // Убедимся, что возвращаем подготовленный массив файлов
+        $note->files = $filesArray;
+        
         \Log::info('Файлы заметки (окончательно): ' . json_encode($note->files));
         return response()->json(['data' => $note]);
     }
@@ -226,8 +229,68 @@ class NoteController extends Controller
         // Обработка загруженных файлов
         $uploadedFiles = [];
         
+        // Проверим все возможные имена полей с файлами
+        $uploadFiles = null;
+        
+        // Детальный лог HTTP-запроса
+        \Log::info('Метод запроса: ' . $request->method());
+        \Log::info('Content-Type: ' . $request->header('Content-Type'));
+        \Log::info('Все параметры запроса: ' . json_encode($request->all()));
+        \Log::info('Все файлы в запросе: ' . json_encode($request->allFiles()));
+        \Log::info('Наличие поля upload_files: ' . ($request->hasFile('upload_files') ? 'ДА' : 'НЕТ'));
+        \Log::info('Наличие поля upload_files[]: ' . ($request->hasFile('upload_files[]') ? 'ДА' : 'НЕТ'));
+        \Log::info('Содержимое $_FILES: ' . json_encode($_FILES));
+        
+        // Проверка директории для загрузки файлов
+        $uploadDir = storage_path('app/public/uploads');
+        if (!file_exists($uploadDir)) {
+            \Log::info('Создаем директорию для загрузки файлов: ' . $uploadDir);
+            mkdir($uploadDir, 0755, true);
+        }
+        
+        // Проверяем все возможные вариации имени поля
         if ($request->hasFile('upload_files')) {
-            \Log::info('Обнаружены файлы для загрузки: ' . count($request->file('upload_files')));
+            $uploadFiles = $request->file('upload_files');
+            \Log::info('Обнаружены файлы для загрузки в поле upload_files: ' . count($uploadFiles));
+        } elseif ($request->hasFile('upload_files[]')) {
+            $uploadFiles = $request->file('upload_files[]');
+            \Log::info('Обнаружены файлы для загрузки в поле upload_files[]: ' . count($uploadFiles));
+        } else {
+            // Проверяем все поля запроса для поиска файлов
+            foreach ($request->allFiles() as $key => $files) {
+                \Log::info('Обнаружено поле с файлами: ' . $key . ' (количество: ' . count($files) . ')');
+                $uploadFiles = $files;
+                break;
+            }
+            
+            // Если файлы не найдены через allFiles(), проверяем через $_FILES
+            if (!$uploadFiles && !empty($_FILES)) {
+                \Log::info('Пытаемся получить файлы напрямую через $_FILES');
+                foreach ($_FILES as $key => $fileData) {
+                    if (isset($fileData['tmp_name']) && is_array($fileData['tmp_name'])) {
+                        \Log::info('Найдено поле с файлами в $_FILES: ' . $key);
+                        $uploadFiles = [];
+                        for ($i = 0; $i < count($fileData['tmp_name']); $i++) {
+                            if (!empty($fileData['tmp_name'][$i]) && is_uploaded_file($fileData['tmp_name'][$i])) {
+                                $uploadFiles[] = $fileData['tmp_name'][$i];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Проверка отладочного поля
+        if ($request->has('debug_files_count')) {
+            \Log::info('Отладочное поле debug_files_count: ' . $request->input('debug_files_count'));
+        }
+        
+        if ($request->has('has_files')) {
+            \Log::info('Отладочное поле has_files: ' . $request->input('has_files'));
+        }
+        
+        if ($uploadFiles) {
+            \Log::info('Обнаружены файлы для загрузки: ' . count($uploadFiles));
             
             // Создаем символическую ссылку для storage, если её нет
             if (!file_exists(public_path('storage'))) {
@@ -235,13 +298,30 @@ class NoteController extends Controller
                 \Log::info('Создана символическая ссылка на storage');
             }
             
-            foreach ($request->file('upload_files') as $file) {
+            // Убедимся, что директория для загрузок существует
+            $uploadDir = storage_path('app/public/uploads');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+                \Log::info('Создана директория для загрузок: ' . $uploadDir);
+            }
+            
+            \Log::info('Начинаем обработку ' . count($uploadFiles) . ' файлов');
+            foreach ($uploadFiles as $index => $file) {
+                \Log::info('Обработка файла #' . ($index + 1) . ': ' . ($file->getClientOriginalName() ?? 'без имени'));
+                
                 if ($file->isValid()) {
                     $fileName = $file->getClientOriginalName();
                     $fileExt = $file->getClientOriginalExtension();
-                    $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
+                    $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '_' . uniqid() . '.' . $fileExt;
                     
                     try {
+                        // Убедимся, что директория существует
+                        $uploadDir = storage_path('app/public/uploads');
+                        if (!file_exists($uploadDir)) {
+                            \Log::info('Создаем директорию для загрузки файлов: ' . $uploadDir);
+                            mkdir($uploadDir, 0755, true);
+                        }
+                        
                         // Сохраняем файл в public/uploads
                         $path = $file->storeAs('uploads', $uniqueFileName, 'public');
                         
@@ -249,6 +329,15 @@ class NoteController extends Controller
                         $fullPath = storage_path('app/public/' . $path);
                         if (!file_exists($fullPath)) {
                             \Log::error('Файл не был сохранен по пути: ' . $fullPath);
+                            
+                            // Пробуем сохранить альтернативным способом
+                            if ($file->move(storage_path('app/public/uploads'), $uniqueFileName)) {
+                                \Log::info('Файл успешно сохранен альтернативным способом');
+                                $path = 'uploads/' . $uniqueFileName;
+                            } else {
+                                \Log::error('Не удалось сохранить файл альтернативным способом');
+                                continue; // Пропускаем этот файл и переходим к следующему
+                            }
                         } else {
                             \Log::info('Файл успешно сохранен: ' . $fullPath);
                         }
@@ -268,8 +357,10 @@ class NoteController extends Controller
                         \Log::info('Сохранен файл: ' . json_encode($fileData));
                         $uploadedFiles[] = $fileData;
                     } catch (\Exception $e) {
-                        \Log::error('Ошибка при сохранении файла: ' . $e->getMessage());
+                        \Log::error('Ошибка при сохранении файла: ' . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
                     }
+                } else {
+                    \Log::error('Файл не прошел валидацию: ' . ($file->getErrorMessage() ?? 'неизвестная ошибка'));
                 }
             }
             
@@ -419,32 +510,75 @@ class NoteController extends Controller
         } elseif ($request->hasFile('upload_files[]')) {
             $uploadFiles = $request->file('upload_files[]');
             \Log::info('Файлы найдены в поле upload_files[]');
+        } else {
+            // Проверяем, возможно, файлы передаются под другим именем
+            foreach ($request->allFiles() as $key => $files) {
+                \Log::info('Обнаружено поле с файлами: ' . $key . ' (количество: ' . count($files) . ')');
+                $uploadFiles = $files;
+                break;
+            }
         }
         
         if ($uploadFiles) {
             \Log::info('Количество загруженных файлов: ' . count($uploadFiles));
             
+            // Создаем символическую ссылку для storage, если её нет
+            if (!file_exists(public_path('storage'))) {
+                \Artisan::call('storage:link');
+                \Log::info('Создана символическая ссылка на storage');
+            }
+            
+            // Убедимся, что директория для загрузок существует
+            $uploadDir = storage_path('app/public/uploads');
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+                \Log::info('Создана директория для загрузок: ' . $uploadDir);
+            }
+            
             foreach ($uploadFiles as $file) {
-                \Log::info('Обработка файла: ' . $file->getClientOriginalName() . ' (' . $file->getSize() . ' байт)');
-                if ($file->isValid()) {
-                    $fileName = $file->getClientOriginalName();
-                    $fileExt = $file->getClientOriginalExtension();
-                    $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
-                    
-                    // Сохраняем файл в public/uploads
-                    $path = $file->storeAs('uploads', $uniqueFileName, 'public');
-                    
-                    // Определяем тип файла
-                    $fileType = $this->getFileType($fileExt);
-                    
-                    $uploadedFiles[] = [
-                        'name' => $fileName,
-                        'path' => $path,
-                        'url' => asset('storage/' . $path),
-                        'size' => $file->getSize(),
-                        'type' => $fileType,
-                        'extension' => $fileExt
-                    ];
+                // Проверяем, что это действительно файл, а не пустая строка
+                if (!is_string($file) && $file->isValid()) {
+                    try {
+                        \Log::info('Обработка файла: ' . $file->getClientOriginalName() . ' (' . $file->getSize() . ' байт)');
+                        $fileName = $file->getClientOriginalName();
+                        $fileExt = $file->getClientOriginalExtension();
+                        $uniqueFileName = pathinfo($fileName, PATHINFO_FILENAME) . '_' . time() . '.' . $fileExt;
+                        
+                        // Сохраняем файл в public/uploads
+                        $path = $file->storeAs('uploads', $uniqueFileName, 'public');
+                        \Log::info('Файл сохранен по пути: ' . $path);
+                        
+                        // Проверяем, что файл действительно сохранился
+                        $fullPath = storage_path('app/public/' . $path);
+                        if (file_exists($fullPath)) {
+                            \Log::info('Проверка - файл существует по пути: ' . $fullPath);
+                        } else {
+                            \Log::error('Файл не найден по указанному пути: ' . $fullPath);
+                        }
+                        
+                        // Определяем тип файла
+                        $fileType = $this->getFileType($fileExt);
+                        
+                        $fileData = [
+                            'name' => $fileName,
+                            'path' => $path,
+                            'url' => asset('storage/' . $path),
+                            'size' => $file->getSize(),
+                            'type' => $fileType,
+                            'extension' => $fileExt
+                        ];
+                        
+                        \Log::info('Добавление данных файла в заметку: ' . json_encode($fileData));
+                        $uploadedFiles[] = $fileData;
+                    } catch (\Exception $e) {
+                        \Log::error('Ошибка при сохранении файла: ' . $e->getMessage() . "\nTrace: " . $e->getTraceAsString());
+                    }
+                } else {
+                    if (is_string($file)) {
+                        \Log::error('Файл является строкой, а не объектом UploadedFile');
+                    } else if (!$file->isValid()) {
+                        \Log::error('Файл не прошел валидацию: ' . $file->getErrorMessage());
+                    }
                 }
             }
         } else {
@@ -460,6 +594,15 @@ class NoteController extends Controller
         // Добавляем файлы к данным заметки
         $data['files'] = $uploadedFiles; // Всегда сохраняем массив, даже пустой
         \Log::info('Финальные файлы для сохранения: ' . json_encode($data['files']));
+        
+        // Дополнительная проверка, что files действительно массив
+        if (!is_array($data['files'])) {
+            \Log::error('КРИТИЧЕСКАЯ ОШИБКА: files не является массивом перед сохранением, исправляем');
+            $data['files'] = is_string($data['files']) ? json_decode($data['files'], true) : [];
+            if (!is_array($data['files'])) {
+                $data['files'] = [];
+            }
+        }
         
         $note->update($data);
         

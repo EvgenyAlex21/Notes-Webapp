@@ -5,6 +5,8 @@ use App\Http\Controllers\PagesController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\FolderController;
+use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\TestController;
 
 Route::get('/', function () {
     return redirect('/notes');
@@ -46,6 +48,16 @@ Route::prefix('api')->group(function () {
     Route::delete('/notes/{note}/force', [NoteController::class, 'forceDelete']);
     Route::put('/notes/{note}/color', [NoteController::class, 'updateColor']);
     Route::post('/notes/{note}/toggle-pin', [NoteController::class, 'togglePin']);
+    
+    // Маршруты для работы с напоминаниями
+    Route::get('/reminders/check', [ReminderController::class, 'checkReminders']);
+    Route::post('/reminders/{id}/done', [ReminderController::class, 'markReminderAsDone']);
+    Route::post('/notes/{note}/remove-reminder', [NoteController::class, 'removeReminder']);
+    Route::post('/api/notes/{note}/remove-reminder', [NoteController::class, 'removeReminder']); // API версия
+    
+    // Маршруты для тестирования функциональности
+    Route::get('/test/reminders', [TestController::class, 'testReminders']);
+    Route::post('/test/create-reminder', [TestController::class, 'createTestReminder']);
     
     // Новые маршруты для расширенных функций
     Route::post('/notes/{note}/archive', [NoteController::class, 'archive']);

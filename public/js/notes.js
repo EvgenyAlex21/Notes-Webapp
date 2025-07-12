@@ -892,6 +892,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 $('.view-note-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
+                    console.log('Клик на кнопке "Просмотр", ID заметки:', noteId);
                     viewNote(noteId);
                 });
             }
@@ -1055,54 +1056,78 @@ function loadNote(id) {
                 window.currentNoteFiles = validFiles;
                 console.log('Сохранили валидные файлы в window.currentNoteFiles:', window.currentNoteFiles);
                 
-                // Проверим наличие контейнера для существующих файлов
-                const existingFilesContainer = $('#existing-files');
-                if (existingFilesContainer.length === 0) {
-                    console.warn('Элемент #existing-files не найден в DOM, создаем его');
-                    // Создаем контейнер, если его нет
-                    $('#files-container').append('<div id="existing-files" class="mt-3"></div>');
-                }
-                
-                // Получаем контейнер и очищаем его
-                const filesContainer = $('#existing-files');
+                // Проверим наличие контейнера для файлов
+                // Используем #files-container для согласованности с другими страницами
+                const filesContainer = $('#files-container');
                 filesContainer.empty();
+                
+                // Создаем элемент для существующих файлов
+                filesContainer.append('<div id="existing-files" class="mt-3"></div>');
+                const existingFilesContainer = $('#existing-files');
                 
                 // Если есть валидные файлы - отображаем их
                 if (validFiles.length > 0) {
-                    filesContainer.append('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6>');
+                    // Заголовок для файлов
+                    existingFilesContainer.html('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6><div class="row g-2"></div>');
                     let filesHtml = '';
+                    
                     validFiles.forEach(file => {
+                        // Определяем URL файла - используем url или создаем из path
+                        const fileUrl = file.url || (file.path ? `/storage/${file.path}` : null);
+                        if (!fileUrl) {
+                            console.warn('Файл не имеет URL:', file);
+                            return; // Пропускаем файл без URL
+                        }
+                        
+                        // Определяем тип файла, если не указан
+                        if (!file.type && file.extension) {
+                            const ext = file.extension.toLowerCase();
+                            if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                                file.type = 'image';
+                            } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                                file.type = 'video';
+                            } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+                                file.type = 'audio';
+                            }
+                        }
+                        
                         let preview = '';
                         if (file.type === 'image') {
-                            preview = `<img src="${file.url}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}" onerror="this.onerror=null;this.src='https://placehold.co/200?text=Изображение+недоступно';this.style='height:100px;object-fit:cover;'">`;
+                            preview = `<img src="${fileUrl}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}" onerror="this.onerror=null;this.src='https://placehold.co/200?text=Изображение+недоступно';this.style='height:100px;object-fit:cover;'">`;
                         } else if (file.type === 'video') {
-                            preview = `<video src="${file.url}" controls style="width: 100%; height: 100px; object-fit: cover; background: #f8f9fa;" onerror="this.onerror=null;this.outerHTML='<div class=\\'d-flex align-items-center justify-content-center\\' style=\\'height:100px;background:#f8f9fa;\\'><i class=\\'fas fa-film fa-2x text-danger\\'></i></div>'"></video>`;
+                            preview = `<video src="${fileUrl}" controls style="width: 100%; height: 100px; object-fit: cover; background: #f8f9fa;" onerror="this.onerror=null;this.outerHTML='<div class=\\'d-flex align-items-center justify-content-center\\' style=\\'height:100px;background:#f8f9fa;\\'><i class=\\'fas fa-film fa-2x text-danger\\'></i></div>'"></video>`;
+                        } else if (file.type === 'audio') {
+                            preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-music fa-2x text-info"></i></div>`;
                         } else {
                             // Документы и прочее
                             let iconClass = 'fa-file';
                             if (file.extension && typeof file.extension === 'string') {
-                                if (file.extension.match(/pdf/i)) iconClass = 'fa-file-pdf';
-                                else if (file.extension.match(/docx?/i)) iconClass = 'fa-file-word';
-                                else if (file.extension.match(/xlsx?/i)) iconClass = 'fa-file-excel';
-                                else if (file.extension.match(/pptx?/i)) iconClass = 'fa-file-powerpoint';
-                                else if (file.extension.match(/zip|rar|tar|gz/i)) iconClass = 'fa-file-archive';
-                                else if (file.extension.match(/txt|rtf/i)) iconClass = 'fa-file-alt';
+                                const ext = file.extension.toLowerCase();
+                                if (ext === 'pdf') iconClass = 'fa-file-pdf';
+                                else if (['doc', 'docx'].includes(ext)) iconClass = 'fa-file-word';
+                                else if (['xls', 'xlsx'].includes(ext)) iconClass = 'fa-file-excel';
+                                else if (['ppt', 'pptx'].includes(ext)) iconClass = 'fa-file-powerpoint';
+                                else if (['zip', 'rar', 'tar', 'gz'].includes(ext)) iconClass = 'fa-file-archive';
+                                else if (['txt', 'rtf'].includes(ext)) iconClass = 'fa-file-alt';
+                                else if (['exe'].includes(ext)) iconClass = 'fa-cog';
                             }
                             preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
                         }
+                        
                         filesHtml += `
                             <div class="col-md-3 col-sm-4 col-6 mb-3">
                                 <div class="card h-100">
                                     ${preview}
                                     <div class="card-body p-2 text-center">
                                         <p class="card-text small text-truncate mb-1" title="${file.name}">${file.name}</p>
-                                        <a href="${file.url}" target="_blank" class="btn btn-sm btn-outline-primary">Открыть</a>
+                                        <a href="${fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary">Открыть</a>
                                     </div>
                                 </div>
                             </div>
                         `;
                     });
-                    filesContainer.append(`<div class="row g-2">${filesHtml}</div>`);
+                    
+                    existingFilesContainer.find('.row').html(filesHtml);
                 } else {
                     console.log('Нет валидных файлов для отображения');
                 }
@@ -1233,8 +1258,13 @@ function createNote() {
             console.log('Файл', i+1, ':', file.name, file.size, 'байт', file.type);
             formData.append('upload_files[]', file);
         }
+        
+        // Добавляем дополнительные поля для отладки
+        formData.append('has_files', 'true');
+        formData.append('debug_files_count', fileInput.files.length);
     } else {
         console.log('Файлы для загрузки не выбраны');
+        formData.append('has_files', 'false');
     }
     
     if (!$('#name').val() || !$('#description').val()) {
@@ -1442,6 +1472,20 @@ function handleFileUpload() {
         return;
     }
     
+    // Проверяем правильное имя поля для файлов
+    const uploadInput = document.getElementById('upload-files');
+    if (uploadInput && uploadInput.name !== 'upload_files[]') {
+        console.log('Исправляем имя поля для файлов:', uploadInput.name, '->', 'upload_files[]');
+        uploadInput.name = 'upload_files[]';
+    }
+    
+    // Убеждаемся, что форма имеет правильный enctype
+    const form = $('#create-note-form, #edit-note-form').first();
+    if (form && form.attr('enctype') !== 'multipart/form-data') {
+        console.log('Устанавливаем правильный enctype для формы');
+        form.attr('enctype', 'multipart/form-data');
+    }
+    
     // Проверяем существование контейнера для превью
     if ($('#file-preview').length === 0) {
         console.log('Контейнер #file-preview не найден, создаем его');
@@ -1451,6 +1495,18 @@ function handleFileUpload() {
     // Для страницы создания и редактирования заметки
     $('#upload-files').on('change', function() {
         const files = this.files;
+        
+        // Убедимся, что имя поля правильное
+        if (this.name !== 'upload_files[]') {
+            console.log('Исправляем имя поля файлов:', this.name, '->', 'upload_files[]');
+            this.name = 'upload_files[]';
+        }
+        
+        // Отладочная информация
+        console.log('Выбрано файлов:', files.length);
+        for (let i = 0; i < files.length; i++) {
+            console.log(`Файл ${i+1}:`, files[i].name, files[i].size, 'байт', files[i].type);
+        }
         
         // Очищаем превью
         $('#file-preview').empty();
@@ -1673,6 +1729,26 @@ function updateNote(id) {
         formData.append('files', JSON.stringify([]));
     }
     
+    // Убедимся, что форма имеет правильный enctype
+    const form = $('#edit-note-form');
+    if (form.attr('enctype') !== 'multipart/form-data') {
+        console.log('Устанавливаем правильный enctype для формы');
+        form.attr('enctype', 'multipart/form-data');
+    }
+    
+    // Проверим имя поля для файлов
+    if (fileInput && fileInput.name !== 'upload_files[]') {
+        console.log('Исправляем имя поля для файлов:', fileInput.name, '->', 'upload_files[]');
+        fileInput.name = 'upload_files[]';
+    }
+    
+    // Добавляем поле для отладки
+    formData.append('debug_update', 'true');
+    if (hasFiles) {
+        formData.append('has_files', 'true');
+        formData.append('debug_files_count', fileInput.files.length);
+    }
+    
     // Добавляем файлы, если они есть
     if (hasFiles) {
         console.log('Добавляем новые файлы в FormData:', fileInput.files.length, 'файлов');
@@ -1682,6 +1758,8 @@ function updateNote(id) {
         }
     } else {
         console.log('Новых файлов для загрузки нет');
+        // Добавляем пустое поле upload_files[], чтобы избежать ошибки на сервере
+        formData.append('upload_files[]', '');
     }
     
     if (!$('#name').val() || !$('#description').val()) {

@@ -115,7 +115,7 @@ $(document).ready(function() {
                 }
                 
                 $('#search-results').append(`
-                    <div class="search-result-item" data-id="${result.id}">
+                    <div class="search-result-item" data-id="${result.id.replace('note-', '')}">
                         <div class="title">${highlightedTitle}</div>
                         <div class="description">${highlightedDesc}</div>
                         ${tagsHTML}
@@ -126,6 +126,7 @@ $(document).ready(function() {
             // Добавляем обработчик клика на результаты
             $('.search-result-item').on('click', function() {
                 const id = $(this).data('id');
+                console.log('Клик по результату поиска, ID заметки:', id);
                 viewNote(id);
             });
             

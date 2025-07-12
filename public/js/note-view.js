@@ -17,9 +17,13 @@ function initViewNoteHandlers() {
  * @param {number} id - ID заметки
  */
 function viewNote(id) {
+    // Получаем числовой ID заметки (если передан с префиксом note-)
+    const noteId = id.toString().replace('note-', '');
+    console.log(`Запрос на просмотр заметки: получен ID=${id}, преобразован в noteId=${noteId}`);
+    
     // Получаем заметку по ID
     $.ajax({
-        url: `/api/notes/${id}`,
+        url: `/api/notes/${noteId}`,
         method: 'GET',
         dataType: 'json',
         success: function(response) {
@@ -33,7 +37,8 @@ function viewNote(id) {
             }
         },
         error: function(xhr) {
-            showNotification('Не удалось загрузить заметку', 'error');
+            console.error(`Ошибка при загрузке заметки ID=${noteId}:`, xhr.status, xhr.statusText);
+            showNotification(`Не удалось загрузить заметку (${xhr.status})`, 'error');
         }
     });
 }
@@ -65,9 +70,16 @@ function renderNoteInModal(note) {
     console.log('Тип файлов:', typeof note.files, Array.isArray(note.files));
     
     // Обработка разных форматов файлов
-    if (typeof note.files === 'string') {
+    let fileArray = [];
+    
+    if (note.files === null || note.files === undefined) {
+        note.files = [];
+        console.log('Файлы отсутствуют (null/undefined), установлен пустой массив');
+    } else if (typeof note.files === 'string') {
         try {
-            note.files = JSON.parse(note.files);
+            fileArray = JSON.parse(note.files);
+            note.files = fileArray;
+            console.log('Файлы преобразованы из строки в массив:', fileArray);
             console.log('Преобразовали файлы из строки в массив:', note.files);
         } catch (e) {
             console.error('Ошибка при парсинге строки файлов:', e);
@@ -83,6 +95,13 @@ function renderNoteInModal(note) {
     
     let filesHTML = '';
     
+    console.log('Отображение файлов, тип:', typeof note.files, 'isArray:', Array.isArray(note.files), 'длина:', note.files ? note.files.length : 0);
+    
+    // Подробная отладка файлов
+    if (note.files && note.files.length > 0) {
+        console.log('Первый файл:', JSON.stringify(note.files[0]));
+    }
+    
     // Дополнительная проверка на корректность структуры файлов
     if (note.files && Array.isArray(note.files) && note.files.length > 0) {
         let validFiles = note.files.filter(file => 
@@ -93,17 +112,34 @@ function renderNoteInModal(note) {
         console.log('Проверенные файлы для отображения:', validFiles.length, 'из', note.files.length);
         
         // Если есть корректные файлы для отображения
-        if (validFiles.length > 0) {                    // Для файлов, у которых есть path, но нет url, добавляем url
-                    validFiles = validFiles.map(file => {
-                        if (!file.url && file.path) {
-                            file.url = `/storage/${file.path}`;
-                        } else if (!file.url && !file.path) {
-                            // Если нет ни url, ни path - ставим плейсхолдер
-                            file.url = 'https://placehold.co/200?text=Файл+недоступен';
-                            console.warn('У файла нет ни URL, ни path:', file);
-                        }
-                        return file;
-                    });
+        if (validFiles.length > 0) {
+            // Для файлов, у которых есть path, но нет url, добавляем url
+            validFiles = validFiles.map(file => {
+                if (!file.url && file.path) {
+                    file.url = `/storage/${file.path}`;
+                    console.log('Добавлен URL для файла:', file.name, file.url);
+                } else if (!file.url && !file.path) {
+                    // Если нет ни url, ни path - ставим плейсхолдер
+                    file.url = 'https://placehold.co/200?text=Файл+недоступен';
+                    console.warn('У файла нет ни URL, ни path:', file);
+                }
+                
+                // Определяем тип файла, если не указан
+                if (!file.type && file.extension) {
+                    const ext = file.extension.toLowerCase();
+                    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                        file.type = 'image';
+                    } else if (['mp4', 'webm', 'ogg'].includes(ext)) {
+                        file.type = 'video';
+                    } else if (['mp3', 'wav', 'ogg'].includes(ext)) {
+                        file.type = 'audio';
+                    } else {
+                        file.type = 'document';
+                    }
+                }
+                
+                return file;
+            });
             
             filesHTML = `
                 <div class="note-files mt-4">
