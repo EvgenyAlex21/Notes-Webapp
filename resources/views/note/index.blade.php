@@ -340,7 +340,7 @@
             margin-right: 10px;
         }
         
-        /* Стили для папок */
+        /* Стили для папок - точно такие же как у sidebar-link */
         .folder-link {
             display: block;
             padding: 8px 12px;
@@ -354,11 +354,6 @@
             background-color: #f8f9fa;
         }
         .folder-link.active {
-            background-color: #e9ecef;
-            color: #212529;
-            font-weight: bold;
-        }
-        .active-folder .folder-link {
             background-color: #e9ecef;
             color: #212529;
             font-weight: bold;
@@ -671,7 +666,7 @@
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
-                    <a href="/notes" class="sidebar-link {{ !isset($trashMode) || !$trashMode ? 'active' : '' }}">
+                    <a href="/notes" class="sidebar-link {{ (!isset($trashMode) || !$trashMode) && (!isset($folderMode) || !$folderMode) ? 'active' : '' }}">
                         <i class="fas fa-sticky-note"></i> Все заметки
                     </a>
                     <a href="/notes/archive" class="sidebar-link {{ isset($archiveMode) && $archiveMode ? 'active' : '' }}">

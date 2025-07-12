@@ -580,7 +580,7 @@ function loadAllNotes(trashMode = false, folder = null) {
                                 <div class="note-header">
                                     <h4>${note.name}</h4>
                                     <div class="note-status-priority">
-                                        ${note.folder ? `<span class="badge bg-info folder-badge" title="В папке: ${note.folder}">
+                                        ${note.folder ? `<span class="badge bg-secondary folder-badge" title="В папке: ${note.folder}">
                                             <i class="fas fa-folder me-1"></i>${note.folder}
                                         </span>` : ''}
                                         <span class="badge" style="background-color: ${getNoteColorHex(note.color)}; font-weight: 400;">
@@ -2031,15 +2031,58 @@ function loadStats() {
     });
 }
 
+// Получение имени текущей папки из URL
+function getCurrentFolderNameFromUrl() {
+    const folderMatch = window.location.pathname.match(/\/notes\/folder\/(.+)/);
+    if (folderMatch) {
+        try {
+            let folderName = decodeURIComponent(folderMatch[1]);
+            // Полное декодирование (на случай, если имя закодировано несколько раз)
+            while (folderName !== decodeURIComponent(folderName)) {
+                folderName = decodeURIComponent(folderName);
+            }
+            console.log('getCurrentFolderNameFromUrl: Декодированное имя папки:', folderName);
+            return folderName;
+        } catch (e) {
+            console.error('getCurrentFolderNameFromUrl: Ошибка при декодировании имени папки:', e);
+            return folderMatch[1]; // Используем как есть, если ошибка декодирования
+        }
+    }
+    return null;
+}
+
 // Обновление отображения статистики
 function updateStatsDisplay() {
     if (statsData) {
         console.log('Обновляем статистику:', statsData);
-        // Обновляем основные счетчики в боковой панели
-        $('#total-notes').text(`Всего: ${statsData.total || 0}`);
-        $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
-        $('#active-notes').text(`Активно: ${statsData.active || 0}`);
-        $('#pinned-notes').text(`Закреплено: ${statsData.pinned || 0}`);
+        
+        // Проверяем, находимся ли мы в режиме папки
+        const folderMode = window.location.pathname.match(/\/notes\/folder\/(.+)/) !== null;
+        const currentFolderName = folderMode ? getCurrentFolderNameFromUrl() : null;
+        
+        // Если мы в режиме папки, используем статистику для конкретной папки
+        if (folderMode && currentFolderName && statsData.by_folder && statsData.by_folder[currentFolderName]) {
+            // Количество заметок в текущей папке
+            const folderNotes = window.currentNotesCount || {
+                total: $('.note-wrapper:visible').length, 
+                active: $('.note-wrapper:visible:not(.completed)').length,
+                completed: $('.note-wrapper:visible.completed').length,
+                pinned: $('.note-wrapper:visible.pinned').length
+            };
+            
+            $('#total-notes').text(`Всего: ${folderNotes.total}`);
+            $('#completed-notes').text(`Выполнено: ${folderNotes.completed}`);
+            $('#active-notes').text(`Активно: ${folderNotes.active}`);
+            $('#pinned-notes').text(`Закреплено: ${folderNotes.pinned}`);
+            
+            console.log('Отображается статистика для текущей папки:', currentFolderName, folderNotes);
+        } else {
+            // Если не в папке, показываем общую статистику
+            $('#total-notes').text(`Всего: ${statsData.total || 0}`);
+            $('#completed-notes').text(`Выполнено: ${statsData.completed || 0}`);
+            $('#active-notes').text(`Активно: ${statsData.active || 0}`);
+            $('#pinned-notes').text(`Закреплено: ${statsData.pinned || 0}`);
+        }
         $('#archived-notes').text(`В архиве: ${statsData.archived || 0}`);
         $('#trashed-notes').text(`В корзине: ${statsData.trashed || 0}`);
         $('#reminders-notes').text(`С напоминаниями: ${statsData.with_reminders || 0}`);
