@@ -134,6 +134,9 @@ function showFileInViewer(url, name, size, type) {
         type = getFileTypeByExtension(name);
     }
     
+    // Получаем расширение файла для более точного определения типа
+    const extension = name.toLowerCase().split('.').pop();
+    
     // В зависимости от типа файла создаем соответствующий элемент
     switch (type) {
         case 'image':
@@ -146,6 +149,7 @@ function showFileInViewer(url, name, size, type) {
             createVideoPlayer(contentContainer, url, name);
             break;
         case 'pdf':
+        case 'application/pdf':
             createPdfViewer(contentContainer, url, name);
             break;
         case 'doc':
@@ -154,13 +158,54 @@ function showFileInViewer(url, name, size, type) {
         case 'xlsx':
         case 'ppt':
         case 'pptx':
-            createOfficeViewer(contentContainer, url, name, type);
+        case 'application/msword':
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+        case 'application/vnd.ms-excel':
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+        case 'application/vnd.ms-powerpoint':
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
+            createOfficeViewer(contentContainer, url, name, extension || type);
             break;
         case 'txt':
+        case 'text/plain':
+        case 'json':
+        case 'application/json':
+        case 'xml':
+        case 'html':
+        case 'css':
+        case 'js':
             createTextViewer(contentContainer, url, name);
             break;
+        case 'archive':
+        case 'zip':
+        case 'rar':
+        case '7z':
+        case 'tar':
+        case 'gz':
+        case 'bz2':
+        case 'xz':
+        case 'tgz':
+            createArchiveViewer(contentContainer, url, name, type);
+            break;
         default:
-            createGenericFileInfo(contentContainer, url, name, type);
+            // Проверяем наличие функции перед вызовом
+            if (typeof createGenericFileInfo === 'function') {
+                createGenericFileInfo(contentContainer, url, name, extension || type);
+            } else {
+                // Запасной вариант, если функция не определена
+                console.error('Функция createGenericFileInfo не найдена, используем запасной вариант');
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'p-4 text-center';
+                infoDiv.innerHTML = `
+                    <div class="mb-3"><i class="fas fa-file fa-4x text-secondary"></i></div>
+                    <h5>${name}</h5>
+                    <p class="text-muted mb-4">Файл не может быть предпросмотрен. Вы можете скачать его.</p>
+                    <a href="${url}" class="btn btn-primary" download>
+                        <i class="fas fa-download me-2"></i>Скачать файл
+                    </a>
+                `;
+                contentContainer.appendChild(infoDiv);
+            }
             break;
     }
     
@@ -256,7 +301,7 @@ function createOfficeViewer(container, url, name, type) {
     
     // Создаем контейнер с информацией
     const infoDiv = document.createElement('div');
-    infoDiv.className = 'p-4 text-center';
+    infoDiv.className = 'file-info-block';
     
     // Иконка в зависимости от типа файла
     let iconClass = 'fa-file';
@@ -265,20 +310,41 @@ function createOfficeViewer(container, url, name, type) {
     else if (type.includes('ppt')) iconClass = 'fa-file-powerpoint';
     
     infoDiv.innerHTML = `
-        <div class="mb-3"><i class="fas ${iconClass} fa-4x text-primary"></i></div>
-        <h5>${name}</h5>
-        <p class="text-muted mb-4">Документы не могут быть предпросмотрены напрямую. Используйте кнопку скачать или откройте через Google Docs.</p>
+        <div class="file-type-icon"><i class="fas ${iconClass} fa-4x text-primary"></i></div>
+        <h4>${name}</h4>
+        <p class="text-muted mb-4">Предпросмотр для документа можно открыть через внешний сервис Google Docs Viewer</p>
+        <div class="d-flex justify-content-center">
+            <a href="${url}" class="btn btn-outline-primary me-2" download>
+                <i class="fas fa-download me-1"></i> Скачать
+            </a>
+            <a href="https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true" 
+               class="btn btn-primary" target="_blank">
+                <i class="fab fa-google me-1"></i> Открыть в Google Docs
+            </a>
+        </div>
     `;
     
-    // Кнопка для открытия через Google Docs
-    const googleDocsBtn = document.createElement('a');
-    googleDocsBtn.href = `https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true`;
-    googleDocsBtn.target = '_blank';
-    googleDocsBtn.className = 'btn btn-primary me-2';
-    googleDocsBtn.innerHTML = '<i class="fab fa-google me-2"></i>Открыть через Google Docs';
+    // Пытаемся встроить предпросмотр через iframe с Google Docs
+    const previewContainer = document.createElement('div');
+    previewContainer.className = 'mt-4';
+    previewContainer.innerHTML = `
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Предпросмотр документа</span>
+                <a href="https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}" 
+                   class="btn btn-sm btn-outline-primary" target="_blank">
+                   <i class="fas fa-external-link-alt me-1"></i> Открыть в полном размере
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(absoluteUrl)}&embedded=true" 
+                        width="100%" height="500px" frameborder="0"></iframe>
+            </div>
+        </div>
+    `;
     
-    infoDiv.appendChild(googleDocsBtn);
     container.appendChild(infoDiv);
+    container.appendChild(previewContainer);
 }
 
 /**
@@ -287,12 +353,13 @@ function createOfficeViewer(container, url, name, type) {
 function createTextViewer(container, url, name) {
     // Создаем контейнер для текста
     const textContainer = document.createElement('div');
-    textContainer.className = 'p-3';
-    textContainer.style.maxHeight = '70vh';
-    textContainer.style.overflow = 'auto';
-    textContainer.style.backgroundColor = '#f8f9fa';
-    textContainer.style.fontFamily = 'monospace';
-    textContainer.style.whiteSpace = 'pre-wrap';
+    textContainer.className = 'text-content';
+    
+    // Добавляем лоадер, пока загружается содержимое
+    const loader = document.createElement('div');
+    loader.className = 'd-flex justify-content-center align-items-center p-5';
+    loader.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Загрузка...</span></div>';
+    container.appendChild(loader);
     
     // Загружаем содержимое текстового файла
     fetch(url)
@@ -308,23 +375,105 @@ function createTextViewer(container, url, name) {
 }
 
 /**
- * Создает информацию о файле, для которого нет специального обработчика
+ * Создает просмотрщик для архивов
+ */
+function createArchiveViewer(container, url, name, type) {
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'file-info-block';
+    
+    infoDiv.innerHTML = `
+        <div class="file-type-icon"><i class="fas fa-file-archive fa-4x text-primary"></i></div>
+        <h4>${name}</h4>
+        <p class="text-muted mb-4">Архивы можно только скачать. Предпросмотр недоступен.</p>
+        <div class="d-flex justify-content-center">
+            <a href="${url}" class="btn btn-primary" download>
+                <i class="fas fa-download me-1"></i> Скачать архив
+            </a>
+        </div>
+    `;
+    
+    container.appendChild(infoDiv);
+}
+
+/**
+ * Создает информацию о недоступном файле
+ */
+function createErrorFileInfo(container, url, name, errorType = 'not-found') {
+    container.innerHTML = '';
+    
+    const errorContainer = document.createElement('div');
+    errorContainer.className = 'file-info-block';
+    
+    let iconClass, errorMessage, errorDetails;
+    
+    switch (errorType) {
+        case 'not-found':
+            iconClass = 'fa-exclamation-triangle text-warning';
+            errorMessage = 'Файл не найден';
+            errorDetails = 'Запрашиваемый файл не найден или был удален.';
+            break;
+        case 'access-denied':
+            iconClass = 'fa-lock text-danger';
+            errorMessage = 'Доступ запрещен';
+            errorDetails = 'У вас нет прав для просмотра этого файла.';
+            break;
+        case 'format-error':
+            iconClass = 'fa-file-alt text-danger';
+            errorMessage = 'Ошибка формата';
+            errorDetails = 'Невозможно отобразить файл в данном формате.';
+            break;
+        default:
+            iconClass = 'fa-exclamation-circle text-danger';
+            errorMessage = 'Ошибка просмотра';
+            errorDetails = 'Произошла ошибка при попытке отобразить файл.';
+    }
+    
+    errorContainer.innerHTML = `
+        <div class="file-type-icon"><i class="fas ${iconClass}"></i></div>
+        <h4 class="mb-3">${errorMessage}</h4>
+        <p class="text-muted mb-4">${errorDetails}</p>
+        <p class="text-muted mb-2">Имя файла: ${name}</p>
+        <a href="${url}" class="btn btn-primary" download>
+            <i class="fas fa-download me-2"></i>Скачать файл
+        </a>
+    `;
+    
+    container.appendChild(errorContainer);
+}
+
+/**
+ * Создает информацию о файле для неподдерживаемых типов
+ * @param {HTMLElement} container - Контейнер для размещения
+ * @param {string} url - URL файла
+ * @param {string} name - Имя файла
+ * @param {string} type - Тип файла
  */
 function createGenericFileInfo(container, url, name, type) {
-    const extension = name.split('.').pop().toLowerCase();
-    
-    // Определяем иконку в зависимости от расширения
+    // Определяем подходящую иконку в зависимости от типа
     let iconClass = 'fa-file';
-    if (['zip', 'rar', '7z'].includes(extension)) iconClass = 'fa-file-archive';
-    else if (['js', 'php', 'html', 'css', 'py', 'java', 'c', 'cpp'].includes(extension)) iconClass = 'fa-file-code';
+    let fileTypeText = 'Файл';
     
-    // Создаем контейнер с информацией
+    if (type === 'archive' || ['zip', 'rar', '7z', 'tar', 'gz'].includes(type)) {
+        iconClass = 'fa-file-archive';
+        fileTypeText = 'Архив';
+    } else if (['exe', 'msi', 'bat', 'cmd'].includes(type)) {
+        iconClass = 'fa-file-code';
+        fileTypeText = 'Исполняемый файл';
+    } else if (['db', 'sqlite', 'mdb', 'accdb'].includes(type)) {
+        iconClass = 'fa-database';
+        fileTypeText = 'База данных';
+    } else if (['ttf', 'otf', 'woff', 'woff2'].includes(type)) {
+        iconClass = 'fa-font';
+        fileTypeText = 'Шрифт';
+    }
+    
     const infoDiv = document.createElement('div');
-    infoDiv.className = 'p-4 text-center';
+    infoDiv.className = 'file-info-block';
+    
     infoDiv.innerHTML = `
-        <div class="mb-3"><i class="fas ${iconClass} fa-4x text-secondary"></i></div>
-        <h5>${name}</h5>
-        <p class="text-muted">Предпросмотр для этого типа файла не поддерживается.</p>
+        <div class="file-type-icon"><i class="fas ${iconClass} fa-4x text-primary"></i></div>
+        <h4>${name}</h4>
+        <p class="text-muted mb-4">${fileTypeText} не может быть предпросмотрен. Вы можете скачать его на устройство.</p>
     `;
     
     container.appendChild(infoDiv);
@@ -374,28 +523,69 @@ function updateNavigationButtons() {
  * Определяет тип файла по расширению
  */
 function getFileTypeByExtension(filename) {
+    if (!filename) return 'unknown';
+    
     const extension = filename.split('.').pop().toLowerCase();
     
-    // Определяем тип по расширению
-    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'].includes(extension)) {
+    // Изображения
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'tiff', 'ico', 'heic'].includes(extension)) {
         return 'image';
-    } else if (['mp3', 'wav', 'ogg', 'flac', 'aac'].includes(extension)) {
-        return 'audio';
-    } else if (['mp4', 'webm', 'avi', 'mov', 'wmv', 'mkv'].includes(extension)) {
-        return 'video';
-    } else if (extension === 'pdf') {
-        return 'pdf';
-    } else if (['doc', 'docx'].includes(extension)) {
-        return 'doc';
-    } else if (['xls', 'xlsx'].includes(extension)) {
-        return 'xls';
-    } else if (['ppt', 'pptx'].includes(extension)) {
-        return 'ppt';
-    } else if (extension === 'txt') {
-        return 'txt';
-    } else {
-        return 'other';
     }
+    
+    // Аудио
+    if (['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac', 'wma', 'opus', '3gp', 'mid', 'midi'].includes(extension)) {
+        return 'audio';
+    }
+    
+    // Видео
+    if (['mp4', 'webm', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'mpeg', 'mpg', '3gp', 'ogv', 'ts', 'm4v'].includes(extension)) {
+        return 'video';
+    }
+    
+    // PDF
+    if (extension === 'pdf') {
+        return 'pdf';
+    }
+    
+    // Офисные документы - Microsoft Office
+    if (['doc', 'docx', 'docm', 'dot', 'dotx'].includes(extension)) {
+        return 'doc';
+    }
+    if (['xls', 'xlsx', 'xlsm', 'xlsb', 'xlt', 'xltx'].includes(extension)) {
+        return 'xls';
+    }
+    if (['ppt', 'pptx', 'pptm', 'pot', 'potx', 'pps', 'ppsx'].includes(extension)) {
+        return 'ppt';
+    }
+    
+    // Офисные документы - OpenOffice / LibreOffice
+    if (['odt', 'ott', 'fodt'].includes(extension)) {
+        return 'doc'; // OpenDocument Text
+    }
+    if (['ods', 'ots', 'fods'].includes(extension)) {
+        return 'xls'; // OpenDocument Spreadsheet
+    }
+    if (['odp', 'otp', 'fodp'].includes(extension)) {
+        return 'ppt'; // OpenDocument Presentation
+    }
+    
+    // Текстовые файлы
+    if (['txt', 'csv', 'json', 'xml', 'log', 'md', 'rtf', 'ini', 'conf', 'config', 'yml', 'yaml', 'toml'].includes(extension)) {
+        return 'txt';
+    }
+    
+    // Код
+    if (['html', 'htm', 'css', 'js', 'ts', 'jsx', 'tsx', 'php', 'py', 'java', 'c', 'cpp', 'h', 'cs', 'go', 'rb', 'pl', 'swift'].includes(extension)) {
+        return 'txt';
+    }
+    
+    // Архивы
+    if (['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz', 'tgz'].includes(extension)) {
+        return 'archive';
+    }
+    
+    // По умолчанию
+    return 'other';
 }
 
 /**

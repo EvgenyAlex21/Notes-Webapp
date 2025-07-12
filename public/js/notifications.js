@@ -1,13 +1,10 @@
-/**
- * Система уведомлений и напоминаний для приложения заметок
- * В стиле Telegram - всплывающие уведомления в правом нижнем углу
- */
-
 // Глобальная переменная для хранения всех активных уведомлений
 let activeNotifications = [];
 let notificationContainer = null;
 let notificationCheckInterval = null;
 let lastCheckTime = 0;
+// Счетчик для уникальных идентификаторов уведомлений
+let notificationCounter = 0;
 
 // Инициализация системы уведомлений
 function initNotificationsSystem() {
@@ -331,86 +328,95 @@ function showBrowserNotification(title, message, url) {
     }
 }
 
-// Показывает уведомление в стиле Telegram
-function showNotification(options) {
-    const defaults = {
-        id: 'notification-' + Date.now(),
-        title: 'Уведомление',
-        message: '',
-        type: 'info', // info, success, warning, error, reminder
-        autoClose: true,
-        duration: 5000, // ms
-        actions: []
+/**
+ * Отображает красивое всплывающее уведомление (обновленная версия)
+ * @param {string} message - Текст уведомления
+ * @param {string} type - Тип уведомления (info, success, warning, danger)
+ * @param {number} duration - Длительность отображения в миллисекундах
+ */
+function showNotification(message, type = 'info', duration = 3000) {
+    // Инкрементируем счетчик для уникального ID
+    notificationCounter++;
+    const notificationId = `notification-${Date.now()}-${notificationCounter}`;
+    
+    // Определяем иконку в зависимости от типа уведомления
+    let icon;
+    switch(type) {
+        case 'success':
+            icon = 'fa-check-circle';
+            break;
+        case 'warning':
+            icon = 'fa-exclamation-triangle';
+            break;
+        case 'danger':
+        case 'error':
+            type = 'danger'; // Нормализуем тип
+            icon = 'fa-exclamation-circle';
+            break;
+        default:
+            icon = 'fa-info-circle';
+            type = 'info'; // Нормализуем тип
+    }
+    
+    // Создаем контейнер для уведомлений, если он не существует
+    if (!notificationContainer) {
+        initNotificationsSystem();
+    }
+    
+    // Создаем элемент уведомления
+    const notification = document.createElement('div');
+    notification.id = notificationId;
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas ${icon} notification-icon"></i>
+            <div class="notification-message">${message}</div>
+            <button class="notification-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="notification-progress-bar"></div>
+    `;
+    
+    // Добавляем в контейнер
+    notificationContainer.appendChild(notification);
+    
+    // Добавляем в массив активных уведомлений
+    const notifObj = {
+        id: notificationId,
+        element: notification,
+        createdAt: Date.now(),
+        duration: duration,
+        timeout: null
     };
+    activeNotifications.push(notifObj);
     
-    const settings = Object.assign({}, defaults, options);
+    // Анимация появления
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
     
-    // Создаем HTML уведомления
-    const notificationEl = document.createElement('div');
-    notificationEl.id = settings.id;
-    notificationEl.className = `notification-item ${settings.type}`;
+    // Настройка автозакрытия
+    if (duration > 0) {
+        const progressBar = notification.querySelector('.notification-progress-bar');
+        progressBar.style.animationDuration = `${duration}ms`;
+        progressBar.classList.add('active');
+        
+        notifObj.timeout = setTimeout(() => {
+            closeNotification(notificationId);
+        }, duration);
+    }
     
-    // Заголовок и кнопка закрытия
-    const headerEl = document.createElement('div');
-    headerEl.className = 'notification-header';
-    
-    const titleEl = document.createElement('h6');
-    titleEl.className = 'notification-title';
-    titleEl.textContent = settings.title;
-    headerEl.appendChild(titleEl);
-    
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'notification-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.addEventListener('click', function() {
-        closeNotification(settings.id);
+    // Добавляем обработчик для кнопки закрытия
+    const closeBtn = notification.querySelector('.notification-close-btn');
+    closeBtn.addEventListener('click', () => {
+        closeNotification(notificationId);
     });
-    headerEl.appendChild(closeBtn);
-    notificationEl.appendChild(headerEl);
     
-    // Содержимое уведомления
-    const contentEl = document.createElement('div');
-    contentEl.className = 'notification-content';
-    contentEl.textContent = settings.message;
-    notificationEl.appendChild(contentEl);
+    // Если уведомлений много, прокручиваем контейнер вниз
+    notificationContainer.scrollTop = notificationContainer.scrollHeight;
     
-    // Добавляем действия, если есть
-    if (settings.actions && settings.actions.length > 0) {
-        const actionsEl = document.createElement('div');
-        actionsEl.className = 'notification-actions';
-        
-        settings.actions.forEach(action => {
-            const actionBtn = document.createElement('button');
-            actionBtn.className = action.class || '';
-            actionBtn.textContent = action.text;
-            actionBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof action.onClick === 'function') {
-                    action.onClick();
-                }
-            });
-            actionsEl.appendChild(actionBtn);
-        });
-        
-        notificationEl.appendChild(actionsEl);
-    }
-    
-    // Добавляем уведомление в контейнер
-    notificationContainer.appendChild(notificationEl);
-    
-    // Запускаем автозакрытие, если нужно
-    if (settings.autoClose) {
-        setTimeout(() => {
-            closeNotification(settings.id);
-        }, settings.duration);
-    }
-    
-    // Добавляем в список активных
-    if (!activeNotifications.includes(settings.id)) {
-        activeNotifications.push(settings.id);
-    }
-    
-    return settings.id;
+    return notificationId;
 }
 
 // Закрывает уведомление по его ID

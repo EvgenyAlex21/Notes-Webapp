@@ -34,3 +34,19 @@ body.dark-theme .view-more-badge {
 body.dark-theme .view-more-badge:hover {
     background-color: #2c4764 !important;
 }
+
+/* Обязательное отображение кнопок просмотра заметок */
+.view-more-badge.view-note-btn {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.view-button-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 10px;
+}

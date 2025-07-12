@@ -1,0 +1,84 @@
+/**
+ * Стили для исправления проблем с отображением заметок
+ */
+
+/* Обязательное отображение основных элементов заметки */
+.note-item, .note-wrapper {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Кнопки действий */
+.note-actions {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.note-actions .dropdown {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.note-actions .dropdown-toggle {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.note-actions .dropdown-menu {
+    min-width: 180px !important;
+}
+
+/* Обязательное отображение кнопки просмотра */
+.view-button-container {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 15px !important;
+    margin-bottom: 5px !important;
+}
+
+.view-more-badge.view-note-btn {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    padding: 6px 12px !important;
+}
+
+/* Исправляем отображение заголовка заметки */
+.note-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+}
+
+/* Исправляем отображение статусов заметки */
+.note-status-priority {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    margin: 5px 0 !important;
+}
+
+/* Исправляем отображение значков заметки */
+.badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Добавляем отступ между элементами заметки */
+.note-content {
+    padding: 5px 0 !important;
+    min-height: 30px !important;
+}
+
+/* Делаем заметку кликабельной */
+.note-content-text {
+    cursor: pointer;
+}

@@ -1,4 +1,8 @@
-<!DOCTYPE html>
+<!DOCTYPE    <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">l>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -10,10 +14,14 @@
     <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
-    <script src="{{ asset('js/scroll-top.js') }}"></script></script>
+    <script src="{{ asset('js/scroll-top.js') }}"></script>
+    <script src="{{ asset('js/view-buttons.js') }}"></script>
+    <script src="{{ asset('js/note-buttons-fix.js') }}"></script>
     <!-- Подавляем предупреждения о устаревшем событии DOMNodeInserted в консоли -->
     <script>
         // Сохраняем оригинальную функцию console.warn
@@ -900,7 +908,7 @@
     
     <!-- Модальное окно для просмотра файлов -->
     <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="fileViewerModalLabel">Просмотр файла</h5>

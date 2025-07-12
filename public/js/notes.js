@@ -7,6 +7,12 @@ let statsData = {};
 let viewNoteModal = null;
 
 $(document).ready(function() {
+    // Инициализация системы уведомлений, если доступна
+    if (typeof initNotificationsSystem === 'function') {
+        initNotificationsSystem();
+        console.log('Инициализирована система уведомлений');
+    }
+    
     // Инициализация модального окна просмотра заметки если оно существует
     const viewNoteModalElement = document.getElementById('viewNoteModal');
     if (viewNoteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -510,16 +516,22 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 if (archiveMode) {
                     $('.empty-container h3').html('<i class="fas fa-archive me-2"></i>Архив пуст');
                     $('.empty-container p').text('Архивированные заметки будут отображаться здесь');
-                    // Проверяем наличие кнопки и добавляем, если нет
+                    
+                    // Проверяем наличие кнопки и гарантируем её наличие
                     if ($('.empty-container .btn').length === 0) {
                         $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
+                    } else {
+                        $('.empty-container .btn').attr('href', '/notes').html('Вернуться к заметкам').show();
                     }
                 } else if (trashMode) {
                     $('.empty-container h3').html('<i class="fas fa-trash me-2"></i>Корзина пуста');
                     $('.empty-container p').text('Удаленные заметки будут появляться здесь');
-                    // Проверяем наличие кнопки и добавляем, если нет
+                    
+                    // Проверяем наличие кнопки и гарантируем её наличие
                     if ($('.empty-container .btn').length === 0) {
                         $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
+                    } else {
+                        $('.empty-container .btn').attr('href', '/notes').html('Вернуться к заметкам').show();
                     }
                 }
             }
@@ -664,7 +676,8 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                          id="note-${note.id}" data-id="${note.id}" data-color="${note.color}" data-done="${note.done}" 
                          data-pinned="${note.is_pinned}" data-tags="${note.tags || ''}" 
                          data-raw-tags="${note.tags || ''}" data-folder="${note.folder || ''}"
-                         data-updated-at="${note.updated_at}">
+                         data-updated-at="${note.updated_at}"
+                         style="position: relative;">
                          
                         ${isPinned ? '<span class="badge pin-badge">Закреплено</span>' : ''}
                         
@@ -777,17 +790,17 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                     }
                                 })()}
                                 
-                                <!-- Кнопка "Посмотреть" -->
-                                <div class="mt-2">
-                                    <span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}">
+                                <!-- Кнопка "Посмотреть" всегда должна быть видна -->
+                                <div class="mt-2 view-button-container">
+                                    <span class="badge bg-primary view-more-badge view-note-btn" data-id="${note.id}" style="display: inline-block !important; visibility: visible !important;">
                                         <i class="fas fa-eye me-1"></i> Посмотреть
                                     </span>
                                 </div>
                             </div>
                             <!-- Кнопки действий (справа) -->
-                            <div class="col-12 text-end note-actions mt-2">
-                                <div class="dropdown d-inline-block">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="col-12 text-end note-actions mt-2" style="display: block !important; visibility: visible !important;">
+                                <div class="dropdown d-inline-block" style="display: inline-block !important; visibility: visible !important;">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="display: inline-block !important; visibility: visible !important;">
                                         <i class="fas fa-ellipsis-v"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow">
