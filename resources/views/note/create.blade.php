@@ -1062,8 +1062,8 @@
                 $('.file-remove').off('click').on('click', function(e) {
                     e.stopPropagation();
                     const fileId = $(this).data('file-id');
-                    const fileName = uploadedFiles.find(file => file.id === fileId)?.name || 'файл';
-                    
+                    const fileItem = uploadedFiles.find(file => file.id === fileId);
+                    const fileName = fileItem?.name || 'файл';
                     
                     createConfirmationModal(
                         'Удалить файл?',
@@ -1071,13 +1071,27 @@
                         'Удалить',
                         'Отмена',
                         function() {
+                            if (fileItem && fileItem.path) {
+                                $.ajax({
+                                    url: '/notes/files/temp',
+                                    method: 'DELETE',
+                                    data: {
+                                        path: fileItem.path,
+                                        _token: $('meta[name="csrf-token"]').attr('content')
+                                    },
+                                    success: function(response) {
+                                        console.log('Файл успешно удален на сервере:', response);
+                                    },
+                                    error: function(xhr, status, error) {
+                                        console.error('Ошибка при удалении файла на сервере:', error);
+                                    }
+                                });
+                            }
                             
                             uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
                             
-                            
                             $(`#file-item-${fileId}`).fadeOut(300, function() {
                                 $(this).remove();
-                                
                                 updateGlobalFilesArray();
                             });
                         }

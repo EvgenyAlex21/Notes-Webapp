@@ -994,4 +994,46 @@ class NoteController extends Controller
             ]
         ]);
     }
+    
+    /**
+     * Удаляет временный файл из хранилища
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteTempFile(Request $request)
+    {
+        \Log::info('Запрос на удаление временного файла');
+        
+        $filePath = $request->input('path');
+        
+        if (!$filePath) {
+            \Log::error('Не указан путь к файлу для удаления');
+            return response()->json(['success' => false, 'message' => 'Не указан путь к файлу'], 400);
+        }
+
+        if (!str_starts_with($filePath, 'uploads/')) {
+            $filePath = 'uploads/' . $filePath;
+        }
+        
+        \Log::info('Пытаемся удалить файл: ' . $filePath);
+        
+        $fullPath = storage_path('app/public/' . $filePath);
+        
+        \Log::info('Полный путь к файлу: ' . $fullPath);
+        
+        if (file_exists($fullPath)) {
+            \Log::info('Файл найден, удаляем');
+            if (unlink($fullPath)) {
+                \Log::info('Файл успешно удален: ' . $filePath);
+                return response()->json(['success' => true, 'message' => 'Файл успешно удален']);
+            } else {
+                \Log::error('Не удалось удалить файл: ' . $filePath);
+                return response()->json(['success' => false, 'message' => 'Не удалось удалить файл'], 500);
+            }
+        } else {
+            \Log::warning('Файл не найден: ' . $fullPath);
+            return response()->json(['success' => true, 'message' => 'Файл не найден, считаем удаленным']);
+        }
+    }
 }

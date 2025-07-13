@@ -28,6 +28,7 @@ Route::post('/notes/{note}/toggle-pin', [NoteController::class, 'togglePin']);
 Route::post('/notes/{note}/archive', [NoteController::class, 'archive']);
 Route::post('/notes/{note}/unarchive', [NoteController::class, 'unarchive']);
 Route::post('/notes/{note}/files', [NoteController::class, 'uploadFiles']);
+Route::delete('/notes/files/temp', [NoteController::class, 'deleteTempFile']);
 
 Route::prefix('api')->group(function () {
     Route::get('/notes', [NoteController::class, 'index']);

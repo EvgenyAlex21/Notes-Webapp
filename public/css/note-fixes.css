@@ -1,6 +1,29 @@
 .note-item, .note-wrapper {
     position: relative !important;
     overflow: visible !important;
+    height: 420px !important; 
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.note-item .card-body {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+.note-content-preview {
+    flex: 1 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 4 !important; 
+    line-clamp: 4 !important;
+    -webkit-box-orient: vertical !important;
+    text-overflow: ellipsis !important;
+}
+
+.note-footer {
+    margin-top: auto !important;
 }
 
 .note-actions {

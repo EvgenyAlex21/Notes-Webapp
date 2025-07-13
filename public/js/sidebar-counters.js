@@ -212,8 +212,11 @@ function updateSidebarCounters() {
     console.log('Обновление счетчиков боковой панели');
     const currentPath = window.location.pathname;
     updateCountersFromAPI(statsSource, currentPath);
+    
     if (currentPath === '/notes' || currentPath === '/notes/') {
-        updateMainPageCounterExcludingFolders(statsSource);
+        const visibleNotesCount = $('.note-item').length;
+        $('#all-notes-count').text(visibleNotesCount);
+        console.log('Обновлен счетчик на главной странице:', visibleNotesCount);
     } else if (currentPath.includes('/notes/folder')) {
         updateFolderPageCounter();
     } else    if (currentPath.includes('/notes/') && currentPath.includes('/edit')) {
@@ -277,9 +280,16 @@ function updateCountersFromAPI(statsSource, currentPath) {
 }
 
 function updateMainPageCounterExcludingFolders(statsSource) {
-    const totalActive = Math.max(0, statsSource.active || 0);
-    $('#all-notes-count').text(totalActive);
-    console.log('Счетчик "Все заметки" на главной странице:', totalActive);
+    const visibleNotesCount = $('.note-item').length;
+    
+    if (visibleNotesCount > 0) {
+        $('#all-notes-count').text(visibleNotesCount);
+        console.log('Счетчик "Все заметки" на главной странице (по видимым заметкам):', visibleNotesCount);
+    } else {
+        const totalActive = Math.max(0, statsSource.active || 0);
+        $('#all-notes-count').text(totalActive);
+        console.log('Счетчик "Все заметки" на главной странице (из API):', totalActive);
+    }
 }
 
 function updateFolderPageCounter() {
