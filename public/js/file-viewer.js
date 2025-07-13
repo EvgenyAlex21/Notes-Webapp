@@ -7,7 +7,7 @@ window.filesList = filesList;
 
 /**
  * Обновление глобального массива файлов из внешних скриптов
- * @param {Array} newFilesList - Новый массив файлов
+ * @param {Array} newFilesList 
  */
 function updateGlobalCurrentFiles(newFilesList) {
     filesList = newFilesList || [];

@@ -1,8 +1,3 @@
-/**
- * Продвинутые мобильные функции
- * Touch gestures, swipe actions, pull-to-refresh
- */
-
 class AdvancedMobileFeatures {
     constructor() {
         this.touchStartX = 0;
@@ -29,14 +24,14 @@ class AdvancedMobileFeatures {
         }
     }
     
-    // Swipe gestures для заметок
+    
     initSwipeGestures() {
         const noteItems = document.querySelectorAll('.note-item');
         
         noteItems.forEach(note => {
             note.classList.add('note-item-swipeable');
             
-            // Создаем панель действий
+            
             const actionsPanel = document.createElement('div');
             actionsPanel.className = 'note-swipe-actions';
             actionsPanel.innerHTML = `
@@ -67,14 +62,14 @@ class AdvancedMobileFeatures {
                 currentX = e.touches[0].clientX;
                 deltaX = startX - currentX;
                 
-                // Проверяем, что это горизонтальный свайп
+                
                 const deltaY = Math.abs(e.touches[0].clientY - e.touches[0].clientY);
                 if (deltaY > Math.abs(deltaX)) {
                     isScrolling = true;
                     return;
                 }
                 
-                if (deltaX > 20) { // Свайп влево
+                if (deltaX > 20) { 
                     e.preventDefault();
                     const progress = Math.min(deltaX / 100, 1);
                     note.style.transform = `translateX(-${deltaX}px)`;
@@ -86,18 +81,18 @@ class AdvancedMobileFeatures {
                 if (isScrolling) return;
                 
                 if (deltaX > 80) {
-                    // Показываем действия
+                    
                     note.style.transform = 'translateX(-100px)';
                     actionsPanel.classList.add('active');
                     this.triggerHaptic('medium');
                 } else {
-                    // Возвращаем в исходное положение
+                    
                     note.style.transform = 'translateX(0)';
                     actionsPanel.classList.remove('active');
                 }
             });
             
-            // Обработчики действий
+            
             actionsPanel.addEventListener('click', (e) => {
                 const action = e.target.closest('[data-action]');
                 if (action) {
@@ -123,16 +118,16 @@ class AdvancedMobileFeatures {
                 break;
         }
         
-        // Закрываем панель действий
+        
         noteElement.style.transform = 'translateX(0)';
         noteElement.querySelector('.note-swipe-actions').classList.remove('active');
     }
     
-    // Pull to refresh
+    
     initPullToRefresh() {
         const container = document.querySelector('.notes-container') || document.body;
         
-        // Создаем индикатор
+        
         const indicator = document.createElement('div');
         indicator.className = 'pull-refresh-indicator';
         indicator.innerHTML = '<div class="pull-refresh-spinner"></div>';
@@ -158,7 +153,7 @@ class AdvancedMobileFeatures {
                 e.preventDefault();
                 const progress = Math.min(deltaY / this.pullThreshold, 1);
                 
-                // Обновляем позицию индикатора
+                
                 indicator.style.top = `${-60 + (progress * 80)}px`;
                 indicator.style.opacity = progress;
                 
@@ -186,7 +181,7 @@ class AdvancedMobileFeatures {
     performRefresh(indicator) {
         indicator.classList.add('active');
         
-        // Имитируем загрузку
+        
         setTimeout(() => {
             location.reload();
         }, 1000);
@@ -198,28 +193,28 @@ class AdvancedMobileFeatures {
         indicator.classList.remove('active');
     }
     
-    // Нижняя навигация
+    
     initBottomNavigation() {
-        // Создаем только если еще не существует
+        
         if (document.querySelector('.mobile-bottom-nav')) return;
         
         const currentPath = window.location.pathname;
         
-        // Проверяем наличие папок
+        
         const foldersExist = document.querySelector('#folders-list') && 
                            document.querySelector('#folders-list').children.length > 0;
         
         const nav = document.createElement('div');
         nav.className = 'mobile-bottom-nav';
         
-        // Базовые пункты меню
+        
         let navItems = `
             <a href="/notes" class="nav-item ${(currentPath === '/notes' || currentPath === '/' || (currentPath.includes('/notes') && !currentPath.includes('archive') && !currentPath.includes('trash') && !currentPath.includes('calendar') && !currentPath.includes('folder'))) ? 'active' : ''}">
                 <i class="fas fa-home"></i>
                 <span>Главная</span>
             </a>`;
         
-        // Добавляем папки, если они есть
+        
         if (foldersExist) {
             navItems += `
             <a href="#" class="nav-item folders-nav" onclick="toggleMobileFolders(event)">
@@ -228,7 +223,7 @@ class AdvancedMobileFeatures {
             </a>`;
         }
         
-        // Остальные пункты
+        
         navItems += `
             <a href="/notes/archive" class="nav-item ${currentPath.includes('archive') ? 'active' : ''}">
                 <i class="fas fa-archive"></i>
@@ -246,11 +241,11 @@ class AdvancedMobileFeatures {
         nav.innerHTML = navItems;
         document.body.appendChild(nav);
         
-        // Добавляем отступ снизу для основного контента
+        
         document.body.style.paddingBottom = '80px';
     }
     
-    // Floating Action Button
+    
     initFAB() {
         if (window.location.pathname === '/notes/create') return;
         
@@ -264,9 +259,9 @@ class AdvancedMobileFeatures {
         document.body.appendChild(fab);
     }
     
-    // Haptic feedback эмуляция
+    
     initHapticFeedback() {
-        // Добавляем haptic классы к интерактивным элементам
+        
         document.querySelectorAll('.btn, .note-item, .sidebar-link').forEach(el => {
             el.classList.add('haptic-light');
         });
@@ -277,7 +272,7 @@ class AdvancedMobileFeatures {
     }
     
     triggerHaptic(intensity = 'light') {
-        // Если поддерживается Vibration API
+        
         if ('vibrator' in navigator || 'vibrate' in navigator) {
             let pattern;
             switch (intensity) {
@@ -297,7 +292,7 @@ class AdvancedMobileFeatures {
         }
     }
     
-    // Мобильный поиск
+    
     initMobileSearch() {
         const searchInput = document.querySelector('#search-notes');
         if (!searchInput) return;
@@ -325,12 +320,12 @@ class AdvancedMobileFeatures {
         
         document.body.appendChild(overlay);
         
-        // Показываем с анимацией
+        
         setTimeout(() => {
             overlay.classList.add('active');
         }, 10);
         
-        // Настраиваем поиск
+        
         const input = overlay.querySelector('.mobile-search-input');
         const results = overlay.querySelector('.mobile-search-results');
         
@@ -345,8 +340,8 @@ class AdvancedMobileFeatures {
             return;
         }
         
-        // Здесь должен быть AJAX запрос для поиска
-        // Для демонстрации используем заглушку
+        
+        
         resultsContainer.innerHTML = `
             <div class="mobile-loading-skeleton skeleton-text large"></div>
             <div class="mobile-loading-skeleton skeleton-text"></div>
@@ -365,7 +360,7 @@ class AdvancedMobileFeatures {
         }, 500);
     }
     
-    // Показать toast уведомление
+    
     showMobileToast(message, type = 'info', duration = 3000) {
         const toast = document.createElement('div');
         toast.className = `mobile-toast ${type}`;
@@ -376,12 +371,12 @@ class AdvancedMobileFeatures {
         
         document.body.appendChild(toast);
         
-        // Показываем с анимацией
+        
         setTimeout(() => {
             toast.classList.add('show');
         }, 10);
         
-        // Скрываем через заданное время
+        
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => {
@@ -427,11 +422,11 @@ class AdvancedMobileFeatures {
     }
 }
 
-// Функция для переключения показа папок в мобильном меню
+
 function toggleMobileFolders(event) {
     event.preventDefault();
     
-    // Открываем боковое меню где отображаются папки
+    
     const sidebar = document.querySelector('.sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
     
@@ -439,7 +434,7 @@ function toggleMobileFolders(event) {
         sidebar.classList.add('show');
         overlay.classList.add('show');
         
-        // Прокручиваем к разделу папок
+        
         setTimeout(() => {
             const foldersSection = document.querySelector('#folders-list');
             if (foldersSection) {
@@ -449,10 +444,10 @@ function toggleMobileFolders(event) {
     }
 }
 
-// Делаем функцию глобальной
+
 window.toggleMobileFolders = toggleMobileFolders;
 
-// Глобальные функции для совместимости
+
 window.toggleMobileMenu = function() {
     if (window.mobileResponsiveManager) {
         window.mobileResponsiveManager.toggleMobileMenu();
@@ -469,14 +464,14 @@ window.showMobileToast = function(message, type, duration) {
     }
 };
 
-// Инициализация при загрузке
+
 document.addEventListener('DOMContentLoaded', () => {
     if (MobileUtils && MobileUtils.isMobile()) {
         window.advancedMobileFeatures = new AdvancedMobileFeatures();
     }
 });
 
-// Экспорт
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = AdvancedMobileFeatures;
 }

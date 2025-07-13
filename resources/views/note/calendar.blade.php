@@ -164,7 +164,7 @@
             min-height: 500px;
         }
         
-        /* Темная тема */
+       
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
@@ -219,7 +219,7 @@
             color: #ffffff;
         }
         
-        /* Стили для календаря */
+       
         .fc-event {
             cursor: pointer;
             border-radius: 4px;
@@ -275,7 +275,7 @@
             color: #f8f9fa;
         }
         
-        /* Стили для папок (точно как на главной странице) */
+       
         .folder-item {
             margin-bottom: 8px;
             transition: all 0.2s ease;
@@ -340,7 +340,7 @@
             margin-right: 8px;
         }
         
-        /* Темная тема для папок */
+       
         .dark-theme .folder-link {
             color: #f8f9fa !important;
         }
@@ -371,7 +371,7 @@
             background-color: #6c757d;
         }
         
-        /* Стили для отключенных элементов */
+       
         .form-check-input:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -510,26 +510,26 @@
         let calendar;
         
         $(document).ready(function() {
-            // Инициализация календаря
+            
             initCalendar();
             
-            // Инициализация темы
+            
             if (typeof ThemeManager !== 'undefined') {
                 ThemeManager.init();
             }
             
-            // Загрузка счетчиков
+            
             if (typeof loadNoteCounts === 'function') {
                 loadNoteCounts();
             } else {
-                // Альтернативная загрузка счетчиков
+                
                 loadStats();
             }
             
-            // Загрузка папок
+            
             loadFolders();
             
-            // Обработчик для кнопки добавления папки
+            
             $('#add-folder-btn').on('click', function(e) {
                 e.preventDefault();
                 console.log('Клик на кнопку добавления папки');
@@ -613,7 +613,7 @@
                 });
             });
             
-            // Обработчики для цветовых фильтров
+            
             $('.color-option').on('click', function() {
                 $('.color-option').removeClass('selected');
                 $(this).addClass('selected');
@@ -626,11 +626,11 @@
                 }
             });
             
-            // Обработчики для боковых фильтров
+            
             $('.sidebar-filter').on('change', function() {
                 const filterValue = $(this).val();
-                // Здесь можно добавить фильтрацию событий по статусу
-                // Пока просто обновляем календарь
+                
+                
                 if (calendar) {
                     calendar.refetchEvents();
                 }
@@ -641,7 +641,7 @@
             const calendarEl = document.getElementById('calendar');
             calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                firstDay: 1, // Понедельник как первый день недели
+                firstDay: 1, 
                 locale: 'ru',
                 headerToolbar: {
                     left: 'prev,next today',
@@ -657,14 +657,14 @@
                 dayHeaderFormat: { weekday: 'short' },
                 events: loadCalendarEvents,
                 eventClick: function(info) {
-                    // Обработка клика по событию
+                    
                     const noteId = info.event.id;
                     if (noteId) {
                         window.location.href = '/notes/' + noteId;
                     }
                 },
                 dateClick: function(info) {
-                    // Обработка клика по дню - создание новой заметки с этой датой
+                    
                     const selectedDate = info.dateStr;
                     createNoteForDate(selectedDate);
                 },
@@ -674,7 +674,7 @@
                 eventDisplay: 'block',
                 displayEventTime: false,
                 eventDidMount: function(info) {
-                    // Добавляем тултип с информацией о заметке
+                    
                     $(info.el).attr('title', info.event.title);
                 }
             });
@@ -682,14 +682,14 @@
             calendar.render();
         }
 
-        // Создание заметки для выбранной даты
+        
         function createNoteForDate(dateStr) {
-            // Открываем страницу создания заметки с предустановленной датой
+            
             const url = `/notes/create?due_date=${dateStr}`;
             window.location.href = url;
         }
 
-        // Фильтрация событий по цвету
+        
         function filterEventsByColor(colorFilter) {
             if (!calendar) return;
             
@@ -710,7 +710,7 @@
         }
 
         function loadCalendarEvents(info, successCallback, failureCallback) {
-            // Получаем активные фильтры
+            
             const activeFilter = $('input[name="sidebar-filter"]:checked').val();
             
             $.ajax({
@@ -758,9 +758,9 @@
             });
         }
 
-        // Функция для получения контрастного цвета текста
+        
         function getContrastColor(hexColor) {
-            // Простая функция для определения контрастного цвета
+            
             const color = hexColor.replace('#', '');
             const r = parseInt(color.substr(0, 2), 16);
             const g = parseInt(color.substr(2, 2), 16);
@@ -789,7 +789,7 @@
             return colorMap[color] || colorMap['default'];
         }
 
-        // Функция загрузки статистики (счетчиков)
+        
         function loadStats() {
             $.ajax({
                 url: '/api/stats',
@@ -798,7 +798,7 @@
                     if (response.success && response.data) {
                         const stats = response.data;
                         
-                        // Обновляем счетчики в навигации
+                        
                         $('#all-notes-count').text(stats.total || 0);
                         $('#archive-notes-count').text(stats.archived || 0);
                         $('#trash-notes-count').text(stats.trashed || 0);
@@ -811,7 +811,7 @@
             });
         }
 
-        // Функция загрузки папок
+        
         function loadFolders() {
             $.ajax({
                 url: '/api/stats',
@@ -828,10 +828,10 @@
                             addFolderToSidebar(folderName, count);
                         });
                         
-                        // Инициализируем обработчики для папок
+                        
                         initFolderEventHandlers();
                     } else if (response.data && response.data.by_folder) {
-                        // Если нет success флага, но есть данные
+                        
                         const foldersContainer = $('#folders-list');
                         foldersContainer.empty();
                         
@@ -840,7 +840,7 @@
                             addFolderToSidebar(folderName, count);
                         });
                         
-                        // Инициализируем обработчики для папок
+                        
                         initFolderEventHandlers();
                     }
                 },
@@ -850,14 +850,14 @@
             });
         }
 
-        // Добавление папки в боковую панель (точно как на главной странице)
+        
         function addFolderToSidebar(folderName, count, customId = null) {
             const normalizedName = folderName.toLowerCase().trim();
             const folderId = customId || ('folder-' + normalizedName.replace(/[^a-z0-9]/g, '-'));
             
             console.log('Добавление папки в сайдбар:', folderName, 'ID:', folderId);
             
-            // Проверяем, существует ли уже такая папка в sidebar
+            
             if (!customId) {
                 const existingFolder = $(`#${folderId}, [data-folder-name="${normalizedName}"]`);
                 if (existingFolder.length > 0) {
@@ -867,7 +867,7 @@
                 }
             }
             
-            // Проверяем, является ли эта папка текущей для правильной подсветки
+            
             const currentPath = window.location.pathname;
             const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
             let isActive = false;
@@ -917,9 +917,9 @@
             `);
         }
 
-        // Инициализация обработчиков для папок
+        
         function initFolderEventHandlers() {
-            // Обработчик для переименования папки 
+            
             $('.rename-folder').off('click').on('click', function(e) {
                 e.preventDefault();
                 const oldFolderName = $(this).data('folder');
@@ -936,7 +936,7 @@
                 });
             });
 
-            // Обработчик для удаления папки
+            
             $('.delete-folder').off('click').on('click', function(e) {
                 e.preventDefault();
                 const folderName = $(this).data('folder');
@@ -952,17 +952,17 @@
                 });
             });
 
-            // Обработчик для перемещения заметок в папку
+            
             $('.move-notes-to-folder').off('click').on('click', function(e) {
                 e.preventDefault();
-                // Ничего не делаем - функция отключена в календаре
+                
                 return false;
             });
         }
 
-        // Универсальное модальное окно для ввода названия папки
+        
         function showFolderInputModal({ title, placeholder, value = '', confirmText = 'OK', onConfirm }) {
-            // Удаляем старое окно, если оно есть
+            
             $('#folderInputModal').remove();
             const modalHtml = `
                 <div class="modal fade" id="folderInputModal" tabindex="-1" aria-labelledby="folderInputModalLabel" aria-hidden="true">
@@ -1007,7 +1007,7 @@
             });
         }
 
-        // Универсальное модальное окно подтверждения действия
+        
         function showConfirmModal({ title, message, confirmText = 'OK', confirmClass = 'btn-primary', cancelText = '× Отмена', onConfirm }) {
             $('#confirmActionModal').remove();
             const modalHtml = `
@@ -1038,20 +1038,20 @@
             });
         }
 
-        // Функция для создания папки
+        
         function addFolder(folderName) {
             if (!folderName || folderName.trim() === '') return;
             
             console.log('Создание новой папки:', folderName);
             
-            // Получаем CSRF-токен
+            
             const csrfToken = $('meta[name="csrf-token"]').attr('content');
             
-            // Создаем папку сразу на странице с временным ID
+            
             const tempId = 'new-folder-' + Date.now();
             addFolderToSidebar(folderName, 0, tempId);
             
-            // Создаем папку через API
+            
             $.ajax({
                 url: '/api/folders',
                 method: 'POST',
@@ -1067,22 +1067,22 @@
                     if (response.success) {
                         console.log('Папка успешно создана:', response);
                         
-                        // Удаляем временный элемент и добавляем постоянный с правильным ID
+                        
                         $(`#${tempId}`).remove();
                         addFolderToSidebar(folderName, 0);
                         
                         showNotification('Папка успешно добавлена', 'success');
                         
-                        // Обновляем счетчики
+                        
                         loadStats();
                     } else {
-                        // В случае ошибки удаляем временный элемент
+                        
                         $(`#${tempId}`).remove();
                         showNotification(response.message || 'Ошибка при создании папки', 'warning');
                     }
                 },
                 error: function(xhr) {
-                    // В случае ошибки удаляем временный элемент
+                    
                     $(`#${tempId}`).remove();
                     
                     let errorMessage = 'Ошибка при создании папки';
@@ -1095,7 +1095,7 @@
             });
         }
 
-        // Функция для отображения уведомлений
+        
         function showNotification(message, type = 'info') {
             const alertClass = type === 'success' ? 'alert-success' : 
                              type === 'danger' ? 'alert-danger' : 
@@ -1111,7 +1111,7 @@
             
             $('body').append(notification);
             
-            // Автоматически скрываем через 5 секунд
+            
             setTimeout(() => {
                 notification.fadeOut(() => {
                     notification.remove();

@@ -257,7 +257,6 @@
     
     <div class="container">
         <div class="row">
-            <!-- Боковая панель -->
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
@@ -339,7 +338,6 @@
                 </div>
             </div>
             
-            <!-- Основное содержимое -->
             <div class="col-md-9">
                 <div class="calendar-content">
                     <div id="calendar"></div>
@@ -353,20 +351,16 @@
         let calendar;
         
         $(document).ready(function() {
-            // Инициализация календаря
             initCalendar();
             
-            // Инициализация темы
             if (typeof ThemeManager !== 'undefined') {
                 ThemeManager.init();
             }
             
-            // Загрузка счетчиков
             if (typeof loadNoteCounts === 'function') {
                 loadNoteCounts();
             }
-            
-            // Загрузка папок
+
             loadFolders();
         });
 
@@ -382,7 +376,6 @@
                 },
                 events: loadCalendarEvents,
                 eventClick: function(info) {
-                    // Обработка клика по событию
                     const noteId = info.event.id;
                     if (noteId) {
                         window.location.href = '/notes/' + noteId;
@@ -448,7 +441,6 @@
             return colorMap[color] || colorMap['default'];
         }
 
-        // Функция загрузки папок
         function loadFolders() {
             $.ajax({
                 url: '/api/folders',

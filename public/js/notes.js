@@ -1,5 +1,4 @@
-// Глобальные переменные для всего файла
-let selectedColor = 'default';
+﻿let selectedColor = 'default';
 let currentTags = [];
 let currentSort = 'date-new';
 let currentTheme = localStorage.getItem('theme') || 'light';
@@ -7,27 +6,22 @@ let statsData = {};
 let viewNoteModal = null;
 
 $(document).ready(function() {
-    // Инициализация системы уведомлений, если доступна
     if (typeof initNotificationsSystem === 'function') {
         initNotificationsSystem();
         console.log('Инициализирована система уведомлений');
     }
     
-    // Инициализация модального окна просмотра заметки если оно существует
     const viewNoteModalElement = document.getElementById('viewNoteModal');
     if (viewNoteModalElement && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         try {
-            // Удаляем tabindex="-1" для предотвращения проблем с ARIA
             viewNoteModalElement.removeAttribute('tabindex');
             
-            // Настраиваем опции модального окна для улучшения доступности
             viewNoteModal = new bootstrap.Modal(viewNoteModalElement, {
                 backdrop: true,
                 keyboard: true,
                 focus: true
             });
             
-            // Исправление для aria-hidden
             $(viewNoteModalElement).on('shown.bs.modal', function() {
                 $(this).attr('aria-hidden', 'false');
             });
@@ -36,17 +30,13 @@ $(document).ready(function() {
         }
     }
     
-    // Инициализация выпадающих меню
     safeInitBootstrap();
     
-    // Текущий URL
     const currentPath = window.location.pathname;
     
-    // Инициализация локальных переменных - используем данные из pageData, если доступны
     let trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || currentPath === '/notes/trash';
     let archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
     
-    // Проверяем и устанавливаем активные пункты навигации
     if (trashMode) {
         $('.sidebar-link').removeClass('active');
         $('a[href="/notes/trash"]').addClass('active');
@@ -57,27 +47,22 @@ $(document).ready(function() {
         console.log('Активирован режим архива');
     }
     
-    // Инициализация темы
     initTheme();
     
-    // Инициализация цветового выбора
     $('.color-option').on('click', function() {
         $('.color-option').removeClass('selected');
         $(this).addClass('selected');
         selectedColor = $(this).data('color');
     });
     
-    // Обработка ввода тегов
     $('#tag-input').on('keydown', function(e) {
         if (e.key === 'Enter' && $(this).val().trim() !== '') {
             e.preventDefault();
             const tagText = $(this).val().trim();
             
-            // Проверяем, что такой тег еще не добавлен
             if (!currentTags.includes(tagText)) {
                 currentTags.push(tagText);
                 
-                // Создаем элемент тега
                 const tagElement = $(`
                     <div class="tag" data-tag="${tagText}">
                         ${tagText}
@@ -85,11 +70,9 @@ $(document).ready(function() {
                     </div>
                 `);
                 
-                // Добавляем перед input
                 $(this).before(tagElement);
                 $(this).val('');
                 
-                // Обработчик для удаления тега
                 $('.remove-tag').off('click').on('click', function() {
                     const tag = $(this).parent().data('tag');
                     currentTags = currentTags.filter(t => t !== tag);
@@ -99,42 +82,34 @@ $(document).ready(function() {
         }
     });
     
-    // Получение списка всех заметок
     if (currentPath === '/notes' || currentPath === '/notes/trash' || currentPath === '/notes/archive' || currentPath.match(/\/notes\/folder\//) || currentPath.match(/\/notes\/\d+$/)) {
         console.log('Инициализация загрузки заметок для страницы:', currentPath);
         
-        // Проверяем, находимся ли мы в режиме папки
         const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
         const noteMatch = currentPath.match(/\/notes\/(\d+)$/);
         
         if (folderMatch) {
             console.log('Загружаем заметки для папки из URL:', folderMatch[1]);
-            // В этом случае loadAllNotes сам определит папку из URL
             loadAllNotes(trashMode);
         } else if (noteMatch) {
             console.log('Загружаем заметки для просмотра конкретной заметки:', noteMatch[1]);
-            // Загружаем все заметки как обычно, модальное окно откроется через showNoteId
             loadAllNotes(trashMode);
         } else if (currentPath === '/notes/archive') {
             console.log('Загружаем архивные заметки');
-            loadAllNotes(false, null, true); // trashMode=false, folder=null, archiveMode=true
+            loadAllNotes(false, null, true); 
         } else {
             loadAllNotes(trashMode);
         }
         
-        // Обработчики фильтров вынесены в отдельный файл note-filters.js
         
         $('.filter-btn').on('click', function() {
             const filter = $(this).data('filter');
             
-            // Обновляем визуальное состояние кнопок
             $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
             $(this).removeClass('btn-outline-secondary').addClass('btn-secondary');
             
-            // Снимаем все боковые фильтры
             $('#filter-pinned, #filter-completed, #filter-active').prop('checked', false);
             
-            // Устанавливаем соответствующий чекбокс при нажатии кнопки
             if (filter === 'pinned') {
                 $('#filter-pinned').prop('checked', true);
             } else if (filter === 'completed') {
@@ -143,7 +118,6 @@ $(document).ready(function() {
                 $('#filter-active').prop('checked', true);
             }
             
-            // Применяем фильтры
             applyFilters();
         });
         
@@ -151,33 +125,27 @@ $(document).ready(function() {
             applyFilters();
         });
         
-        // Очистка корзины
         $('#empty-trash').on('click', function() {
             emptyTrash();
         });
     }
     
-    // Загрузка данных для редактирования
     if (currentPath.match(/\/notes\/\d+\/edit/)) {
         const id = $('#note-id').val();
         loadNote(id);
     }
     
-    // Обработка создания заметки
     $('#save-button').on('click', function(e) {
         e.preventDefault();
         console.log('Кнопка "Сохранить" нажата');
-        // Не вызываем createNote() здесь, так как это уже произойдет в обработчике submit формы
     });
     
-    // Обработка формы создания при нажатии Enter или кнопки Сохранить
     $('#create-note-form').on('submit', function(e) {
         e.preventDefault();
         console.log('Форма отправлена');
         createNote();
     });
     
-    // Обработка обновления заметки
     $('#update-button').on('click', function(e) {
         e.preventDefault();
         console.log('Кнопка "Сохранить изменения" нажата');
@@ -185,10 +153,8 @@ $(document).ready(function() {
         updateNote(id);
     });
     
-    // Инициализация обработки файлов
     handleFileUpload();
-    
-    // Обработка формы редактирования при нажатии Enter
+
     $('#edit-note-form').on('submit', function(e) {
         e.preventDefault();
         console.log('Форма редактирования отправлена');
@@ -196,48 +162,40 @@ $(document).ready(function() {
         updateNote(id);
     });
     
-    // Обработка удаления заметки
     $('#delete-button').on('click', function() {
         const id = $('#note-id').val();
         deleteNote(id);
     });
     
-    // Обработка закрепления заметки
     $('#toggle-pin-button').on('click', function() {
         const id = $('#note-id').val();
         togglePin(id);
     });
     
-    // Инициализация темы
     initTheme();
     
-    // Обработка переключения темы
     $('#theme-toggle').on('change', function() {
         toggleTheme();
     });
     
-    // Обработчик для поля поиска
     $('#search-notes').on('input', function() {
         const query = $(this).val().trim();
         performSearch(query);
         applyFilters();
     });
     
-    // Обработчик для очистки поиска
     $('#search-clear').on('click', function() {
         $('#search-notes').val('');
         $('#search-results').empty().hide();
         applyFilters();
     });
     
-    // Обработчик для сортировки
     $('.sort-option').on('click', function(e) {
         e.preventDefault();
         const sortType = $(this).data('sort');
         applySorting(sortType);
     });
     
-    // Обработчик для добавления папки (красивое модальное окно)
     $('#add-folder-btn').on('click', function() {
         showFolderInputModal({
             title: 'Создание новой папки',
@@ -251,7 +209,6 @@ $(document).ready(function() {
         });
     });
     
-    // Обработчик для кнопки "Отметить как выполненное/активное"
     $('body').on('click', '.toggle-done-btn', function(event) {
         event.preventDefault();
         event.stopPropagation();
@@ -259,25 +216,18 @@ $(document).ready(function() {
         toggleDone(id, event);
     });
     
-    // Если мы находимся на странице календаря
     if (currentPath === '/notes/calendar') {
         initCalendar();
     }
     
-
-    
-    // Обновляем статистику
     loadStats();
 });
 
-// Функция для подсчета видимых заметок на странице
 function countVisibleNotes() {
-    // Сначала проверяем, есть ли сохраненные счетчики из фактических данных
     if (window.currentNotesCount) {
         return window.currentNotesCount;
     }
     
-    // Если нет, подсчитываем по DOM
     const visibleNotes = $('.note-wrapper:visible, .note-item:visible').length;
     const activeNotes = $('.note-wrapper:visible:not(.completed), .note-item:visible:not(.completed)').length;
     const completedNotes = $('.note-wrapper:visible.completed, .note-item:visible.completed').length;
@@ -291,27 +241,22 @@ function countVisibleNotes() {
     };
 }
 
-// Функция обновления счетчиков на текущей странице
 function updatePageCounters() {
     const counts = countVisibleNotes();
     
-    // Обновляем счетчики на странице
     $('#visible-total-notes').text(`Всего: ${counts.total}`);
     $('#visible-completed-notes').text(`Выполнено: ${counts.completed}`);
     $('#visible-active-notes').text(`Активно: ${counts.active}`);
     $('#visible-pinned-notes').text(`Закреплено: ${counts.pinned}`);
     
-    // Обновляем счетчики вверху страницы
     $('.counter-total').text(counts.total);
     $('.counter-completed').text(counts.completed);
     $('.counter-active').text(counts.active);
     $('.counter-pinned').text(counts.pinned);
 }
 
-// Загрузка всех заметок
 function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false) {
     let url = `/api/notes`;
-    // Проверяем текущий режим
     const currentPath = window.location.pathname;
     let archiveMode = archiveModeParam || (typeof pageData !== 'undefined' && pageData.archiveMode) || currentPath === '/notes/archive';
     const trashModeFromPage = typeof pageData !== 'undefined' && pageData.trashMode;
@@ -324,41 +269,33 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
         currentPath
     });
     
-    // Если trashMode передан как параметр, используем его, иначе берем из pageData
     if (trashMode === false && trashModeFromPage) {
         trashMode = trashModeFromPage;
     }
     
-    // Проверяем, находимся ли в режиме папки
     const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
     
-    // Определяем режим папки
     let folderMode = false;
     let folderName = null;
     
-    // Получаем имя папки с разных источников
-    // 1. Приоритет: из переданного параметра
     if (folder) {
         folderMode = true;
         folderName = folder;
         console.log('Имя папки получено из параметра функции:', folderName);
     } 
-    // 2. Из URL
     else if (folderMatch) {
         folderMode = true;
         try {
             folderName = decodeURIComponent(folderMatch[1]);
-            // Полное декодирование (на случай, если имя закодировано несколько раз)
             while (folderName !== decodeURIComponent(folderName)) {
                 folderName = decodeURIComponent(folderName);
             }
             console.log('Полностью декодированное имя папки из URL:', folderName);
         } catch (e) {
             console.warn('Ошибка при декодировании имени папки из URL:', e);
-            folderName = folderMatch[1]; // Используем как есть, если ошибка декодирования
+            folderName = folderMatch[1]; 
         }
     }
-    // 3. Из данных страницы, если они есть
     else if (typeof pageData !== 'undefined' && pageData.folderMode && pageData.folderName) {
         folderMode = true;
         folderName = pageData.folderName;
@@ -367,20 +304,16 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
     
     console.log('Режим папки:', folderMode, 'Имя папки:', folderName);
     
-    // Подсвечиваем текущую папку в боковом меню, если мы в режиме папки
     if (folderMode && folderName) {
-        // Снимаем подсветку со всех элементов
         $('.folder-link').removeClass('active');
         $('.folder-link').parent().removeClass('active-folder');
         $('.nav-link').removeClass('active');
         
         console.log('Активируем папку в меню:', folderName);
         
-        // Пытаемся найти папку разными способами
         const normalizedName = folderName.toLowerCase().trim();
         const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
         
-        // 1. Пытаемся найти по ID
         let foundFolder = false;
         const folderElement = $(`#${folderId}`);
         if (folderElement.length > 0) {
@@ -390,7 +323,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
             foundFolder = true;
         }
         
-        // 2. Пытаемся найти по data-атрибуту folder-name
         if (!foundFolder) {
             const folderByData = $(`[data-folder-name="${normalizedName}"]`);
             if (folderByData.length > 0) {
@@ -401,7 +333,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
             }
         }
         
-        // 3. Пытаемся найти по data-атрибуту в ссылке
         if (!foundFolder) {
             const linkByData = $(`.folder-link[data-folder="${folderName}"]`);
             if (linkByData.length > 0) {
@@ -412,10 +343,9 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
             }
         }
         
-        // 4. В крайнем случае ищем по тексту
         if (!foundFolder) {
             $(`.folder-item`).each(function() {
-                const linkText = $(this).find('.folder-link').text().trim().replace(/\s*\d+\s*$/, ''); // Удаляем счетчик из текста
+                const linkText = $(this).find('.folder-link').text().trim().replace(/\s*\d+\s*$/, '');
                 const folderTextMatch = linkText === folderName || 
                                       linkText.includes(folderName) || 
                                       folderName.includes(linkText);
@@ -425,24 +355,21 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     $(this).addClass('active-folder');
                     $(this).find('.folder-link').addClass('active');
                     foundFolder = true;
-                    return false; // Останавливаем цикл
+                    return false; 
                 }
             });
         }
     } else if (currentPath === '/notes/trash') {
-        // Если мы в корзине, подсвечиваем соответствующий пункт меню
         $('.nav-link').removeClass('active');
         $('.folder-link').removeClass('active');
         $('.folder-link').parent().removeClass('active-folder');
         $('.trash-link').addClass('active');
     } else if (archiveMode) {
-        // Если мы в архиве, подсвечиваем соответствующий пункт меню
         $('.nav-link').removeClass('active');
         $('.folder-link').removeClass('active');
         $('.folder-link').parent().removeClass('active-folder');
         $('.archive-link').addClass('active');
     } else {
-        // Если мы на главной странице
         $('.nav-link').removeClass('active');
         $('.folder-link').removeClass('active');
         $('.folder-link').parent().removeClass('active-folder');
@@ -464,9 +391,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
         url += '?archive=true';
         console.log('Формируем URL для режима архива:', url);
     } else if (folderMode && folderName) {
-        // Явно декодируем имя папки (на случай, если оно уже закодировано)
         try {
-            // Используем уже декодированное имя папки
             url += `?folder=${encodeURIComponent(folderName)}`;
             console.log('Используем имя папки для API запроса:', folderName);
             console.log('URL параметр для API:', `?folder=${encodeURIComponent(folderName)}`);
@@ -482,7 +407,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
         }
     }
     
-    // Обновляем статистику
     loadStats();
     
     console.log('Делаем запрос на:', url);
@@ -496,7 +420,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
             console.log('URL запроса:', url);
             console.log('Режим архива:', archiveMode, 'Режим корзины:', trashMode, 'Режим папки:', folderMode);
             
-            // Отладка для архивных заметок
             if (archiveMode) {
                 console.log('ОТЛАДКА АРХИВА: Получено данных', {
                     total: notes.length,
@@ -507,15 +430,12 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 });
             }
             
-            // Очищаем контейнеры заметок, учитывая как обычный, так и контейнер для корзины
             $('.notes-container, .trash-notes-container').empty();
             
-            // Сразу проверяем, есть ли заметки в массиве response
             if (notes.length === 0) {
                 console.log('Пустой массив заметок для режима: ' + 
                     (archiveMode ? 'архива' : trashMode ? 'корзины' : 'основной'));
                 
-                // Скрываем контейнеры заметок, учитывая разные классы
                 if (trashMode) {
                     $('.notes-container, .trash-notes-container').hide();
                     $('.empty-container, .empty-trash-container').removeClass('d-none');
@@ -524,12 +444,10 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     $('.empty-container').removeClass('d-none');
                 }
                 
-                // Принудительно устанавливаем правильное сообщение для пустого состояния
                 if (archiveMode) {
                     $('.empty-container h3').html('<i class="fas fa-archive me-2"></i>Архив пуст');
                     $('.empty-container p').text('Архивированные заметки будут отображаться здесь');
                     
-                    // Проверяем наличие кнопки и гарантируем её наличие
                     if ($('.empty-container .btn').length === 0) {
                         $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
                     } else {
@@ -539,7 +457,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     $('.empty-container h3').html('<i class="fas fa-trash me-2"></i>Корзина пуста');
                     $('.empty-container p').text('Удаленные заметки будут появляться здесь');
                     
-                    // Проверяем наличие кнопки и гарантируем её наличие
                     if ($('.empty-container .btn').length === 0) {
                         $('.empty-container').append('<a href="/notes" class="btn btn-primary mt-3">Вернуться к заметкам</a>');
                     } else {
@@ -548,26 +465,20 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 }
             }
             
-            // Фильтрация заметок в зависимости от режима отображения
             let filteredNotes = notes;
             
-            // Если мы на главной странице и не в режиме корзины или архива,
-            // отфильтруем заметки, чтобы не показывать те, которые принадлежат папкам
             if (!trashMode && !archiveMode && !folderMode) {
                 console.log('Фильтруем заметки, скрывая те, что в папках');
                 filteredNotes = notes.filter(note => !note.folder);
                 console.log('Отфильтровано заметок:', filteredNotes.length);
             } else if (folderMode && folderName) {
-                // Если мы в режиме папки, показываем только заметки из этой папки
                 console.log('Фильтруем заметки для папки:', folderName);
                 filteredNotes = notes.filter(note => note.folder === folderName);
                 console.log('Найдено заметок в папке:', filteredNotes.length);
             }
             
-            // Обновляем счётчики видимых заметок немедленно
             console.log('Количество заметок после фильтрации:', filteredNotes.length);
             
-            // Запоминаем фактическое количество заметок в текущем представлении
             window.currentNotesCount = {
                 total: filteredNotes.length,
                 completed: filteredNotes.filter(note => note.done).length,
@@ -575,8 +486,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 pinned: filteredNotes.filter(note => note.is_pinned).length
             };
             
-            // Обновляем счётчики верхней панели на основе фактических данных
-            // Только если есть такие элементы на странице
             if ($('.counter-total').length) {
                 $('.counter-total').text(window.currentNotesCount.total);
             }
@@ -590,7 +499,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 $('.counter-pinned').text(window.currentNotesCount.pinned);
             }
             
-            // Обновляем табы с правильными счетчиками
             if ($('#counter-all').length) {
                 $('#counter-all').text(window.currentNotesCount.total);
             }
@@ -608,7 +516,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 $('.notes-container').hide();
                 $('.empty-container').removeClass('d-none');
                 
-                // Обновляем текст пустого состояния в зависимости от режима
                 let emptyMessage = 'Нет заметок';
                 let emptyIcon = 'fa-sticky-note';
                 let emptyButtonText = 'Создать заметку';
@@ -631,7 +538,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     emptySubtext = 'Вы можете переместить существующие заметки в эту папку или создать новые';
                 }
                 
-                // Обновляем содержимое блока пустого состояния
                 $('.empty-container h3').html(`<i class="fas ${emptyIcon} me-2"></i>${emptyMessage}`);
                 $('.empty-container p').text(emptySubtext);
                 
@@ -648,7 +554,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 return;
             }
             
-            // Показываем контейнер для заметок и скрываем сообщение о пустой корзине/списке
             if (trashMode) {
                 $('.notes-container, .trash-notes-container').show();
                 $('.empty-container, .empty-trash-container').addClass('d-none');
@@ -657,13 +562,10 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 $('.empty-container').addClass('d-none');
             }
             
-            // Сначала добавляем закрепленные заметки
             const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
             const regularNotes = filteredNotes.filter(note => !note.is_pinned);
             
-            // Функция для генерации HTML заметки
             const generateNoteHTML = (note, isPinned = false) => {
-                // Получаем массив тегов, если они есть
                 const tagsArray = note.tags ? note.tags.split(',') : [];
                 let tagsHTML = '';
                 if (tagsArray.length > 0) {
@@ -675,7 +577,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                     `;
                 }
                 
-                // Форматируем даты
                 const createdAt = new Date(note.created_at);
                 const updatedAt = new Date(note.updated_at);
                 const isUpdated = createdAt.getTime() !== updatedAt.getTime();
@@ -741,10 +642,8 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                 <!-- Прикрепленные файлы -->
                                 ${(function() {
                                     try {
-                                        // Проверяем файлы и их формат
                                         if (!note.files) return '';
                                         
-                                        // Пробуем преобразовать строку в массив, если это необходимо
                                         let filesArray = note.files;
                                         if (typeof filesArray === 'string') {
                                             try {
@@ -756,10 +655,8 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                                             }
                                         }
                                         
-                                        // Если это не массив или массив пустой, возвращаем пустую строку
                                         if (!Array.isArray(filesArray) || filesArray.length === 0) return '';
                                         
-                                        // Фильтруем только валидные файлы
                                         const validFiles = filesArray.filter(file => file && file.name);
                                         if (validFiles.length === 0) return '';
                                         
@@ -837,72 +734,58 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 `;
             };
             
-            // Определяем контейнер для заметок с учетом режима корзины
             const notesContainer = trashMode ? $('.trash-notes-container, .notes-container') : $('.notes-container');
             
-            // Добавляем закрепленные заметки
             pinnedNotes.forEach(note => {
                 notesContainer.append(generateNoteHTML(note, true));
             });
             
-            // Затем добавляем обычные заметки
             regularNotes.forEach(note => {
                 notesContainer.append(generateNoteHTML(note, false));
             });
             
-            // Инициализация обработчиков для просмотра заметок
             initViewNoteHandlers();
             
-            // Добавляем обработчики событий
             if (trashMode) {
-                // Восстановление заметки
                 $('.restore-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     restoreNote(noteId);
                 });
                 
-                // Окончательное удаление заметки
                 $('.force-delete-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     forceDeleteNote(noteId);
                 });
             } else {
-                // Удаление заметки (перемещение в корзину)
                 $('.delete-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     deleteNote(noteId);
                 });
                 
-                // Закрепление/открепление заметки
                 $('.toggle-pin-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     togglePin(noteId);
                 });
                 
-                // Архивирование/разархивирование заметки
                 $('.toggle-archive-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
-                    // Если мы в архиве, восстанавливаем из архива
                     if (window.location.pathname === '/notes/archive') {
                         unarchiveNote(noteId);
                     } else {
-                        // Иначе архивируем
                         archiveNote(noteId);
                     }
                 });
                 
-                // Просмотр заметки
                 $('.view-note-btn').on('click', function(e) {
                     e.preventDefault();
                     const noteId = $(this).data('id');
                     console.log('Клик на кнопке "Просмотр", ID заметки:', noteId);
                     
-                    // Определяем источник вызова по URL
                     const currentPath = window.location.pathname;
                     let source = null;
                     
@@ -925,10 +808,8 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
                 });
             }
             
-            // Применяем текущие фильтры и обновляем счетчики
             applyFilters();
             
-            // Дополнительно обновляем счетчики видимых заметок
             updatePageCounters();
         },
         error: function(error) {
@@ -938,7 +819,6 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
     });
 }
 
-// Загрузка одной заметки
 function loadNote(id) {
     $.ajax({
         url: `/api/notes/${id}`,
@@ -947,38 +827,30 @@ function loadNote(id) {
         success: function(response) {
             const note = response.data;
             
-            // Заполняем основные поля
             $('#name').val(note.name);
             $('#description').val(note.formatted_description || note.description);
             $('#done').prop('checked', note.done);
             
-            // Если есть функция для установки содержимого Quill-редактора, используем её
             if (window.setQuillContent && typeof window.setQuillContent === 'function') {
                 window.setQuillContent(note.formatted_description || note.description);
             }
             
-            // Выбираем цвет
             $('.color-option').removeClass('selected');
             $(`.color-option[data-color="${note.color || 'default'}"]`).addClass('selected');
             
-            // Отображаем дату создания/обновления
             const createdAt = new Date(note.created_at);
             const updatedAt = new Date(note.updated_at);
             const formattedDate = `Создано: ${formatDate(createdAt)}${createdAt.getTime() !== updatedAt.getTime() ? ` • Обновлено: ${formatDate(updatedAt)}` : ''}`;
             $('#note-date').text(formattedDate);
             
-            // Обновляем состояние кнопки закрепления
             updatePinButtonState(note.is_pinned);
             
-            // Загружаем теги
             if (note.tags) {
                 const tagsList = note.tags.split(',');
                 currentTags = tagsList;
                 
-                // Очищаем контейнер тегов (оставляем только input)
                 $('#tags-container').find('.tag').remove();
                 
-                // Добавляем теги
                 tagsList.forEach(tag => {
                     $('#tag-input').before(`
                         <div class="tag" data-tag="${tag}">
@@ -988,21 +860,16 @@ function loadNote(id) {
                     `);
                 });
                 
-                // Обработчик для удаления тега
                 $('.remove-tag').off('click').on('click', function() {
                     const tag = $(this).parent().data('tag');
                     $(this).parent().remove();
                     
-                    // Удаляем тег из массива
                     currentTags = currentTags.filter(t => t !== tag);
                 });
             }
             
-            // Устанавливаем дату напоминания, если она есть
             if (note.reminder_at) {
-                // Преобразуем UTC-дату из БД в локальное время для input type="datetime-local"
                 const utcDate = new Date(note.reminder_at);
-                // Получаем локальное смещение
                 const tzOffset = utcDate.getTimezoneOffset();
                 const localDate = new Date(utcDate.getTime() - tzOffset * 60000);
                 const year = localDate.getFullYear();
@@ -1017,7 +884,6 @@ function loadNote(id) {
                 $('#reminder-actions').hide();
             }
             
-            // Обработчик удаления напоминания
             $('#remove-reminder').off('click').on('click', function() {
                 if (confirm('Вы уверены, что хотите удалить напоминание?')) {
                     $.ajax({
@@ -1040,11 +906,9 @@ function loadNote(id) {
                 }
             });
             
-            // Отображаем существующие файлы
             console.log('Файлы заметки:', note.files);
             console.log('Тип файлов:', typeof note.files, Array.isArray(note.files));
             
-            // Обработка разных форматов файлов
             if (typeof note.files === 'string') {
                 try {
                     note.files = JSON.parse(note.files);
@@ -1061,56 +925,44 @@ function loadNote(id) {
                 note.files = [];
             }
             
-            // Обработка файлов заметки
             if (note.files && Array.isArray(note.files)) {
-                // Фильтруем только корректные файлы
                 let validFiles = note.files.filter(file => 
                     file && typeof file === 'object' && file.name && 
-                    (file.url || file.path) // Должен быть либо url, либо path
+                    (file.url || file.path) 
                 );
                 
                 console.log('Проверенные файлы для отображения:', validFiles.length, 'из', note.files.length);
                 
-                // Для файлов, у которых есть path, но нет url, добавляем url
                 validFiles = validFiles.map(file => {
                     if (!file.url && file.path) {
                         file.url = `/storage/${file.path}`;
                     } else if (!file.url && !file.path) {
-                        // Если нет ни url, ни path - ставим плейсхолдер
                         file.url = 'https://placehold.co/200?text=Файл+недоступен';
                         console.warn('У файла нет ни URL, ни path:', file);
                     }
                     return file;
                 });
-                
-                // Сохраняем файлы в глобальной переменной для использования при обновлении
+
                 window.currentNoteFiles = validFiles;
                 console.log('Сохранили валидные файлы в window.currentNoteFiles:', window.currentNoteFiles);
                 
-                // Проверим наличие контейнера для файлов
-                // Используем #files-container для согласованности с другими страницами
                 const filesContainer = $('#files-container');
                 filesContainer.empty();
                 
-                // Создаем элемент для существующих файлов
                 filesContainer.append('<div id="existing-files" class="mt-3"></div>');
                 const existingFilesContainer = $('#existing-files');
                 
-                // Если есть валидные файлы - отображаем их
                 if (validFiles.length > 0) {
-                    // Заголовок для файлов
                     existingFilesContainer.html('<h6 class="mt-3 mb-2">Прикрепленные файлы:</h6><div class="row g-2 files-container"></div>');
                     let filesHtml = '';
                     
                     validFiles.forEach((file, index) => {
-                        // Определяем URL файла - используем url или создаем из path
                         const fileUrl = file.url || (file.path ? `/storage/${file.path}` : null);
                         if (!fileUrl) {
                             console.warn('Файл не имеет URL:', file);
-                            return; // Пропускаем файл без URL
+                            return; 
                         }
                         
-                        // Определяем тип файла, если не указан
                         if (!file.type && file.extension) {
                             const ext = file.extension.toLowerCase();
                             if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
@@ -1130,7 +982,6 @@ function loadNote(id) {
                         } else if (file.type === 'audio') {
                             preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-music fa-2x text-info"></i></div>`;
                         } else {
-                            // Документы и прочее
                             let iconClass = 'fa-file';
                             if (file.extension && typeof file.extension === 'string') {
                                 const ext = file.extension.toLowerCase();
@@ -1145,11 +996,9 @@ function loadNote(id) {
                             preview = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas ${iconClass} fa-2x text-secondary"></i></div>`;
                         }
                         
-                        // Проверяем, если мы на странице редактирования
                         const isEditPage = window.location.pathname.includes('/notes/') && window.location.pathname.includes('/edit');
                         
                         if (isEditPage) {
-                            // Для страницы редактирования - кнопки "глаз" и "корзина" в том же стиле что и на странице создания
                             filesHtml += `
                                 <div class="col-md-3 col-sm-4 col-6 mb-3">
                                     <div class="card h-100">
@@ -1175,7 +1024,6 @@ function loadNote(id) {
                                 </div>
                             `;
                         } else {
-                            // Для страницы просмотра - кнопка "Открыть"
                             filesHtml += `
                                 <div class="col-md-3 col-sm-4 col-6 mb-3">
                                     <div class="card h-100">
@@ -1198,13 +1046,10 @@ function loadNote(id) {
                         }
                     });
                     
-                    // Привязываем обработчики событий
                     existingFilesContainer.find('.files-container').html(filesHtml);
                     
-                    // Если мы на странице редактирования, добавляем обработчики для кнопок управления файлами
                     if (window.location.pathname.includes('/notes/') && window.location.pathname.includes('/edit')) {
                         setTimeout(function() {
-                            // Обработчик для кнопки удаления файла
                             $('.remove-file').off('click').on('click', function(e) {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -1215,7 +1060,6 @@ function loadNote(id) {
                                 
                                 console.log('Кнопка удаления нажата для файла:', fileName);
                                 
-                                // Создаем модальное окно для подтверждения удаления
                                 try {
                                     createConfirmationModal({
                                         title: 'Удаление файла',
@@ -1227,13 +1071,10 @@ function loadNote(id) {
                                         onConfirm: function() {
                                             console.log('Подтверждено удаление файла:', fileName);
                                             
-                                            // Удаляем файл из массива currentNoteFiles
                                             window.currentNoteFiles = window.currentNoteFiles.filter(file => file.path !== filePath);
                                             
-                                            // Удаляем карточку файла из DOM
                                             fileCard.remove();
                                             
-                                            // Если это был последний файл, скрываем контейнер
                                             if (window.currentNoteFiles.length === 0) {
                                                 $('#existing-files').hide();
                                             }
@@ -1245,7 +1086,7 @@ function loadNote(id) {
                                     console.error('Ошибка создания модального окна:', e);
                                 }
                             });
-                        }, 100); // Небольшая задержка для уверенности, что DOM обновился
+                        }, 100); 
                     }
                 } else {
                     console.log('Нет валидных файлов для отображения');
@@ -1254,7 +1095,6 @@ function loadNote(id) {
                 console.log('Нет файлов для отображения или формат неверный:', typeof note.files);
                 window.currentNoteFiles = [];
                 
-                // Очищаем контейнер для существующих файлов, если он есть
                 const existingFilesContainer = $('#existing-files');
                 if (existingFilesContainer.length > 0) {
                     existingFilesContainer.empty();
@@ -1268,7 +1108,6 @@ function loadNote(id) {
     });
 }
 
-// Функция для форматирования даты
 function formatDate(date) {
     return new Intl.DateTimeFormat('ru-RU', {
         day: '2-digit',
@@ -1279,14 +1118,13 @@ function formatDate(date) {
     }).format(date);
 }
 
-// Обновление состояния кнопки закрепления
 function updatePinButtonState(isPinned) {
     if (isPinned) {
         $('#toggle-pin-button')
             .removeClass('btn-outline-warning')
             .addClass('btn-warning')
             .attr('title', 'Открепить')
-            .html('<i class="fas fa-thumbtack"></i>'); // Только иконка без текста
+            .html('<i class="fas fa-thumbtack"></i>'); 
     } else {
         $('#toggle-pin-button')
             .removeClass('btn-warning')
@@ -1296,75 +1134,59 @@ function updatePinButtonState(isPinned) {
     }
 }
 
-// Создание заметки
 function createNote() {
-    // Проверяем, не выполняется ли уже запрос
     if (window.isCreatingNote) {
         console.log('Запрос на создание заметки уже выполняется, игнорируем повторный вызов');
         return;
     }
     
-    // Устанавливаем флаг, что выполняется запрос
     window.isCreatingNote = true;
     
-    // Блокируем кнопку сохранения, чтобы предотвратить повторные нажатия
     $('#save-button').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Сохраняем...');
     
-    // Убедимся, что форма имеет правильный enctype для загрузки файлов
     const form = $('#create-note-form');
     if (form.attr('enctype') !== 'multipart/form-data') {
         console.log('Устанавливаем enctype="multipart/form-data" для формы создания заметки');
         form.attr('enctype', 'multipart/form-data');
     }
     
-    // Используем глобальную переменную selectedColor
     const noteColor = $('.color-option.selected').data('color');
     
-    // Убедимся, что currentTags существует
     if (typeof currentTags === 'undefined') {
         currentTags = [];
         console.log('Инициализирована пустая переменная currentTags');
     }
     
-    // Проверяем, есть ли файлы для загрузки
     const fileInput = $('#upload-files')[0];
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     
     if (hasFiles) {
         console.log('Обнаружены файлы для загрузки:', fileInput.files.length);
-        // Проверяем правильное имя поля для файлов
         if (fileInput.name !== 'upload_files[]') {
             console.log('Исправляем имя поля для файлов:', fileInput.name, '->', 'upload_files[]');
             fileInput.name = 'upload_files[]';
         }
     }
-    
-    // Создаем FormData для отправки файлов
+
     const formData = new FormData();
     formData.append('name', $('#name').val());
     formData.append('description', $('#description').val());
     
-    // Добавляем дату напоминания, если она указана
     if ($('#reminder-date').val()) {
-        // Преобразуем локальное время в UTC перед отправкой
         const localValue = $('#reminder-date').val();
         const localDate = new Date(localValue);
         const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-        // Форматируем в ISO без секунд и миллисекунд
         const isoString = utcDate.toISOString().slice(0, 16);
         formData.append('reminder_at', isoString);
     }
     formData.append('color', noteColor || 'default');
     
-    // Проверяем значение и отладочный вывод
     const isPinned = $('#is_pinned').is(':checked');
     console.log('Значение чекбокса is_pinned:', isPinned);
-    formData.append('is_pinned', isPinned ? '1' : '0'); // Используем числовые значения 1/0 для boolean
+    formData.append('is_pinned', isPinned ? '1' : '0'); 
     
-    // Добавляем значение done со значением false
     formData.append('done', '0');
     
-    // Проверяем, находимся ли мы в папке
     const currentFolder = getCurrentFolderNameFromUrl();
     if (currentFolder) {
         formData.append('folder', currentFolder);
@@ -1375,7 +1197,6 @@ function createNote() {
         formData.append('tags', currentTags.join(','));
     }
     
-    // Добавляем файлы, если они есть
     if (hasFiles) {
         console.log('Добавляем', fileInput.files.length, 'файлов к запросу');
         for (let i = 0; i < fileInput.files.length; i++) {
@@ -1384,7 +1205,6 @@ function createNote() {
             formData.append('upload_files[]', file);
         }
         
-        // Добавляем дополнительные поля для отладки
         formData.append('has_files', 'true');
         formData.append('debug_files_count', fileInput.files.length);
     } else {
@@ -1401,10 +1221,8 @@ function createNote() {
     
     console.log('Отправляю данные на сервер' + (hasFiles ? ' (с файлами)' : ''));
     
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Проверяем наличие CSRF-токена
     if (!csrfToken) {
         console.error('CSRF-токен отсутствует');
         showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
@@ -1413,7 +1231,6 @@ function createNote() {
     
     console.log('CSRF-токен получен:', csrfToken);
     
-    // Отладочный вывод содержимого formData
     console.log('FormData содержит следующие данные:');
     for (let pair of formData.entries()) {
         console.log(pair[0] + ': ' + pair[1]);
@@ -1431,13 +1248,11 @@ function createNote() {
         cache: false,
         xhr: function() {
             var xhr = new window.XMLHttpRequest();
-            // Обработчик загрузки для отображения прогресса
             xhr.upload.addEventListener("progress", function(evt) {
                 if (evt.lengthComputable) {
                     var percentComplete = evt.loaded / evt.total * 100;
                     console.log('Загрузка: ' + percentComplete.toFixed(1) + '%');
                     
-                    // Обновляем текст кнопки
                     if (percentComplete < 100) {
                         $('#save-button').html('<i class="fas fa-spinner fa-spin"></i> Загрузка ' + percentComplete.toFixed(0) + '%');
                     } else {
@@ -1448,28 +1263,22 @@ function createNote() {
             return xhr;
         },
         success: function(response) {
-            // Сбрасываем флаг создания заметки
             window.isCreatingNote = false;
             
             console.log('Успешно создана заметка:', response);
             showNotification('Заметка успешно создана', 'success');
             
-            // Обновляем кнопку
             $('#save-button').html('<i class="fas fa-check"></i> Сохранено!');
             
-            // Обновляем счетчики в боковой панели
             if (typeof updateSidebarCounters === 'function') {
                 updateSidebarCounters();
             } else if (typeof loadSidebarStats === 'function') {
                 loadSidebarStats();
             }
             
-            // Небольшая задержка перед перенаправлением
             setTimeout(() => {
-                // Проверяем, находимся ли мы в папке
                 const currentFolder = getCurrentFolderNameFromUrl();
                 if (currentFolder) {
-                    // Если мы в папке, возвращаемся в эту папку
                     window.location.href = `/notes/folder/${encodeURIComponent(currentFolder)}`;
                 } else {
                     window.location.href = '/notes';
@@ -1477,7 +1286,6 @@ function createNote() {
             }, 1000);
         },
         error: function(xhr, status, error) {
-            // Сбрасываем флаг создания заметки и разблокируем кнопку
             window.isCreatingNote = false;
             $('#save-button').prop('disabled', false).html('<i class="fas fa-save"></i> Сохранить');
             
@@ -1493,7 +1301,6 @@ function createNote() {
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                     
-                    // Проверяем наличие детальных ошибок валидации
                     if (xhr.responseJSON.errors) {
                         errorDetails = Object.entries(xhr.responseJSON.errors)
                             .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -1504,7 +1311,6 @@ function createNote() {
                         const response = JSON.parse(xhr.responseText);
                         errorMessage = response.message || errorMessage;
                         
-                        // Проверяем наличие детальных ошибок валидации
                         if (response.errors) {
                             errorDetails = Object.entries(response.errors)
                                 .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
@@ -1519,29 +1325,24 @@ function createNote() {
                 console.error('Ошибка при обработке ответа:', e);
             }
             
-            // Проверяем, является ли это ошибкой размера файла
             if (xhr.status === 413 || errorMessage.includes('размер') || errorMessage.includes('превышает') || errorMessage.includes('большой')) {
                 showErrorModal('Превышен размер файла', errorMessage + (errorDetails ? '\n\nДетали:\n' + errorDetails : ''));
             } else {
                 showNotification('Ошибка при создании заметки: ' + errorMessage, 'danger');
                 
-                // Отображаем модальное окно с деталями ошибки, если они есть
                 if (errorDetails) {
                     if ($('#errorModal').length > 0) {
                         $('#errorModalText').text(errorMessage);
                         $('#errorModalDetails').text(errorDetails);
                         
-                        // Настраиваем обработчик повторной отправки
                         $('#retryButton').one('click', function() {
                             $('#errorModal').modal('hide');
                             setTimeout(() => createNote(), 500);
                         });
                         
-                        // Показываем модальное окно
                         const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
                         errorModal.show();
                     } else {
-                        // Если модального окна нет, показываем обычное сообщение
                         alert('Ошибка при создании заметки:\n' + errorMessage + '\n\nДетали:\n' + errorDetails);
                     }
                 }
@@ -1550,141 +1351,145 @@ function createNote() {
     });
 }
 
-// Функция для отображения красивых уведомлений
 function showNotification(message, type = 'info', duration = 3000) {
-    // Удаляем существующие уведомления, если они есть
-    $('.notification-toast').remove();
+    if (window.showNotification && typeof window.showNotification === 'function' && 
+        window.showNotification.toString() !== showNotification.toString()) {
+        return window.showNotification(message, type, duration);
+    }
+
+    const notificationId = `notification-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
     
-    // Создаем HTML для уведомления
+    let icon;
+    switch(type) {
+        case 'success':
+            icon = 'fa-check-circle';
+            break;
+        case 'warning':
+            icon = 'fa-exclamation-triangle';
+            break;
+        case 'danger':
+        case 'error':
+            type = 'danger';
+            icon = 'fa-exclamation-circle';
+            break;
+        default:
+            icon = 'fa-info-circle';
+            type = 'info';
+    }
+    
+    if ($('.notifications-container').length === 0) {
+        $('body').append('<div class="notifications-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+    }
+    
     const toast = $(`
-        <div class="toast notification-toast align-items-center text-white bg-${type} border-0 position-fixed show" 
-             role="alert" aria-live="assertive" aria-atomic="true" style="top: 20px; right: 20px; z-index: 9999;">
-            <div class="d-flex">
-                <div class="toast-body">
+        <div id="${notificationId}" class="notification-toast alert bg-${type} ${type === 'warning' ? 'text-dark' : 'text-white'} d-flex align-items-center fade show mb-2" 
+             role="alert" aria-live="assertive" aria-atomic="true" style="border-radius: 8px; box-shadow: 0 3px 10px rgba(0,0,0,0.2); min-width: 300px; max-width: 400px;">
+            <div class="d-flex w-100 align-items-center">
+                <i class="fas ${icon} me-3" style="font-size: 1.2rem;"></i>
+                <div class="notification-body flex-grow-1">
                     ${message}
                 </div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            <div class="notification-progress-bar" style="position: absolute; bottom: 0; left: 0; height: 3px; background-color: rgba(255,255,255,0.7); width: 100%; transition: width linear;"></div>
         </div>
     `);
     
-    // Добавляем в DOM
-    $('body').append(toast);
-    
-    // Создаем контейнер для тостов, если его нет
-    if ($('.toast-container').length === 0) {
-        $('body').append('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
-    }
-    
-    // Показываем уведомление
+    $('.notifications-container').append(toast);
     toast.show();
     
-    // Обработчик на кнопку закрытия
+    const progressBar = toast.find('.notification-progress-bar');
+    progressBar.css('transition', `width ${duration}ms linear`);
+    setTimeout(() => progressBar.css('width', '0%'), 50);
+
     toast.find('.btn-close').on('click', function() {
-        toast.hide();
-        setTimeout(() => toast.remove(), 500);
+        toast.removeClass('show').addClass('hiding');
+        setTimeout(() => toast.remove(), 300);
     });
     
-    // Удаляем через указанный интервал
     setTimeout(() => {
-        toast.hide();
-        setTimeout(() => toast.remove(), 500);
+        toast.removeClass('show').addClass('hiding');
+        setTimeout(() => toast.remove(), 300);
     }, duration);
 }
 
-// Обработка загрузки файлов
 function handleFileUpload() {
-    // Проверяем наличие элементов в DOM и на какой странице мы находимся
     const currentPath = window.location.pathname;
     
-    // Если мы не на странице создания или редактирования заметки, пропускаем
     if (!currentPath.match(/\/notes\/create/) && !currentPath.match(/\/notes\/\d+\/edit/)) {
         console.log('Не страница создания/редактирования заметки, пропуск инициализации загрузки файлов');
         return;
     }
     
-    // Проверяем наличие элемента #upload-files
     if ($('#upload-files').length === 0) {
         console.log('Элемент #upload-files не найден, пропуск инициализации загрузки файлов');
         return;
     }
     
-    // Проверяем правильное имя поля для файлов
     const uploadInput = document.getElementById('upload-files');
     if (uploadInput && uploadInput.name !== 'upload_files[]') {
         console.log('Исправляем имя поля для файлов:', uploadInput.name, '->', 'upload_files[]');
         uploadInput.name = 'upload_files[]';
     }
     
-    // Убеждаемся, что форма имеет правильный enctype
     const form = $('#create-note-form, #edit-note-form').first();
     if (form && form.attr('enctype') !== 'multipart/form-data') {
         console.log('Устанавливаем правильный enctype для формы');
         form.attr('enctype', 'multipart/form-data');
     }
     
-    // Проверяем существование контейнера для превью
     if ($('#file-preview').length === 0) {
         console.log('Контейнер #file-preview не найден, создаем его');
         $('#files-container').append('<div id="file-preview" class="row g-2 mt-2"></div>');
     }
     
-    // Для страницы создания и редактирования заметки
     $('#upload-files').on('change', function() {
         const files = this.files;
         
-        // Убедимся, что имя поля правильное
         if (this.name !== 'upload_files[]') {
             console.log('Исправляем имя поля файлов:', this.name, '->', 'upload_files[]');
             this.name = 'upload_files[]';
         }
         
-        // Отладочная информация
         console.log('Выбрано файлов:', files.length);
         for (let i = 0; i < files.length; i++) {
             console.log(`Файл ${i+1}:`, files[i].name, files[i].size, 'байт', files[i].type);
         }
         
-        // Очищаем превью
         $('#file-preview').empty();
         
-        // Проверка на превышение лимита файлов
         if (files.length > 10) {
             showErrorModal('Превышено количество файлов', 'Можно загрузить максимум 10 файлов за раз.');
-            $(this).val(''); // Очистить выбор
+            $(this).val('');
             return;
         }
         
-        // Проверяем размер каждого файла
         let totalSize = 0;
         for (let i = 0; i < files.length; i++) {
             totalSize += files[i].size;
             
             console.log(`Проверка файла ${i+1}: "${files[i].name}", размер: ${files[i].size} байт (${formatFileSize(files[i].size)})`);
             
-            if (files[i].size > 15 * 1024 * 1024) { // 15 МБ
+            if (files[i].size > 15 * 1024 * 1024) {
                 console.log('Файл превышает лимит 15 МБ, показываем модальное окно');
                 showErrorModal('Превышен размер файла', `Файл "${files[i].name}" имеет размер ${formatFileSize(files[i].size)}. Максимально допустимый размер - 15 МБ.`);
-                $(this).val(''); // Очистить выбор
+                $(this).val(''); 
                 $('#file-preview').empty();
                 return;
             }
             
-            // Создаем превью для файла
             createFilePreview(files[i]);
         }
         
-        // Проверка общего размера
-        if (totalSize > 50 * 1024 * 1024) { // 50 МБ
+        if (totalSize > 50 * 1024 * 1024) { 
             showErrorModal('Превышен общий размер файлов', `Общий размер выбранных файлов составляет ${formatFileSize(totalSize)}. Максимально допустимый размер - 50 МБ.`);
-            $(this).val(''); // Очистить выбор
+            $(this).val('');
             $('#file-preview').empty();
             return;
         }
     });
 }
 
-// Создание превью для загруженных файлов
 function createFilePreview(file) {
     const reader = new FileReader();
     const previewContainer = $('#file-preview');
@@ -1694,7 +1499,6 @@ function createFilePreview(file) {
         let previewElement = '';
         
         if (fileType === 'image') {
-            // Для изображений создаем превью с миниатюрой
             previewElement = `
                 <div class="col-md-3 col-sm-4 col-6">
                     <div class="card h-100">
@@ -1707,7 +1511,6 @@ function createFilePreview(file) {
                 </div>
             `;
         } else if (fileType === 'video') {
-            // Для видео показываем иконку
             previewElement = `
                 <div class="col-md-3 col-sm-4 col-6">
                     <div class="card h-100">
@@ -1722,7 +1525,6 @@ function createFilePreview(file) {
                 </div>
             `;
         } else {
-            // Для других файлов
             let iconClass = 'fa-file';
             if (file.name.match(/\.pdf$/i)) iconClass = 'fa-file-pdf';
             else if (file.name.match(/\.(doc|docx)$/i)) iconClass = 'fa-file-word';
@@ -1752,7 +1554,6 @@ function createFilePreview(file) {
     reader.readAsDataURL(file);
 }
 
-// Определение типа файла по MIME-типу
 function getFileTypeByMime(mimeType) {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
@@ -1763,7 +1564,6 @@ function getFileTypeByMime(mimeType) {
     return 'other';
 }
 
-// Форматирование размера файла
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Б';
     const k = 1024;
@@ -1772,12 +1572,9 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// Функция для отображения красивых уведомлений
 function showNotification(message, type = 'info', duration = 3000) {
-    // Удаляем существующие уведомления, если они есть
     $('.notification-toast').remove();
     
-    // Создаем HTML для уведомления
     const toast = $(`
         <div class="toast notification-toast align-items-center text-white bg-${type} border-0 position-fixed show" 
              role="alert" aria-live="assertive" aria-atomic="true" style="top: 20px; right: 20px; z-index: 9999;">
@@ -1790,42 +1587,33 @@ function showNotification(message, type = 'info', duration = 3000) {
         </div>
     `);
     
-    // Добавляем в DOM
     $('body').append(toast);
     
-    // Создаем контейнер для тостов, если его нет
     if ($('.toast-container').length === 0) {
         $('body').append('<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
     }
     
-    // Показываем уведомление
     toast.show();
-    
-    // Обработчик на кнопку закрытия
+
     toast.find('.btn-close').on('click', function() {
         toast.hide();
         setTimeout(() => toast.remove(), 500);
     });
     
-    // Удаляем через указанный интервал
     setTimeout(() => {
         toast.hide();
         setTimeout(() => toast.remove(), 500);
     }, duration);
 }
 
-// Обновление заметки
 function updateNote(id) {
-    // Получаем выбранный цвет
     const noteColor = $('.color-option.selected').data('color');
     
-    // Убедимся, что currentTags существует
     if (typeof currentTags === 'undefined') {
         currentTags = [];
         console.log('Инициализирована пустая переменная currentTags в updateNote');
     }
     
-    // Проверяем, есть ли файлы для загрузки
     const fileInput = $('#upload-files')[0];
     const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
     
@@ -1835,19 +1623,15 @@ function updateNote(id) {
     console.log('- количество файлов:', fileInput && fileInput.files ? fileInput.files.length : 0);
     console.log('- hasFiles =', hasFiles);
     
-    // Создаем FormData для отправки файлов
     const formData = new FormData();
     formData.append('name', $('#name').val());
     formData.append('description', $('#description').val());
     
-    // Добавляем дату напоминания
     if ($('#reminder_at').length && $('#reminder_at').val()) {
-        // Используем значение из скрытого поля
         formData.append('reminder_at', $('#reminder_at').val());
         console.log('Использовано значение из скрытого поля reminder_at:', $('#reminder_at').val());
     } 
     else if ($('#reminder-date').val() && $('#reminder-type').val() !== 'none') {
-        // Преобразуем локальное время в UTC
         const localValue = $('#reminder-date').val();
         const localDate = new Date(localValue);
         const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
@@ -1855,56 +1639,47 @@ function updateNote(id) {
         formData.append('reminder_at', isoString);
         console.log('Создано значение reminder_at из поля даты:', isoString);
     } else {
-        // Если нет напоминания - передаем пустую строку
         formData.append('reminder_at', '');
         console.log('Передано пустое значение для reminder_at');
     }
-    // Явно передаем булево значение как строку "1" или "0"
     formData.append('done', $('#done').is(':checked') ? '1' : '0');
     formData.append('color', noteColor || 'default');
     
-    // Если есть поле is_pinned
     if ($('#is_pinned').length) {
         formData.append('is_pinned', $('#is_pinned').is(':checked') ? '1' : '0');
     }
     
-    formData.append('_method', 'PUT'); // Для поддержки PUT-запроса через FormData
+    formData.append('_method', 'PUT'); 
     
     if (currentTags && currentTags.length > 0) {
         formData.append('tags', currentTags.join(','));
     }
     
-    // Проверяем наличие существующих файлов
     if (window.currentNoteFiles && Array.isArray(window.currentNoteFiles)) {
         console.log('Сохраняем существующие файлы:', window.currentNoteFiles);
         formData.append('files', JSON.stringify(window.currentNoteFiles));
     } else {
         console.log('Нет существующих файлов или они в неправильном формате');
-        // Всегда передаем пустой массив для корректного обновления
         formData.append('files', JSON.stringify([]));
     }
     
-    // Убедимся, что форма имеет правильный enctype
     const form = $('#edit-note-form');
     if (form.attr('enctype') !== 'multipart/form-data') {
         console.log('Устанавливаем правильный enctype для формы');
         form.attr('enctype', 'multipart/form-data');
     }
     
-    // Проверим имя поля для файлов
     if (fileInput && fileInput.name !== 'upload_files[]') {
         console.log('Исправляем имя поля для файлов:', fileInput.name, '->', 'upload_files[]');
         fileInput.name = 'upload_files[]';
     }
     
-    // Добавляем поле для отладки
     formData.append('debug_update', 'true');
     if (hasFiles) {
         formData.append('has_files', 'true');
         formData.append('debug_files_count', fileInput.files.length);
     }
     
-    // Добавляем файлы, если они есть
     if (hasFiles) {
         console.log('Добавляем новые файлы в FormData:', fileInput.files.length, 'файлов');
         for (let i = 0; i < fileInput.files.length; i++) {
@@ -1913,7 +1688,6 @@ function updateNote(id) {
         }
     } else {
         console.log('Новых файлов для загрузки нет');
-        // Добавляем пустое поле upload_files[], чтобы избежать ошибки на сервере
         formData.append('upload_files[]', '');
     }
     
@@ -1924,10 +1698,8 @@ function updateNote(id) {
     
     console.log('Обновляю заметку:', id);
     
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Проверяем наличие CSRF-токена
     if (!csrfToken) {
         console.error('CSRF-токен отсутствует');
         showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
@@ -1936,7 +1708,6 @@ function updateNote(id) {
     
     console.log('CSRF-токен получен:', csrfToken);
     
-    // Вывод отладочной информации о формируемых данных
     console.log('Отправляемые данные:');
     let hasUploadFiles = false;
     for (let pair of formData.entries()) {
@@ -1951,7 +1722,7 @@ function updateNote(id) {
 
     $.ajax({
         url: `/notes/${id}`,
-        type: 'POST', // Используем POST для FormData с методом PUT
+        type: 'POST', 
         headers: {
             'X-CSRF-TOKEN': csrfToken
         },
@@ -1963,18 +1734,15 @@ function updateNote(id) {
             console.log('Заметка успешно обновлена:', response);
             showNotification('Заметка успешно обновлена', 'success');
             
-            // Редирект на главную страницу после успешного обновления
             setTimeout(function() {
                 window.location.href = '/notes';
-            }, 1000); // Задержка в 1 секунду, чтобы пользователь увидел уведомление
+            }, 1000); 
             
-            // Обновляем значения полей на форме
             const note = response.data;
             $('#name').val(note.name);
             $('#description').val(note.description);
             $('#done').prop('checked', note.done);
             
-            // Обновляем дату
             const updatedAt = new Date(note.updated_at);
             const createdAt = new Date(note.created_at);
             const formattedDate = `Создано: ${formatDate(createdAt)}${createdAt.getTime() !== updatedAt.getTime() ? ` • Обновлено: ${formatDate(updatedAt)}` : ''}`;
@@ -2002,9 +1770,7 @@ function updateNote(id) {
     });
 }
 
-// Удаление заметки (перемещение в корзину)
 function deleteNote(id) {
-    // Создаем и показываем модальное окно подтверждения
     const modal = createConfirmationModal({
         id: `deleteNoteModal_${id}`,
         title: 'Подтвердите действие на сайте',
@@ -2021,12 +1787,9 @@ function deleteNote(id) {
     modal.show();
 }
 
-// Выполнение удаления заметки
 function executeDeleteNote(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
-    
-    // Немедленно скрываем заметку для улучшения UX
+
     $(`.note-wrapper#note-${id}`).fadeOut(300);
     
     $.ajax({
@@ -2040,34 +1803,26 @@ function executeDeleteNote(id) {
         success: function() {
             showNotification('Заметка перемещена в корзину', 'info');
             
-            // Если мы на странице редактирования, перенаправляем на список
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
                 setTimeout(() => {
                     window.location.href = '/notes';
                 }, 1000);
             } else {
-                // Заметка уже скрыта, теперь удаляем её из DOM
                 $(`.note-wrapper#note-${id}`).remove();
                 
-                // Проверим, остались ли ещё заметки
                 if ($('.note-wrapper:visible').length === 0) {
                     $('.notes-container').hide();
                     $('.empty-container').removeClass('d-none');
                 }
                 
-                // Обновляем список заметок и статистику
-                // Проверяем, находимся ли в режиме отображения папки
                 if (window.location.pathname.startsWith('/notes/folder/')) {
-                    // Используем getCurrentFolderNameFromUrl вместо ручной обработки
                     const currentFolder = getCurrentFolderNameFromUrl();
                     console.log('Обновляем заметки в текущей папке:', currentFolder);
                     loadAllNotes(false, currentFolder);
                 } else {
-                    // Обновляем статистику
                     loadStats();
                 }
                 
-                // Обновляем счетчики в боковой панели
                 if (typeof updateSidebarCounters === 'function') {
                     setTimeout(updateSidebarCounters, 500);
                 } else if (typeof loadSidebarStats === 'function') {
@@ -2082,12 +1837,9 @@ function executeDeleteNote(id) {
     });
 }
 
-// Восстановление заметки из корзины
 function restoreNote(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Обрабатываем ID заметки, удаляя префикс "note-" если он есть
     let noteId = id;
     if (typeof noteId === 'string' && noteId.startsWith('note-')) {
         noteId = noteId.substring(5);
@@ -2104,29 +1856,24 @@ function restoreNote(id) {
             'Accept': 'application/json'
         },
         success: function(response) {
-            showNotification('Заметка восстановлена', 'success');                // Используем универсальную функцию обновления интерфейса
+            showNotification('Заметка восстановлена', 'success');                
                 if (typeof updateNoteInterface === 'function') {
-                    // Явно указываем, что заметка должна быть удалена из интерфейса корзины
                     $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
                         $(this).remove();
                         
-                        // Проверим, остались ли ещё заметки
                         if ($('.note-wrapper:visible').length === 0) {
                             $('.trash-notes-container, .notes-container').hide();
                             $('.empty-trash-container, .empty-container').removeClass('d-none');
                         }
                     });
                     
-                    // Вызываем событие для обработки в trash-handler.js
                     $(document).trigger('note:restored', [id]);
                     
                     updateNoteInterface('restore', id);
                 } else {
-                // Запасной вариант, если универсальная функция недоступна
                 $(`.note-wrapper#note-${id}`).fadeOut(300, function() {
                     $(this).remove();
                     
-                    // Проверим, остались ли ещё заметки
                     if ($('.note-wrapper:visible').length === 0) {
                         $('.notes-container').hide();
                         $('.empty-container').removeClass('d-none');
@@ -2134,7 +1881,6 @@ function restoreNote(id) {
                 });
             }
             
-            // Обновляем статистику
             loadStats();
         },
         error: function(error) {
@@ -2144,9 +1890,7 @@ function restoreNote(id) {
     });
 }
 
-// Окончательное удаление заметки
 function forceDeleteNote(id) {
-    // Создаем и показываем модальное окно подтверждения
     const modal = createConfirmationModal({
         id: `forceDeleteNoteModal_${id}`,
         title: 'Подтвердите действие на сайте',
@@ -2163,12 +1907,9 @@ function forceDeleteNote(id) {
     modal.show();
 }
 
-// Выполнение окончательного удаления заметки
 function executeForceDeleteNote(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Обрабатываем ID заметки, удаляя префикс "note-" если он есть
     let noteId = id;
     if (typeof noteId === 'string' && noteId.startsWith('note-')) {
         noteId = noteId.substring(5);
@@ -2177,70 +1918,141 @@ function executeForceDeleteNote(id) {
     console.log(`Окончательное удаление заметки: ${id} -> ${noteId}`);
     
     $.ajax({
-        url: `/api/notes/${noteId}/force`,
-        method: 'DELETE',
+        url: `/api/notes/${noteId}`,
+        method: 'GET',
         headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        success: function(response) {
-            showNotification('Заметка окончательно удалена', 'warning');                // Используем универсальную функцию обновления интерфейса
-                if (typeof updateNoteInterface === 'function') {
-                    // Явно удаляем заметку из DOM в корзине
-                    $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
-                        $(this).remove();
-                        
-                        // Проверим, остались ли ещё заметки
-                        if ($('.note-wrapper:visible').length === 0) {
-                            $('.trash-notes-container, .notes-container').hide();
-                            $('.empty-trash-container, .empty-container').removeClass('d-none');
+        success: function(noteData) {
+            let files = [];
+            
+            if (noteData && noteData.files) {
+                try {
+                    if (typeof noteData.files === 'string') {
+                        files = JSON.parse(noteData.files);
+                    } else if (Array.isArray(noteData.files)) {
+                        files = noteData.files;
+                    }
+                    console.log(`Найдено ${files.length} файлов для удаления`);
+                } catch (e) {
+                    console.error('Ошибка при обработке файлов заметки перед удалением:', e);
+                }
+            }
+            
+            const deleteAttachedFiles = function(files, callback) {
+                if (!files || !files.length) {
+                    console.log('Нет файлов для удаления');
+                    callback();
+                    return;
+                }
+                
+                let deletedCount = 0;
+                let errorCount = 0;
+                
+                const deletePromises = files.map(file => {
+                    return new Promise((resolve) => {
+                        if (!file.path) {
+                            console.warn('Файл не имеет пути для удаления:', file);
+                            resolve();
+                            return;
                         }
+                        
+                        $.ajax({
+                            url: `/api/files/${encodeURIComponent(file.path)}`,
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            success: function() {
+                                console.log(`Файл ${file.name} удален успешно`);
+                                deletedCount++;
+                                resolve();
+                            },
+                            error: function(error) {
+                                console.error(`Ошибка при удалении файла ${file.name}:`, error);
+                                errorCount++;
+                                resolve(); 
+                            }
+                        });
                     });
-                    
-                    // Вызываем событие для обработки в trash-handler.js
-                    $(document).trigger('note:forceDeleted', [id]);
-                    
-                    updateNoteInterface('force_delete', id);
-                } else {
-                // Запасной вариант, если универсальная функция недоступна
-                $(`.note-wrapper#note-${id}`).fadeOut(300, function() {
-                    $(this).remove();
-                    
-                    // Проверим, остались ли ещё заметки
-                    if ($('.note-wrapper:visible').length === 0) {
-                        $('.notes-container').hide();
-                        $('.empty-container').removeClass('d-none');
+                });
+                
+                Promise.all(deletePromises).then(() => {
+                    if (deletedCount > 0) {
+                        console.log(`Удалено файлов: ${deletedCount}`);
+                        showNotification(`Удалены ${deletedCount} прикрепленных файлов`, 'info');
+                    }
+                    if (errorCount > 0) {
+                        console.warn(`Ошибок при удалении файлов: ${errorCount}`);
+                    }
+                    callback();
+                });
+            };
+            
+            deleteAttachedFiles(files, function() {
+                $.ajax({
+                    url: `/api/notes/${noteId}/force`,
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    success: function(response) {
+                        showNotification('Заметка окончательно удалена', 'warning');                
+                        if (typeof updateNoteInterface === 'function') {
+                            $(`.note-wrapper#note-${id}, #note-${id}`).fadeOut(300, function() {
+                                $(this).remove();
+                                
+                                if ($('.note-wrapper:visible').length === 0) {
+                                    $('.trash-notes-container, .notes-container').hide();
+                                    $('.empty-trash-container, .empty-container').removeClass('d-none');
+                                }
+                            });
+                            
+                            $(document).trigger('note:forceDeleted', [id]);
+                            updateNoteInterface('force_delete', id);
+                        } else {
+                            $(`.note-wrapper#note-${id}`).fadeOut(300, function() {
+                                $(this).remove();
+                                
+                                if ($('.note-wrapper:visible').length === 0) {
+                                    $('.notes-container').hide();
+                                    $('.empty-container').removeClass('d-none');
+                                }
+                            });
+                        }
+                        
+                        loadStats();
+                        
+                        if (typeof updateSidebarCounters === 'function') {
+                            setTimeout(updateSidebarCounters, 500);
+                        } else if (typeof loadSidebarStats === 'function') {
+                            setTimeout(loadSidebarStats, 500);
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Ошибка при удалении заметки:', error);
+                        showNotification('Ошибка при удалении заметки: ' + (error.responseJSON?.message || 'Неизвестная ошибка'), 'danger');
                     }
                 });
-            }
-            
-            // Обновляем статистику
-            loadStats();
-            
-            // Обновляем счетчики в боковой панели
-            if (typeof updateSidebarCounters === 'function') {
-                setTimeout(updateSidebarCounters, 500);
-            } else if (typeof loadSidebarStats === 'function') {
-                setTimeout(loadSidebarStats, 500);
-            }
+            });
         },
         error: function(error) {
-            console.error('Ошибка при удалении заметки:', error);
-            showNotification('Ошибка при удалении заметки: ' + (error.responseJSON?.message || 'Неизвестная ошибка'), 'danger');
+            console.error('Ошибка при получении данных заметки перед удалением:', error);
+            showNotification('Не удалось получить данные заметки для удаления', 'danger');
         }
     });
 }
 
-// Очистка корзины (удаление всех заметок)
 function emptyTrash() {
     console.log('Функция emptyTrash вызвана');
-    // Получаем все идентификаторы заметок в корзине
     const noteElements = $('.note-wrapper');
     console.log('Найдено элементов в корзине:', noteElements.length);
     
     const noteIds = Array.from(noteElements).map(el => {
-        // Получаем полный ID элемента
         return $(el).attr('id');
     });
     
@@ -2249,7 +2061,6 @@ function emptyTrash() {
         return;
     }
     
-    // Создаем фиксированный диалог в стиле примера с удалением папки
     const overlay = $('<div></div>').css({
         'position': 'fixed',
         'top': 0,
@@ -2289,11 +2100,9 @@ function emptyTrash() {
         </div>
     `);
     
-    // Добавляем диалог в DOM
     overlay.append(dialogBox);
     $('body').append(overlay);
     
-    // Обработчики кнопок
     $('#cancelTrashBtn, #closeTrashBtn').on('click', function() {
         overlay.remove();
     });
@@ -2304,16 +2113,12 @@ function emptyTrash() {
     });
 }
 
-// Выполнение очистки корзины
 function executeEmptyTrash(noteIds) {
-    // Последовательно удаляем каждую заметку
     let deletedCount = 0;
     let errorCount = 0;
     
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Проверяем, есть ли заметки для удаления
     if (!noteIds || noteIds.length === 0) {
         showNotification('Нет заметок для удаления', 'info');
         return;
@@ -2322,10 +2127,8 @@ function executeEmptyTrash(noteIds) {
     console.log('Удаление заметок из корзины:', noteIds);
     
     noteIds.forEach(id => {
-        // Проверяем и обрабатываем ID заметки
         let noteId = id;
         
-        // Если ID содержит префикс "note-", удаляем его
         if (typeof noteId === 'string' && noteId.startsWith('note-')) {
             noteId = noteId.substring(5);
         }
@@ -2344,12 +2147,10 @@ function executeEmptyTrash(noteIds) {
                 console.log(`Заметка ${noteId} успешно удалена:`, response);
                 deletedCount++;
                 
-                // Находим и удаляем элемент из DOM
                 const noteElement = $(`.note-wrapper#note-${noteId}, #note-${noteId}`);
                 noteElement.fadeOut(300, function() {
                     $(this).remove();
                     
-                    // Проверяем, все ли заметки обработаны
                     if (deletedCount + errorCount === noteIds.length) {
                         completeTrashEmptying(deletedCount, errorCount);
                     }
@@ -2359,7 +2160,6 @@ function executeEmptyTrash(noteIds) {
                 console.error(`Ошибка при удалении заметки ${noteId}:`, error);
                 errorCount++;
                 
-                // Проверяем, все ли заметки обработаны
                 if (deletedCount + errorCount === noteIds.length) {
                     completeTrashEmptying(deletedCount, errorCount);
                 }
@@ -2367,7 +2167,6 @@ function executeEmptyTrash(noteIds) {
         });
     });
     
-    // Функция завершения процесса очистки корзины
     function completeTrashEmptying(success, errors) {
         if (success > 0) {
             const message = errors > 0 
@@ -2375,14 +2174,12 @@ function executeEmptyTrash(noteIds) {
                 : `Корзина очищена. Удалено ${success} заметок`;
                 
             showNotification(message, errors > 0 ? 'warning' : 'success');
-            
-            // Если все заметки удалены или возникли ошибки, но видимых заметок нет
+
             if ($('.note-wrapper:visible').length === 0) {
                 $('.notes-container, .trash-notes-container').hide();
                 $('.empty-container, .empty-trash-container').removeClass('d-none');
             }
             
-            // Обновляем статистику после очистки корзины
             loadStats();
         } else if (errors > 0) {
             showNotification(`Не удалось удалить заметки (${errors})`, 'danger');
@@ -2390,19 +2187,15 @@ function executeEmptyTrash(noteIds) {
     }
 }
 
-// Закрепление/открепление заметки
 function togglePin(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Проверяем наличие CSRF-токена
     if (!csrfToken) {
         console.error('CSRF-токен отсутствует');
         showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
         return;
     }
     
-    // Определяем текущее состояние до запроса
     const $pinButton = $('#toggle-pin-button');
     const isPinnedBefore = $pinButton.hasClass('btn-warning');
     
@@ -2416,9 +2209,7 @@ function togglePin(id) {
         success: function(response) {
             const note = response.data;
             
-            // Если мы на странице редактирования
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
-                // Проверяем, действительно ли изменилось состояние
                 if (isPinnedBefore !== note.is_pinned) {
                     updatePinButtonState(note.is_pinned);
                     showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
@@ -2427,13 +2218,11 @@ function togglePin(id) {
                     console.warn('Состояние закрепления не изменилось:', note.is_pinned);
                 }
             } 
-            // Если мы на странице списка
             else {
                 loadAllNotes(window.location.pathname === '/notes/trash');
                 showNotification(note.is_pinned ? 'Заметка закреплена' : 'Заметка откреплена', 'info');
             }
             
-            // Обновляем статистику
             loadStats();
         },
         error: function(xhr, status, error) {
@@ -2443,24 +2232,19 @@ function togglePin(id) {
     });
 }
 
-// Фильтрация заметок
 function applyFilters() {
-    // Получаем параметры фильтрации
     const searchQuery = $('#search-notes').val().toLowerCase();
     const activeFilter = $('.filter-btn.btn-secondary').data('filter') || $('input[name="sidebar-filter"]:checked').val() || 'all';
     
-    // Обновляем интерфейс в соответствии с выбранным фильтром
     $('.filter-btn').removeClass('btn-secondary').addClass('btn-outline-secondary');
     $(`.filter-btn[data-filter="${activeFilter}"]`).removeClass('btn-outline-secondary').addClass('btn-secondary');
     $(`#filter-${activeFilter}`).prop('checked', true);
     
     console.log('Применяем фильтры:', { searchQuery, activeFilter });
     
-    // Перебираем все заметки и скрываем/показываем их в соответствии с фильтрами
     $('.note-wrapper, .note-item').each(function() {
         let shouldShow = true;
         
-        // Применяем фильтр в зависимости от выбранного значения
         switch (activeFilter) {
             case 'active':
                 if ($(this).data('done') === true) {
@@ -2477,10 +2261,8 @@ function applyFilters() {
                     shouldShow = false;
                 }
                 break;
-            // Для фильтра "all" показываем все заметки
         }
         
-        // Поиск по тексту
         if (searchQuery) {
             const title = $(this).find('h4').text().toLowerCase();
             const description = $(this).find('.note-description').text().toLowerCase();
@@ -2491,7 +2273,6 @@ function applyFilters() {
             }
         }
         
-        // Показываем или скрываем заметку
         if (shouldShow) {
             $(this).fadeIn(300);
         } else {
@@ -2499,15 +2280,12 @@ function applyFilters() {
         }
     });
     
-    // Проверяем, есть ли видимые заметки после фильтрации
     setTimeout(() => {
         const visibleNotes = $('.note-wrapper:visible').length;
         
-        // Обновляем счетчики видимых заметок на странице
         updatePageCounters();
         
         if (visibleNotes === 0) {
-            // Показываем сообщение о том, что ничего не найдено
             if ($('.no-results').length === 0) {
                 $('.notes-container').append(`
                     <div class="no-results alert alert-info text-center my-4">
@@ -2529,7 +2307,6 @@ function applyFilters() {
     }, 350);
 }
 
-// Функция загрузки статистики
 function loadStats() {
     console.log('Загружаем статистику...');
     return $.ajax({
@@ -2554,13 +2331,11 @@ function loadStats() {
     });
 }
 
-// Получение имени текущей папки из URL
 function getCurrentFolderNameFromUrl() {
     const folderMatch = window.location.pathname.match(/\/notes\/folder\/(.+)/);
     if (folderMatch) {
         try {
             let folderName = decodeURIComponent(folderMatch[1]);
-            // Полное декодирование (на случай, если имя закодировано несколько раз)
             while (folderName !== decodeURIComponent(folderName)) {
                 folderName = decodeURIComponent(folderName);
             }
@@ -2568,21 +2343,18 @@ function getCurrentFolderNameFromUrl() {
             return folderName;
         } catch (e) {
             console.error('getCurrentFolderNameFromUrl: Ошибка при декодировании имени папки:', e);
-            return folderMatch[1]; // Используем как есть, если ошибка декодирования
+            return folderMatch[1]; 
         }
     }
     return null;
 }
 
-// Экспортируем функцию для использования в других скриптах
 window.getCurrentFolderNameFromUrl = getCurrentFolderNameFromUrl;
 
-// Обновление отображения статистики
 function updateStatsDisplay() {
     if (statsData) {
         console.log('Обновляем статистику:', statsData);
         
-        // Всегда используем только видимые заметки на текущей странице для счетчиков
         const visibleNotes = {
             total: $('.note-wrapper:visible').length, 
             active: $('.note-wrapper:visible:not(.completed)').length,
@@ -2590,27 +2362,22 @@ function updateStatsDisplay() {
             pinned: $('.note-wrapper:visible.pinned').length
         };
         
-        // Проверяем, находимся ли мы в режиме папки
         const folderMode = window.location.pathname.match(/\/notes\/folder\/(.+)/) !== null;
         const currentFolderName = folderMode ? getCurrentFolderNameFromUrl() : null;
         
-        // Определяем текущий режим просмотра
         const trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || window.location.pathname === '/notes/trash';
         const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || window.location.pathname === '/notes/archive';
         
-        // Обновляем счетчики на основе видимых заметок на текущей странице
         $('#total-notes').text(`Всего: ${visibleNotes.total}`);
         $('#completed-notes').text(`Выполнено: ${visibleNotes.completed}`);
         $('#active-notes').text(`Активно: ${visibleNotes.active}`);
         $('#pinned-notes').text(`Закреплено: ${visibleNotes.pinned}`);
         
-        // Обновляем также счетчики в новом формате, если они есть
         $('.counter-total').text(visibleNotes.total);
         $('.counter-completed').text(visibleNotes.completed);
         $('.counter-active').text(visibleNotes.active);
         $('.counter-pinned').text(visibleNotes.pinned);
         
-        // Выводим информацию в консоль о текущем режиме
         if (folderMode && currentFolderName) {
             console.log('Отображается статистика для текущей папки:', currentFolderName, visibleNotes);
         } else if (trashMode) {
@@ -2621,26 +2388,20 @@ function updateStatsDisplay() {
             console.log('Отображается статистика для всех заметок:', visibleNotes);
         }
         
-        // Глобальные счетчики в боковой панели (не меняем)
         $('#archived-notes').text(`В архиве: ${statsData.archived || 0}`);
         $('#trashed-notes').text(`В корзине: ${statsData.trashed || 0}`);
         $('#reminders-notes').text(`С напоминаниями: ${statsData.with_reminders || 0}`);
         
-        // Также обновляем счетчики на текущей странице
         updatePageCounters();
         
-        // Обновляем папки в боковой панели
         if (statsData.by_folder) {
-            // Очищаем список папок
             $('#folders-list').empty();
             
-            // Добавляем каждую папку
             Object.keys(statsData.by_folder).forEach(folderName => {
                 const count = statsData.by_folder[folderName];
                 addFolderToSidebar(folderName, count);
             });
             
-            // Инициализируем обработчики для папок
             if (typeof initFolderHandlers === 'function') {
                 initFolderHandlers();
             }
@@ -2648,7 +2409,6 @@ function updateStatsDisplay() {
     }
 }
 
-// Инициализация темы
 function initTheme() {
     if (currentTheme === 'dark') {
         $('body').addClass('dark-theme');
@@ -2659,16 +2419,14 @@ function initTheme() {
     }
 }
 
-// Переключение темы
 function toggleTheme() {
     currentTheme = currentTheme === 'light' ? 'dark' : 'light';
     localStorage.setItem('theme', currentTheme);
     initTheme();
 }
 
-// Архивация заметки
 function archiveNote(id) {
-    // Получаем CSRF-токен из meta-тега
+
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
     console.log('Архивация заметки с ID:', id);
@@ -2683,16 +2441,13 @@ function archiveNote(id) {
             console.log('Ответ сервера при архивации:', response);
             showNotification('Заметка архивирована', 'info');
             
-            // Используем универсальную функцию обновления интерфейса
             if (typeof updateNoteInterface === 'function') {
                 updateNoteInterface('archive', id);
             } else {
-                // Запасной вариант, если универсальная функция недоступна
                 if (window.location.pathname === '/notes') {
                     $(`.note-wrapper#${id}`).fadeOut(300, function() {
                         $(this).remove();
                         
-                        // Проверим, остались ли ещё заметки
                         if ($('.note-wrapper:visible').length === 0) {
                             $('.notes-container').hide();
                             $('.empty-container').removeClass('d-none');
@@ -2702,11 +2457,9 @@ function archiveNote(id) {
                     loadAllNotes(window.location.pathname === '/notes/trash');
                 }
                 
-                // Обновляем статистику
                 loadStats();
             }
             
-            // Обновляем счетчики в боковой панели
             if (typeof updateSidebarCounters === 'function') {
                 setTimeout(updateSidebarCounters, 500);
             } else if (typeof loadSidebarStats === 'function') {
@@ -2720,9 +2473,7 @@ function archiveNote(id) {
     });
 }
 
-// Восстановление из архива
 function unarchiveNote(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
     $.ajax({
@@ -2734,16 +2485,13 @@ function unarchiveNote(id) {
         success: function(response) {
             showNotification('Заметка извлечена из архива', 'info');
             
-            // Используем универсальную функцию обновления интерфейса
             if (typeof updateNoteInterface === 'function') {
                 updateNoteInterface('unarchive', id);
             } else {
-                // Запасной вариант, если универсальная функция недоступна
                 if (window.location.pathname === '/notes/archive') {
                     $(`.note-wrapper#${id}`).fadeOut(300, function() {
                         $(this).remove();
                         
-                        // Проверим, остались ли ещё заметки
                         if ($('.note-wrapper:visible').length === 0) {
                             $('.notes-container').hide();
                             $('.empty-container').removeClass('d-none');
@@ -2751,16 +2499,13 @@ function unarchiveNote(id) {
                     });
                 }
                 
-                // Обновляем статистику
                 loadStats();
                 
-                // Если мы на главной странице, обновляем список
                 if (window.location.pathname === '/notes') {
                     loadAllNotes(false);
                 }
             }
             
-            // Обновляем счетчики в боковой панели
             if (typeof updateSidebarCounters === 'function') {
                 setTimeout(updateSidebarCounters, 500);
             } else if (typeof loadSidebarStats === 'function') {
@@ -2774,9 +2519,7 @@ function unarchiveNote(id) {
     });
 }
 
-// Установка напоминания
 function setReminder(id, dateTime) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
     $.ajax({
@@ -2791,7 +2534,6 @@ function setReminder(id, dateTime) {
         success: function() {
             showNotification('Напоминание установлено', 'success');
             
-            // Если мы на странице редактирования, показываем дату напоминания
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
                 $('#reminder-date').text(`Напоминание: ${formatDate(new Date(dateTime))}`);
                 $('#reminder-container').removeClass('d-none');
@@ -2804,9 +2546,7 @@ function setReminder(id, dateTime) {
     });
 }
 
-// Удаление напоминания
 function removeReminder(id) {
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
     $.ajax({
@@ -2818,7 +2558,6 @@ function removeReminder(id) {
         success: function() {
             showNotification('Напоминание удалено', 'info');
             
-            // Если мы находимся на странице редактирования, скрываем информацию о напоминании
             if (window.location.pathname.match(/\/notes\/\d+\/edit/)) {
                 $('#reminder-container').addClass('d-none');
             }
@@ -2830,20 +2569,16 @@ function removeReminder(id) {
     });
 }
 
-// Добавление новой папки
 function addFolder(folderName) {
     if (!folderName || folderName.trim() === '') return;
     
     console.log('Создание новой папки:', folderName);
     
-    // Получаем CSRF-токен
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Создаем папку сразу на странице с временным ID
     const tempId = 'new-folder-' + Date.now();
     addFolderToSidebar(folderName, 0, tempId);
     
-    // Создаем папку через API
     $.ajax({
         url: '/api/folders',
         method: 'POST',
@@ -2859,22 +2594,18 @@ function addFolder(folderName) {
             if (response.success) {
                 console.log('Папка успешно создана:', response);
                 
-                // Удаляем временный элемент и добавляем постоянный с правильным ID
                 $(`#${tempId}`).remove();
                 addFolderToSidebar(folderName, 0);
                 
                 showNotification('Папка успешно добавлена', 'success');
                 
-                // Обновляем счетчики сразу, т.к. папка создается без заметки
                 loadStats();
             } else {
-                // В случае ошибки удаляем временный элемент
                 $(`#${tempId}`).remove();
                 showNotification(response.message || 'Ошибка при создании папки', 'warning');
             }
         },
         error: function(xhr) {
-            // В случае ошибки удаляем временный элемент
             $(`#${tempId}`).remove();
             
             let errorMessage = 'Ошибка при создании папки';
@@ -2887,29 +2618,22 @@ function addFolder(folderName) {
     });
 }
 
-// Добавление папки в боковую панель
 function addFolderToSidebar(folderName, count, customId = null) {
-    // Создаем ID для папки, заменяя пробелы и специальные символы
-    // Используем data-атрибуты для точной идентификации папок по имени
+
     const normalizedName = folderName.toLowerCase().trim();
     const folderId = customId || ('folder-' + normalizedName.replace(/[^a-z0-9]/g, '-'));
     
     console.log('Добавление папки в сайдбар:', folderName, 'ID:', folderId);
     
-    // Проверяем, существует ли уже такая папка в sidebar
     if (!customId) {
-        // Проверяем по ID и по data-folder-name
         const existingFolder = $(`#${folderId}, [data-folder-name="${normalizedName}"]`);
         if (existingFolder.length > 0) {
-            // Если да, просто обновляем счетчик
             existingFolder.find('.badge').text(count);
             console.log('Папка уже существует, обновляем счетчик:', count);
             return;
         }
     }
     
-    // Добавляем папку в интерфейс с сохранением оригинального имени в data-атрибуте
-    // Проверяем, является ли эта папка текущей для правильной подсветки
     const currentPath = window.location.pathname;
     const folderMatch = currentPath.match(/\/notes\/folder\/(.+)/);
     let isActive = false;
@@ -2958,13 +2682,10 @@ function addFolderToSidebar(folderName, count, customId = null) {
         </div>
     `);
     
-    // Добавляем обработчики событий для новой папки
     initFolderEventHandlers();
 }
 
-// Инициализация обработчиков для папок
 function initFolderEventHandlers() {
-    // Обработчик для переименования папки (красивое модальное окно)
     $('.rename-folder').off('click').on('click', function(e) {
         e.preventDefault();
         const oldFolderName = $(this).data('folder');
@@ -2980,9 +2701,7 @@ function initFolderEventHandlers() {
             }
         });
     });
-// Универсальное модальное окно для ввода названия папки
 function showFolderInputModal({ title, placeholder, value = '', confirmText = 'OK', onConfirm }) {
-    // Удаляем старое окно, если оно есть
     $('#folderInputModal').remove();
     const modalHtml = `
         <div class="modal fade" id="folderInputModal" tabindex="-1" aria-labelledby="folderInputModalLabel" aria-hidden="true">
@@ -3027,7 +2746,6 @@ function showFolderInputModal({ title, placeholder, value = '', confirmText = 'O
     });
 }
     
-    // Обработчик для удаления папки (красивое модальное окно)
     $('.delete-folder').off('click').on('click', function(e) {
         e.preventDefault();
         const folderName = $(this).data('folder');
@@ -3042,7 +2760,6 @@ function showFolderInputModal({ title, placeholder, value = '', confirmText = 'O
             }
         });
     });
-// Универсальное модальное окно подтверждения действия
 function showConfirmModal({ title, message, confirmText = 'OK', confirmClass = 'btn-primary', cancelText = '× Отмена', onConfirm }) {
     $('#confirmActionModal').remove();
     const modalHtml = `
@@ -3074,48 +2791,44 @@ function showConfirmModal({ title, message, confirmText = 'OK', confirmClass = '
 }
 }
 
-// Применение сортировки
 function applySorting(sortType) {
     currentSort = sortType;
     
     const notes = $('.note-wrapper');
     const notesContainer = $('.notes-container');
     
-    // Копируем в массив для сортировки
     const notesArray = Array.from(notes);
     
-    // Сортируем в зависимости от выбранного типа
     switch (sortType) {
         case 'date-new':
             notesArray.sort((a, b) => {
                 const dateA = new Date($(a).data('updated-at') || 0);
                 const dateB = new Date($(b).data('updated-at') || 0);
-                return dateB - dateA; // Сначала новые
+                return dateB - dateA;
             });
             break;
         case 'date-old':
             notesArray.sort((a, b) => {
                 const dateA = new Date($(a).data('updated-at') || 0);
                 const dateB = new Date($(b).data('updated-at') || 0);
-                return dateA - dateB; // Сначала старые
+                return dateA - dateB; 
             });
             break;
         case 'alpha-asc':
             notesArray.sort((a, b) => {
                 const titleA = $(a).find('h4').text().toLowerCase();
                 const titleB = $(b).find('h4').text().toLowerCase();
-                return titleA.localeCompare(titleB); // А-Я
+                return titleA.localeCompare(titleB); 
             });
             break;
         case 'alpha-desc':
             notesArray.sort((a, b) => {
                 const titleA = $(a).find('h4').text().toLowerCase();
                 const titleB = $(b).find('h4').text().toLowerCase();
-                return titleB.localeCompare(titleA); // Я-А
+                return titleB.localeCompare(titleA); 
             });
             break;
         case 'color':
-            // Определяем порядок приоритетов цветов (как они расположены в интерфейсе)
             const colorOrder = [
                 'red', 'orange', 'yellow', 'green', 'blue', 'light-blue',  
                 'purple', 'pink', 'teal', 'cyan', 'indigo', 'brown', 
@@ -3126,100 +2839,74 @@ function applySorting(sortType) {
                 const colorA = $(a).data('color') || 'default';
                 const colorB = $(b).data('color') || 'default';
                 
-                // Получаем индексы цветов в нашем порядке
                 const indexA = colorOrder.indexOf(colorA);
                 const indexB = colorOrder.indexOf(colorB);
                 
-                // Если оба цвета одинаковы, сортируем по дате обновления
                 if (indexA === indexB) {
                     const dateA = new Date($(a).data('updated-at') || 0);
                     const dateB = new Date($(b).data('updated-at') || 0);
-                    return dateB - dateA; // Сначала новые
+                    return dateB - dateA; 
                 }
                 
-                // Если какой-то из цветов не найден, отправляем его в конец
                 if (indexA === -1) return 1;
                 if (indexB === -1) return -1;
                 
-                // Иначе сортируем по индексу в массиве colorOrder
                 return indexA - indexB;
             });
             break;
     }
     
-    // Очищаем контейнер и добавляем отсортированные элементы
     notesContainer.empty();
     
-    // Сначала добавляем закрепленные заметки
     const pinnedNotes = notesArray.filter(note => $(note).data('pinned') === true);
     const regularNotes = notesArray.filter(note => $(note).data('pinned') !== true);
     
-    // Добавляем закрепленные заметки
     pinnedNotes.forEach(note => {
         notesContainer.append(note);
     });
     
-    // Затем добавляем обычные заметки
     regularNotes.forEach(note => {
         notesContainer.append(note);
     });
     
-    // Анимация для обновленного списка
     $('.note-wrapper').hide().fadeIn(300);
     
-    // Обновляем счетчики заметок на странице
     setTimeout(updatePageCounters, 350);
 }
 
-// Глобальный поиск с мгновенными результатами
 function performSearch(query) {
     if (!query || query.trim() === '') {
         $('#search-results').empty().hide();
         return;
     }
     
-    // Показываем прелоадер
     $('#search-results').html('<div class="p-3 text-center"><i class="fas fa-spinner fa-spin"></i> Поиск...</div>').show();
     
-    // Ищем среди заметок
     const notes = $('.note-wrapper');
     const results = [];
     
-    // Проверяем, ищем ли мы по тегу
     const isTagSearch = query.startsWith('#');
     const tagQuery = isTagSearch ? query.substring(1).toLowerCase() : '';
     
     notes.each(function() {
         const title = $(this).find('h4').text().toLowerCase();
         const description = $(this).find('.note-description').text().toLowerCase();
-        // Получаем теги как атрибут для надежности
         const tags = $(this).attr('data-tags') || $(this).data('tags') || '';
         const id = $(this).attr('id');
         
-        // Отладочная информация для каждой заметки
         console.log(`[DEBUG] Проверка заметки ID: ${id}, Теги: "${tags}"`)
         
-        // Если это поиск по тегу, специальная проверка
         if (isTagSearch) {
-            // Проверяем, есть ли у заметки теги
             if (tags) {
                 const noteTags = tags.split(',').map(tag => tag.trim().toLowerCase());
-                // Выводим для отладки
                 console.log(`Заметка ID: ${id}, Название: ${title}, Теги: ${noteTags.join(', ')}`);
                 console.log(`Ищем: '${tagQuery}', Есть: ${noteTags.some(tag => tag.includes(tagQuery))}`);
                 
-                // Проверяем, содержит ли какой-либо тег искомую строку
-                // Улучшенный поиск с учетом всех возможных вариантов совпадения
                 const found = noteTags.some(tag => {
-                    // 1. Точное совпадение всего тега
                     if (tag === tagQuery) return true;
-                    // 2. Тег начинается с запроса
                     if (tag.startsWith(tagQuery)) return true;
-                    // 3. Тег содержит запрос (для обратной совместимости)
                     if (tag.includes(tagQuery)) return true;
-                    // 4. Запрос содержит тег (когда тег - часть более длинного запроса)
                     if (tagQuery.includes(tag)) return true;
-                    // Ничего не совпало
                     return false;
                 });
                 
@@ -3234,7 +2921,6 @@ function performSearch(query) {
                 }
             }
         } 
-        // Обычный поиск
         else if (
             title.includes(query.toLowerCase()) || 
             description.includes(query.toLowerCase()) || 
@@ -3250,7 +2936,6 @@ function performSearch(query) {
         }
     });
     
-    // Отображаем результаты
     if (results.length > 0) {
         $('#search-results').empty();
         
@@ -3258,7 +2943,6 @@ function performSearch(query) {
             const highlightedTitle = highlightText(result.title, query);
             const highlightedDesc = highlightText(result.description, query);
             
-            // Формируем HTML для тегов, если они есть
             let tagsHTML = '';
             if (result.tags) {
                 const tagsArray = result.tags.split(',');
@@ -3276,27 +2960,21 @@ function performSearch(query) {
             `);
         });
         
-        // Добавляем обработчик клика на результаты поиска
         $('.search-result-item').on('click', function(e) {
-            // Если клик был по тегу, не обрабатываем клик по всему элементу
             if ($(e.target).hasClass('tag')) {
                 return;
             }
             
             const noteId = $(this).data('id');
             
-            // Прокручиваем к заметке и подсвечиваем ее
             const noteElement = $(`#${noteId}`);
             if (noteElement.length) {
-                // Скрываем результаты поиска
                 $('#search-results').hide();
                 
-                // Анимированная прокрутка к заметке
                 $('html, body').animate({
                     scrollTop: noteElement.offset().top - 100
                 }, 500);
                 
-                // Подсветка заметки
                 noteElement.addClass('highlight-note');
                 setTimeout(() => {
                     noteElement.removeClass('highlight-note');
@@ -3304,9 +2982,8 @@ function performSearch(query) {
             }
         });
         
-        // Добавляем обработчик клика на теги в результатах поиска
         $('.search-result-item .tag').on('click', function(e) {
-            e.stopPropagation(); // Останавливаем всплытие события
+            e.stopPropagation(); 
             const tagText = $(this).text().trim();
             searchByTag(tagText);
         });
@@ -3315,26 +2992,21 @@ function performSearch(query) {
     }
 }
 
-// Функция для подсветки текста
 function highlightText(text, query) {
     if (!query) return text;
     
     const regex = new RegExp(`(${query})`, 'gi');
     return text.replace(regex, '<span class="highlight">$1</span>');
-}    // Быстрое переключение статуса "Выполнено"
+}   
 function toggleDone(id, event) {
-    // Предотвращаем всплытие события, чтобы не активировалась карточка заметки
     if (event) event.stopPropagation();
     
-    // Блокируем кнопки статуса, чтобы предотвратить множественные клики
     const noteElement = $(`.note-wrapper[id="${id}"], .note-item[id="${id}"]`);
     const statusButton = noteElement.find('.note-done-toggle, .toggle-done-btn');
     statusButton.prop('disabled', true);
     
-    // Получаем CSRF-токен из meta-тега
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     
-    // Проверяем наличие CSRF-токена
     if (!csrfToken) {
         console.error('CSRF-токен отсутствует');
         showNotification('Ошибка безопасности: отсутствует CSRF-токен', 'danger');
@@ -3342,7 +3014,6 @@ function toggleDone(id, event) {
         return;
     }
     
-    // Определяем текущее состояние заметки до запроса
     const currentDoneState = noteElement.attr('data-done') === 'true';
     const newDoneState = !currentDoneState;
     
@@ -3352,47 +3023,38 @@ function toggleDone(id, event) {
         pageMode: window.location.pathname 
     });
     
-    // Предварительно меняем UI для немедленного отклика
     if (currentDoneState) {
-        // Меняем с "Выполнено" на "Активно"
         noteElement.removeClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
         noteElement.find('.note-done-toggle').text('Активно');
         
-        // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
         if (dropdownBtn.length) {
             dropdownBtn.html('<i class="fas fa-check-circle"></i> Выполнено');
             dropdownBtn.attr('title', 'Выполнено');
             
-            // Обновляем значения всех элементов с одинаковым ID заметки 
-            // (может быть несколько представлений одной заметки на странице)
             $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
                 $(this).html('<i class="fas fa-check-circle"></i> Выполнено');
                 $(this).attr('title', 'Выполнено');
             });
         }
     } else {
-        // Меняем с "Активно" на "Выполнено" 
         noteElement.addClass('completed');
         noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
         noteElement.find('.note-done-toggle').text('Выполнено');
         
-        // Обновляем текст и иконку в контекстном меню
         const dropdownBtn = noteElement.find('.toggle-done-btn');
         if (dropdownBtn.length) {
             dropdownBtn.html('<i class="fas fa-circle"></i> Активно');
             dropdownBtn.attr('title', 'Активно');
-            
-            // Обновляем значения всех элементов с одинаковым ID заметки
+
             $(`.toggle-done-btn[data-id="${id}"]`).each(function() {
                 $(this).html('<i class="fas fa-circle"></i> Активно');
                 $(this).attr('title', 'Активно');
             });
         }
     }
-    
-    // Обновляем визуальное состояние всех элементов с одинаковым ID заметки
+
     $(`.note-wrapper[id="${id}"], .note-item[id="${id}"]`).each(function() {
         $(this).attr('data-done', newDoneState);
         if (newDoneState) {
@@ -3404,7 +3066,6 @@ function toggleDone(id, event) {
         }
     });
     
-    // Обновляем атрибут данных сразу (до получения ответа с сервера)
     noteElement.attr('data-done', newDoneState);
     
     $.ajax({
@@ -3419,64 +3080,50 @@ function toggleDone(id, event) {
             
             console.log('Ответ сервера при переключении статуса:', response);
             
-            // Разблокируем кнопки статуса
             statusButton.prop('disabled', false);
             
-            // Обновляем атрибут данных согласно данным с сервера
             noteElement.attr('data-done', note.done);
             
-            // Показываем уведомление
             showNotification(response.message || (note.done ? 'Заметка отмечена как выполненная' : 'Заметка отмечена как невыполненная'), 'info');
             
-            // Вызываем событие изменения статуса заметки
             $(document).trigger('note:statusChanged', { 
                 noteId: id, 
                 isDone: note.done 
             });
-            
-            // Используем общий обработчик для обновления внешнего вида заметки на всех страницах
+
             if (typeof window.updateNoteAppearance === 'function') {
-                // Обновляем все экземпляры заметки с тем же ID
                 $(`.note-wrapper[id="note-${id}"], [id="note-${id}"], .note-item[id="note-${id}"]`).each(function() {
                     window.updateNoteAppearance($(this), note.done);
                 });
             }
             
-            // Обновляем счетчики на боковой панели
             loadStats();
             
-            // Обновляем счетчики в боковой панели
             if (typeof updateSidebarCounters === 'function') {
                 setTimeout(updateSidebarCounters, 500);
             } else if (typeof loadSidebarStats === 'function') {
                 setTimeout(loadSidebarStats, 500);
             }
         },
-        error: function(xhr, status, error) {        // В случае ошибки восстанавливаем предыдущее состояние
+        error: function(xhr, status, error) {       
         if (currentDoneState) {
-            // Восстанавливаем состояние "Выполнено"
             noteElement.addClass('completed');
             noteElement.find('.note-done-toggle').removeClass('bg-warning').addClass('bg-success');
             noteElement.find('.note-done-toggle').text('Выполнено');
             
-            // Восстанавливаем текст и иконку в контекстном меню
             noteElement.find('.toggle-done-btn').html('<i class="fas fa-circle"></i> Активно');
             noteElement.find('.toggle-done-btn').attr('title', 'Активно');
         } else {
-            // Восстанавливаем состояние "Активно"
             noteElement.removeClass('completed');
             noteElement.find('.note-done-toggle').removeClass('bg-success').addClass('bg-warning');
             noteElement.find('.note-done-toggle').text('Активно');
             
-            // Восстанавливаем текст и иконку в контекстном меню
             noteElement.find('.toggle-done-btn').html('<i class="fas fa-check-circle"></i> Выполнено');
             noteElement.find('.toggle-done-btn').attr('title', 'Выполнено');
         }
             
-            // Восстанавливаем атрибут данных
             noteElement.attr('data-done', currentDoneState);
             
-            // Разблокируем кнопку
             statusButton.prop('disabled', false);
             
             console.error('Ошибка при изменении статуса выполнения:', xhr.responseText, status, error);
@@ -3485,9 +3132,7 @@ function toggleDone(id, event) {
     });
 }
 
-// Функция для безопасной инициализации элементов Bootstrap
 function safeInitBootstrap() {
-    // Инициализация выпадающих меню, если они есть на странице
     document.querySelectorAll('.dropdown-toggle').forEach(function(element) {
         try {
             if (element && typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
@@ -3501,20 +3146,18 @@ function safeInitBootstrap() {
 
 /**
  * Создает модальное окно подтверждения действия в едином стиле
- * 
- * @param {Object} options - Настройки модального окна
- * @param {string} options.id - Идентификатор модального окна
- * @param {string} options.title - Заголовок окна
- * @param {string} options.message - Текст сообщения
- * @param {string} options.confirmButtonText - Текст кнопки подтверждения
- * @param {string} options.cancelButtonText - Текст кнопки отмены
- * @param {string} options.confirmButtonClass - Класс кнопки подтверждения (например, btn-danger)
- * @param {string} options.icon - Иконка для заголовка (например, fa-trash)
- * @param {Function} options.onConfirm - Функция, выполняемая при подтверждении
- * @returns {bootstrap.Modal} - Экземпляр модального окна
+ * @param {Object} options 
+ * @param {string} options.id 
+ * @param {string} options.title 
+ * @param {string} options.message 
+ * @param {string} options.confirmButtonText 
+ * @param {string} options.cancelButtonText 
+ * @param {string} options.confirmButtonClass 
+ * @param {string} options.icon 
+ * @param {Function} options.onConfirm 
+ * @returns {bootstrap.Modal} 
  */
 function createConfirmationModal(options) {
-    // Настройки по умолчанию
     const defaults = {
         id: 'confirmationModal_' + new Date().getTime(),
         title: 'Подтвердите действие',
@@ -3524,24 +3167,20 @@ function createConfirmationModal(options) {
         confirmButtonClass: 'btn-primary',
         icon: 'fa-question-circle',
         onConfirm: null,
-        size: 'modal-md', // Размер модального окна: modal-sm, modal-md, modal-lg
-        animation: true, // Анимация появления
-        centered: true // Центрирование по вертикали
+        size: 'modal-md', 
+        animation: true, 
+        centered: true 
     };
     
-    // Объединяем настройки по умолчанию с переданными параметрами
     const settings = {...defaults, ...options};
     
-    // Удаляем предыдущее модальное окно с таким же ID, если оно существует
     $(`#${settings.id}`).remove();
     
-    // Определяем дополнительные классы для модального окна
     const modalClasses = [
         'modal fade',
         settings.animation ? 'animate__animated animate__fadeIn' : '',
     ].filter(Boolean).join(' ');
     
-    // Определяем классы для диалога
     const dialogClasses = [
         'modal-dialog',
         settings.size,
@@ -3549,7 +3188,6 @@ function createConfirmationModal(options) {
         'modal-dialog-scrollable'
     ].filter(Boolean).join(' ');
     
-    // Создаем HTML модального окна с улучшенным дизайном
     const modalHTML = `
         <div class="${modalClasses}" id="${settings.id}" tabindex="-1" aria-labelledby="${settings.id}Label}" role="dialog">
             <div class="${dialogClasses}">
@@ -3576,34 +3214,26 @@ function createConfirmationModal(options) {
         </div>
     `;
     
-    // Добавляем модальное окно в DOM
     $('body').append(modalHTML);
     
-    // Создаем экземпляр модального окна
     const modalElement = document.getElementById(settings.id);
     const modal = new bootstrap.Modal(modalElement);
     
-    // Добавляем обработчик события для кнопки подтверждения
     $(`#${settings.id}Confirm`).on('click', function() {
-        // Вызываем функцию обратного вызова, если она задана
         if (typeof settings.onConfirm === 'function') {
             settings.onConfirm();
         }
         
-        // Скрываем модальное окно
         modal.hide();
     });
     
-    // Обработчик события скрытия модального окна
     modalElement.addEventListener('hidden.bs.modal', function() {
-        // Удаляем модальное окно из DOM после скрытия
         $(modalElement).remove();
     });
     
     return modal;
 }
 
-// Функция для показа модального окна об ошибке
 function showErrorModal(title, message) {
     const modal = createConfirmationModal({
         title: title,
@@ -3615,16 +3245,8 @@ function showErrorModal(title, message) {
         size: 'modal-md'
     });
     
-    // Скрываем кнопку отмены, так как нужна только кнопка "Закрыть"
     modal._element.querySelector('.btn-secondary').style.display = 'none';
     
     modal.show();
     return modal;
 }
-
-
-
-
-
-
-

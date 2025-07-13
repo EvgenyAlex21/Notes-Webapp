@@ -1,9 +1,3 @@
-/**
- * Мобильная адаптация JavaScript
- * Обеспечивает корректную работу интерфейса на мобильных устройствах
- * Senior-level implementation
- */
-
 class MobileResponsiveManager {
     constructor() {
         this.isMobile = window.innerWidth <= 768;
@@ -25,16 +19,16 @@ class MobileResponsiveManager {
     }
     
     createMobileElements() {
-        // Создаем кнопку мобильного меню
+        
         this.createMobileMenuToggle();
         
-        // Создаем оверлей для мобильного меню
+        
         this.createSidebarOverlay();
         
-        // Находим существующую боковую панель
+        
         this.sidebar = document.querySelector('.sidebar');
         
-        // Добавляем специальные классы для мобильных устройств
+        
         if (this.isMobile) {
             document.body.classList.add('mobile-device');
             if (this.isTouch) {
@@ -44,12 +38,12 @@ class MobileResponsiveManager {
     }
     
     createMobileMenuToggle() {
-        // Проверяем, не существует ли уже кнопка
+        
         if (document.querySelector('.mobile-menu-toggle')) {
             return;
         }
         
-        // Ищем хедер для размещения кнопки
+        
         const header = document.querySelector('.header .d-flex');
         if (!header) {
             console.warn('Хедер не найден для размещения кнопки меню');
@@ -63,12 +57,12 @@ class MobileResponsiveManager {
         this.mobileMenuToggle.style.display = this.isMobile ? 'block' : 'none';
         this.mobileMenuToggle.title = 'Меню';
         
-        // Добавляем кнопку в хедер
+        
         header.appendChild(this.mobileMenuToggle);
     }
     
     createSidebarOverlay() {
-        // Проверяем, не существует ли уже оверлей
+        
         if (document.querySelector('.sidebar-overlay')) {
             return;
         }
@@ -79,7 +73,7 @@ class MobileResponsiveManager {
     }
     
     setupEventListeners() {
-        // Обработчик для кнопки мобильного меню
+        
         if (this.mobileMenuToggle) {
             this.mobileMenuToggle.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -87,33 +81,33 @@ class MobileResponsiveManager {
             });
         }
         
-        // Обработчик для оверлея
+        
         if (this.sidebarOverlay) {
             this.sidebarOverlay.addEventListener('click', () => {
                 this.closeMobileMenu();
             });
         }
         
-        // Обработчик изменения размера окна
+        
         window.addEventListener('resize', () => {
             this.handleResize();
         });
         
-        // Обработчик изменения ориентации
+        
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
                 this.handleOrientationChange();
             }, 100);
         });
         
-        // Обработчик клавиши ESC для закрытия меню
+        
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isMenuOpen) {
                 this.closeMobileMenu();
             }
         });
         
-        // Обработчик для предотвращения скролла при открытом меню
+        
         document.addEventListener('touchmove', (e) => {
             if (this.isMenuOpen && !this.sidebar.contains(e.target)) {
                 e.preventDefault();
@@ -138,10 +132,10 @@ class MobileResponsiveManager {
         this.mobileMenuToggle.setAttribute('aria-label', 'Закрыть меню');
         this.isMenuOpen = true;
         
-        // Предотвращаем скролл страницы
+        
         document.body.style.overflow = 'hidden';
         
-        // Фокус на первый элемент меню
+        
         const firstLink = this.sidebar.querySelector('a, button');
         if (firstLink) {
             firstLink.focus();
@@ -157,10 +151,10 @@ class MobileResponsiveManager {
         this.mobileMenuToggle.setAttribute('aria-label', 'Открыть меню');
         this.isMenuOpen = false;
         
-        // Восстанавливаем скролл страницы
+        
         document.body.style.overflow = '';
         
-        // Возвращаем фокус на кнопку меню
+        
         this.mobileMenuToggle.focus();
     }
     
@@ -170,17 +164,17 @@ class MobileResponsiveManager {
         if (newIsMobile !== this.isMobile) {
             this.isMobile = newIsMobile;
             
-            // Обновляем видимость кнопки меню
+            
             if (this.mobileMenuToggle) {
                 this.mobileMenuToggle.style.display = this.isMobile ? 'block' : 'none';
             }
             
-            // Закрываем меню при переходе на десктоп
+            
             if (!this.isMobile && this.isMenuOpen) {
                 this.closeMobileMenu();
             }
             
-            // Обновляем классы body
+            
             if (this.isMobile) {
                 document.body.classList.add('mobile-device');
             } else {
@@ -188,24 +182,24 @@ class MobileResponsiveManager {
             }
         }
         
-        // Обновляем размеры элементов
+        
         this.updateElementSizes();
     }
     
     handleOrientationChange() {
-        // Закрываем меню при изменении ориентации
+        
         if (this.isMenuOpen) {
             this.closeMobileMenu();
         }
         
-        // Обновляем viewport height для мобильных браузеров
+        
         if (this.isMobile) {
             this.updateViewportHeight();
         }
     }
     
     updateViewportHeight() {
-        // Фиксируем проблему с высотой viewport в мобильных браузерах
+        
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
     }
@@ -213,13 +207,13 @@ class MobileResponsiveManager {
     optimizeForTouch() {
         if (!this.isTouch) return;
         
-        // Улучшаем области касания для мелких элементов
+        
         this.optimizeTouchTargets();
         
-        // Оптимизируем скролл для мобильных устройств
+        
         this.optimizeScrolling();
         
-        // Улучшаем взаимодействие с формами
+        
         this.optimizeForms();
     }
     
@@ -235,7 +229,7 @@ class MobileResponsiveManager {
             }
         });
         
-        // Улучшаем checkbox'ы для выбора заметок
+        
         const checkboxes = document.querySelectorAll('.note-selection-checkbox input[type="checkbox"]');
         checkboxes.forEach(checkbox => {
             const wrapper = checkbox.closest('.note-selection-checkbox');
@@ -250,7 +244,7 @@ class MobileResponsiveManager {
     }
     
     optimizeScrolling() {
-        // Улучшаем производительность скролла
+        
         const scrollableElements = document.querySelectorAll('.sidebar, .modal-body, .search-results');
         scrollableElements.forEach(element => {
             element.style.webkitOverflowScrolling = 'touch';
@@ -259,7 +253,7 @@ class MobileResponsiveManager {
     }
     
     optimizeForms() {
-        // Предотвращаем зум при фокусе на input
+        
         const inputs = document.querySelectorAll('input, textarea, select');
         inputs.forEach(input => {
             if (input.style.fontSize === '' || parseFloat(input.style.fontSize) < 16) {
@@ -267,7 +261,7 @@ class MobileResponsiveManager {
             }
         });
         
-        // Улучшаем работу с Quill редактором на мобильных
+        
         this.optimizeQuillEditor();
     }
     
@@ -279,7 +273,7 @@ class MobileResponsiveManager {
                 editor.style.fontSize = '16px';
                 editor.style.lineHeight = '1.4';
                 
-                // Улучшаем toolbar для мобильных
+                
                 const toolbar = container.previousElementSibling;
                 if (toolbar && toolbar.classList.contains('ql-toolbar')) {
                     toolbar.style.flexWrap = 'wrap';
@@ -290,7 +284,7 @@ class MobileResponsiveManager {
     }
     
     updateElementSizes() {
-        // Обновляем размеры модальных окон
+        
         const modals = document.querySelectorAll('.modal-dialog');
         modals.forEach(modal => {
             if (this.isMobile) {
@@ -303,7 +297,7 @@ class MobileResponsiveManager {
         });
     }
     
-    // Утилиты для других скриптов
+    
     static isMobileDevice() {
         return window.innerWidth <= 768;
     }
@@ -328,7 +322,7 @@ class MobileResponsiveManager {
     }
 }
 
-// Инициализация при загрузке DOM
+
 function initMobileResponsive() {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
@@ -339,10 +333,10 @@ function initMobileResponsive() {
     }
 }
 
-// Автоматическая инициализация
+
 initMobileResponsive();
 
-// Глобальная функция для кнопки меню
+
 window.toggleMobileMenu = function() {
     if (window.mobileResponsiveManager) {
         window.mobileResponsiveManager.toggleMobileMenu();
@@ -351,29 +345,29 @@ window.toggleMobileMenu = function() {
     }
 };
 
-// Дополнительные утилиты для работы с мобильными устройствами
+
 const MobileUtils = {
-    // Проверка мобильного устройства
+    
     isMobile() {
         return window.innerWidth <= 768;
     },
     
-    // Проверка планшета
+    
     isTablet() {
         return window.innerWidth > 768 && window.innerWidth <= 1024;
     },
     
-    // Проверка десктопа
+    
     isDesktop() {
         return window.innerWidth > 1024;
     },
     
-    // Проверка сенсорного устройства
+    
     isTouch() {
         return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     },
     
-    // Получение размера экрана
+    
     getScreenSize() {
         return {
             width: window.innerWidth,
@@ -381,23 +375,23 @@ const MobileUtils = {
         };
     },
     
-    // Оптимизация производительности для мобильных
+    
     optimizePerformance() {
         if (this.isMobile()) {
-            // Уменьшаем частоту обновления анимаций
+            
             document.documentElement.style.setProperty('--animation-duration', '0.2s');
             
-            // Отключаем hover эффекты на мобильных
+            
             document.body.classList.add('no-hover');
         }
     },
     
-    // Обработка виртуальной клавиатуры
+    
     handleVirtualKeyboard() {
         if (this.isMobile()) {
             const viewport = document.querySelector('meta[name="viewport"]');
             if (viewport) {
-                // Предотвращаем изменение масштаба при появлении клавиатуры
+                
                 let viewportContent = viewport.getAttribute('content');
                 if (!viewportContent.includes('user-scalable=no')) {
                     viewport.setAttribute('content', viewportContent + ', user-scalable=no');
@@ -407,11 +401,11 @@ const MobileUtils = {
     }
 };
 
-// Экспорт для использования в других файлах
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { MobileResponsiveManager, MobileUtils };
 }
 
-// Глобальная доступность
+
 window.MobileResponsiveManager = MobileResponsiveManager;
 window.MobileUtils = MobileUtils;

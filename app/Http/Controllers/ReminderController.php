@@ -11,7 +11,6 @@ class ReminderController extends Controller
 {
     /**
      * Проверяет активные напоминания для текущего пользователя
-     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function checkReminders()
@@ -19,7 +18,6 @@ class ReminderController extends Controller
         try {
             \Log::info('=== ПРОВЕРКА ЛОГИРОВАНИЯ ===', ['datetime' => now()->toDateTimeString()]);
 
-            // Логируем все заметки с напоминаниями (без фильтра по времени)
             $allNotes = Note::where('is_deleted', false)
                 ->where('is_archived', false)
                 ->whereNotNull('reminder_at')
@@ -33,7 +31,6 @@ class ReminderController extends Controller
                     'name' => $n->name
                 ]; })->toArray()
             ]);
-            // Используем локальное время приложения
             $nowLocal = Carbon::now(config('app.timezone', 'Europe/Moscow'));
             $startTimeLocal = $nowLocal->copy()->subHours(24);
 
@@ -42,7 +39,6 @@ class ReminderController extends Controller
                 'startTime_local' => $startTimeLocal->toDateTimeString()
             ]);
 
-            // Получаем заметки с напоминаниями, которые должны быть показаны
             $notes = Note::where('is_deleted', false)
                 ->where('is_archived', false)
                 ->whereNotNull('reminder_at')
@@ -57,7 +53,6 @@ class ReminderController extends Controller
                 'reminder_at' => $notes->pluck('reminder_at')->toArray()
             ]);
 
-            // Логируем каждую заметку с напоминанием для диагностики таймзоны
             foreach ($notes as $note) {
                 \Log::info('[REMINDER][DEBUG] Сравнение времени', [
                     'note_id' => $note->id,
@@ -84,7 +79,6 @@ class ReminderController extends Controller
                 ];
             }
 
-            // Логируем все напоминания в базе (без фильтра по времени)
             $allReminders = Note::where('is_deleted', false)
                 ->where('is_archived', false)
                 ->whereNotNull('reminder_at')
@@ -116,7 +110,6 @@ class ReminderController extends Controller
     
     /**
      * Отмечает напоминание как выполненное (сбрасывает reminder_at)
-     *
      * @param int $id
      * @return \Illuminate\Http\JsonResponse
      */
@@ -127,7 +120,6 @@ class ReminderController extends Controller
             
             \Log::info('Отмечаем напоминание как выполненное для заметки: ' . $note->name);
             
-            // Сбрасываем reminder_at
             $note->reminder_at = null;
             $note->save();
             

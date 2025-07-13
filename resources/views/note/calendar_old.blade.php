@@ -165,7 +165,7 @@
             margin-bottom: 20px;
         }
         
-        /* Темная тема */
+       
         body.dark-theme {
             background-color: #212529;
             color: #f8f9fa;
@@ -218,7 +218,7 @@
             color: #ffffff;
         }
         
-        /* Стили для календаря */
+       
         .dark-theme .fc-theme-standard .fc-list-day-cushion {
             background-color: #495057;
         }
@@ -406,20 +406,20 @@
         let calendar;
         
         $(document).ready(function() {
-            // Инициализация календаря
+            
             initCalendar();
             
-            // Инициализация темы
+            
             if (typeof ThemeManager !== 'undefined') {
                 ThemeManager.init();
             }
             
-            // Загрузка счетчиков
+            
             if (typeof loadNoteCounts === 'function') {
                 loadNoteCounts();
             }
             
-            // Загрузка папок
+            
             loadFolders();
         });
 
@@ -435,7 +435,7 @@
                 },
                 events: loadCalendarEvents,
                 eventClick: function(info) {
-                    // Обработка клика по событию
+                    
                     const noteId = info.event.id;
                     if (noteId) {
                         window.location.href = '/notes/' + noteId;
@@ -501,7 +501,7 @@
             return colorMap[color] || colorMap['default'];
         }
 
-        // Функция загрузки папок
+        
         function loadFolders() {
             $.ajax({
                 url: '/api/folders',
@@ -556,10 +556,10 @@
                             </div>
                         `);
                     });
-                    // Включаем обработчик для троеточий
+                    
                     $('.folder-actions').off('click').on('click', function(e) {
                         e.preventDefault();
-                        // Здесь можно реализовать выпадающее меню или действия для папки
+                        
                         showNotification('Действия с папкой будут реализованы позже', 'info');
                     });
                 }
@@ -569,18 +569,18 @@
             }
         });
     }
-    // Загрузка папок при загрузке страницы
+    
     $(document).ready(function() {
         loadFoldersList();
-        // Отключаем клики на цветах в боковой панели
+        
         $('.sidebar .color-option').css('pointer-events', 'none');
         $('.sidebar .color-option.color-default').addClass('selected');
         $('.sidebar .color-option:not(.color-default)').removeClass('selected');
-        // Счетчики заметок (если есть функция)
+        
         if (typeof loadSidebarStats === 'function') {
             setTimeout(loadSidebarStats, 200);
         }
-        // Переключение темы
+        
         const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
         if (darkThemeEnabled) {
             document.body.classList.add('dark-theme');
@@ -670,16 +670,16 @@
     </div>
 
     <script>
-        // Глобальные переменные
+        
         let calendar;
         let selectedColor = 'default';
         let currentTheme = localStorage.getItem('theme') || 'light';
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Инициализация темы
+            
             if (typeof initTheme === 'function') initTheme();
 
-            // Проверка наличия контейнера календаря
+            
             const calendarEl = document.getElementById('calendar');
             if (calendarEl) {
                 document.getElementById('calendar-debug-text').innerText = 'Инициализация календаря...';
@@ -694,19 +694,19 @@
                 console.error('Контейнер #calendar не найден!');
             }
 
-            // Инициализация цветового выбора
+            
             $('.color-option').on('click', function() {
                 $('.color-option').removeClass('selected');
                 $(this).addClass('selected');
                 selectedColor = $(this).data('color');
             });
 
-            // Обработчик для перерисовки календаря при смене темы
+            
             $('#theme-toggle').on('change', function() {
                 if (calendar) calendar.render();
             });
 
-            // Обработчик для создания заметки
+            
             $('#save-event-btn').on('click', function() {
                 const title = $('#new-event-title').val();
                 const description = $('#new-event-description').val();
@@ -721,7 +721,7 @@
             });
         });
         
-        // Инициализация календаря
+        
         function initCalendar() {
             const calendarEl = document.getElementById('calendar');
             
@@ -741,18 +741,18 @@
                     showEventDetails(info.event);
                 },
                 dateClick: function(info) {
-                    // При клике на дату открываем модальное окно создания заметки
+                    
                     const clickedDate = info.dateStr;
                     $('#new-event-date').val(clickedDate + 'T12:00');
                     $('#createEventModal').modal('show');
                 },
-                dayMaxEvents: true // Разрешить "more" ссылку при большом количестве событий
+                dayMaxEvents: true 
             });
             
             calendar.render();
         }
         
-        // Загрузка событий (заметок с напоминаниями)
+        
         function loadEvents(start, end, successCallback) {
             $.ajax({
                 url: '/api/notes',
@@ -766,7 +766,7 @@
                         if (note.reminder_at || note.due_date) {
                             const date = note.reminder_at || note.due_date;
                             
-                            // Определяем цвет события на основе цвета заметки
+                            
                             let eventColor;
                             switch(note.color) {
                                 case 'red': eventColor = '#dc3545'; break;
@@ -801,20 +801,20 @@
             });
         }
         
-        // Показать детали заметки
+        
         function showEventDetails(event) {
             $('#event-title').text(event.title);
             $('#event-description').text(event.extendedProps.description);
             
-            // Отображаем цвет заметки
+            
             const colorClass = event.extendedProps.color || 'default';
             $('#event-color').removeClass().addClass(`badge color-${colorClass}`).text(getColorName(colorClass));
             
-            // Отображаем дату события
+            
             const eventDate = new Date(event.start);
             $('#event-date').text(formatDate(eventDate));
             
-            // Отображаем теги, если они есть
+            
             if (event.extendedProps.tags) {
                 const tags = event.extendedProps.tags.split(',');
                 let tagsHtml = '';
@@ -828,16 +828,16 @@
                 $('#event-tags').empty();
             }
             
-            // Настраиваем кнопку редактирования
+            
             $('#edit-event-btn').attr('href', `/notes/${event.id}/edit`);
             
-            // Показываем модальное окно
+            
             $('#eventModal').modal('show');
         }
         
-        // Создание заметки с напоминанием
+        
         function createNoteWithReminder(title, description, color, reminderDate) {
-            // Получаем CSRF-токен из meta-тега
+            
             const csrfToken = $('meta[name="csrf-token"]').attr('content');
             
             const data = {
@@ -859,15 +859,15 @@
                 success: function(response) {
                     $('#createEventModal').modal('hide');
                     
-                    // Очищаем форму
+                    
                     $('#new-event-title').val('');
                     $('#new-event-description').val('');
                     $('#new-event-date').val('');
                     
-                    // Обновляем календарь
+                    
                     calendar.refetchEvents();
                     
-                    // Показываем сообщение об успехе
+                    
                     alert('Заметка с напоминанием создана успешно!');
                 },
                 error: function(error) {
@@ -877,7 +877,7 @@
             });
         }
         
-        // Получение названия цвета
+        
         function getColorName(color) {
             switch(color) {
                 case 'red': return 'Высокий приоритет';
@@ -889,7 +889,7 @@
             }
         }
         
-        // Форматирование даты
+        
         function formatDate(date) {
             return new Intl.DateTimeFormat('ru-RU', {
                 day: '2-digit',
@@ -900,7 +900,7 @@
             }).format(date);
         }
         
-        // Примечание: функции управления темой перенесены в theme-manager.js
+        
     </script>
 </body>
 </html>

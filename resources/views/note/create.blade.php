@@ -9,7 +9,6 @@
     <meta http-equiv="Expires" content="0">
     <title>Создание заметки</title>
     
-    <!-- Favicon с версионированием для обхода кэша -->
     <link rel="icon" href="/favicon.ico?v=1">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=1">
     <link rel="icon" type="image/png" sizes="16x16" href="/images/logo.png?v=1">
@@ -85,12 +84,12 @@
             transform: scale(1.3);
             box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff;
         }
-        /* Специальный стиль для серого цвета в боковой панели, чтобы он всегда выглядел выбранным */
+       
         .sidebar .color-option.color-default {
             transform: scale(1.3);
             box-shadow: 0 0 0 2px white, 0 0 0 4px #007bff !important;
         }
-        /* Убираем выделение для всех других цветов в боковой панели */
+       
         .sidebar .color-option:not(.color-default) {
             transform: scale(1.0) !important;
             box-shadow: 0 0 0 1px #ddd !important;
@@ -138,7 +137,7 @@
             padding: 5px;
         }
         
-        /* Стили для папок - точно такие же как у sidebar-link */
+       
         .folder-item {
             padding: 10px 15px;
             border-radius: 0.375rem;
@@ -176,7 +175,7 @@
             background-color: #4a4f55;
         }
         
-        /* Стили для загрузки файлов */
+       
         .upload-area {
             border: 2px dashed #ccc;
             border-radius: 8px;
@@ -231,7 +230,7 @@
             max-width: 100%;
             object-fit: contain;
         }
-        /* Стили для редактора */
+       
         .note-editor.note-frame {
             border-radius: 5px;
             border-color: #ced4da;
@@ -374,7 +373,6 @@
     
     <div class="container">
         <div class="row">
-            <!-- Боковая панель -->
             <div class="col-md-3 mb-4">
                 <div class="sidebar">
                     <h5 class="mb-3">Навигация</h5>
@@ -436,7 +434,6 @@
                     
                     <h5 class="mb-3">Папки</h5>
                     <div id="folders-list">
-                        <!-- Список папок будет загружен динамически -->
                     </div>
                     <div class="mb-3 mt-2">
                         <button id="add-folder-btn" class="btn btn-sm btn-outline-secondary w-100" disabled>
@@ -467,7 +464,6 @@
                 </div>
             </div>
             
-            <!-- Основное содержимое -->
             <div class="col-lg-9">
                 <div class="main-content">
                     <div class="card">
@@ -530,7 +526,6 @@
                                 
                                 <div id="file-preview" class="mt-3 row g-2"></div>
                                 
-                                <!-- Контейнер для хранения файлов -->
                                 <div id="files-container"></div>
                             </div>
                             
@@ -572,7 +567,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для ошибок -->
     <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -605,7 +599,7 @@
     <script src="/js/notifications.js"></script>
     <script src="/js/sidebar-counters.js"></script>        <script>
             $(document).ready(function() {
-                // Устанавливаем минимальную дату и время для напоминаний
+                
                 function setMinDateTime() {
                     const now = new Date();
                     const year = now.getFullYear();
@@ -618,7 +612,7 @@
                     $('#reminder-date').attr('min', minDateTime);
                 }
                 
-                // Устанавливаем минимальную дату при загрузке страницы (сегодня)
+                
                 const today = new Date();
                 const year = today.getFullYear();
                 const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -627,12 +621,12 @@
                 const minDate = `${year}-${month}-${day}T00:00`;
                 $('#reminder-date').attr('min', minDate);
                 
-                // Проверяем дату при изменении
+                
                 $('#reminder-date').on('input', function() {
                     const selectedDateTime = new Date($(this).val());
                     const now = new Date();
                     
-                    // Устанавливаем время сравнения на начало текущего дня
+                    
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     
@@ -647,7 +641,7 @@
                     }
                 });
                 
-                // Инициализация Quill
+                
             var quill = new Quill('#editor-container', {
                 modules: {
                     toolbar: [
@@ -663,17 +657,17 @@
                 theme: 'snow'
             });
             
-            // При отправке формы копируем HTML содержимое редактора в скрытое текстовое поле
+            
             $('#create-note-form').submit(function(e) {
                 var htmlContent = quill.root.innerHTML;
                 $('#description').val(htmlContent);
                 
-                // Проверяем дату напоминания
+                
                 var reminderVal = $('#reminder-date').val();
                 if (reminderVal) {
                     var selectedDateTime = new Date(reminderVal);
                     var today = new Date();
-                    today.setHours(0, 0, 0, 0); // Начало текущего дня
+                    today.setHours(0, 0, 0, 0); 
                     
                     if (selectedDateTime < today) {
                         e.preventDefault();
@@ -684,57 +678,57 @@
                     var localDate = new Date(reminderVal);
                     var utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
                     var isoString = utcDate.toISOString().slice(0, 19).replace('T', ' ');
-                    // Кладём в скрытое поле reminder_at
+                    
                     if ($('#reminder_at').length === 0) {
                         $('<input>').attr({type: 'hidden', id: 'reminder_at', name: 'reminder_at'}).appendTo('#create-note-form');
                     }
                     $('#reminder_at').val(isoString);
                     console.log('Добавлено напоминание (UTC, reminder_at):', isoString);
                 } else {
-                    // Если напоминание не установлено, явно очищаем его
+                    
                     if ($('#reminder_at').length === 0) {
                         $('<input>').attr({type: 'hidden', id: 'reminder_at', name: 'reminder_at'}).appendTo('#create-note-form');
                     }
                     $('#reminder_at').val('');
                     console.log('Напоминание очищено (reminder_at)');
                 }
-                // Для отладки: логируем все значения формы
+                
                 var formDataLog = {};
                 $('#create-note-form').serializeArray().forEach(function(item) { formDataLog[item.name] = item.value; });
                 console.log('Отправляемые данные формы:', formDataLog);
             });
             
-            // При нажатии на кнопку "Сохранить"
+            
             $('#save-button').on('click', function(e) {
                 e.preventDefault();
                 var htmlContent = quill.root.innerHTML;
                 $('#description').val(htmlContent);
                 
-                // Проверяем загружены ли файлы
+                
                 const uploadInput = document.getElementById('upload-files');
                 if (uploadInput && uploadInput.files && uploadInput.files.length > 0) {
                     console.log('Файлы для загрузки:', uploadInput.files.length);
                     
-                    // Выводим информацию о каждом файле
+                    
                     for (let i = 0; i < uploadInput.files.length; i++) {
                         const file = uploadInput.files[i];
                         console.log(`Файл ${i+1}: ${file.name}, ${file.size} байт, ${file.type}`);
                     }
                     
-                    // Убедимся, что форма имеет правильный enctype
+                    
                     const form = $('#create-note-form');
                     if (form.attr('enctype') !== 'multipart/form-data') {
                         console.log('Устанавливаем правильный enctype для формы');
                         form.attr('enctype', 'multipart/form-data');
                     }
                     
-                    // Проверим имя поля для файлов
+                    
                     if (uploadInput.name !== 'upload_files[]') {
                         console.log('Исправляем имя поля для файлов:', uploadInput.name, '->', 'upload_files[]');
                         uploadInput.name = 'upload_files[]';
                     }
                     
-                    // Добавляем скрытое поле с информацией о количестве файлов
+                    
                     const debugInput = document.createElement('input');
                     debugInput.type = 'hidden';
                     debugInput.name = 'debug_files_count';
@@ -743,8 +737,8 @@
                     
                     console.log('Подготовлены файлы для отправки:', uploadInput.files.length);
                 } else {
-                    // Даже если файлов нет, устанавливаем пустой массив для files
-                    // чтобы избежать ошибки "The files field must be an array"
+                    
+                    
                     const filesInput = document.createElement('input');
                     filesInput.type = 'hidden';
                     filesInput.name = 'files';
@@ -754,12 +748,12 @@
                     console.log('Файлы не выбраны, добавлено скрытое поле files=[]');
                 }
                 
-                // Отправляем форму напрямую, а не через AJAX
-                // Это обеспечит правильную отправку файлов
+                
+                
                 document.getElementById('create-note-form').submit();
             });
             
-            // Обработка выбора типа напоминания
+            
             $('#reminder-type').on('change', function() {
                 const selectedType = $(this).val();
                 const dateTimeContainer = $('#reminder-datetime-container');
@@ -776,37 +770,37 @@
                         reminderActions.hide();
                         break;
                     case 'today':
-                        setQuickDate(0); // сегодня
-                        dateTimeContainer.show(); // Показываем поле времени
+                        setQuickDate(0); 
+                        dateTimeContainer.show(); 
                         reminderActions.show();
                         break;
                     case 'tomorrow':
-                        setQuickDate(1); // завтра
-                        dateTimeContainer.show(); // Показываем поле времени
+                        setQuickDate(1); 
+                        dateTimeContainer.show(); 
                         reminderActions.show();
                         break;
                     case 'next-week':
-                        setQuickDate(7); // через неделю
-                        dateTimeContainer.show(); // Показываем поле времени и дату
+                        setQuickDate(7); 
+                        dateTimeContainer.show(); 
                         reminderActions.show();
                         break;
                 }
             });
             
-            // Функция для быстрой установки даты (через указанное количество дней)
+            
             function setQuickDate(daysToAdd) {
                 const now = new Date();
                 now.setDate(now.getDate() + daysToAdd);
-                now.setHours(9, 0, 0); // Устанавливаем время на 9:00
+                now.setHours(9, 0, 0); 
                 
-                // Проверяем, чтобы дата не была в прошлом
+                
                 const currentTime = new Date();
                 if (now < currentTime) {
                     now.setTime(currentTime.getTime());
-                    now.setHours(now.getHours() + 1); // Добавляем час для безопасности
+                    now.setHours(now.getHours() + 1); 
                 }
                 
-                // Форматирование даты для input datetime-local
+                
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
                 const day = String(now.getDate()).padStart(2, '0');
@@ -816,7 +810,7 @@
                 $('#reminder-date').val(`${year}-${month}-${day}T${hours}:${minutes}`);
             }
             
-            // Удаление напоминания
+            
             $('#remove-reminder').off('click').on('click', function() {
                 createConfirmationModal({
                     title: 'Удалить напоминание?',
@@ -836,12 +830,12 @@
                 });
             });
             
-            // Глобальный массив для хранения загруженных файлов
+            
             let uploadedFiles = [];
             const maxFiles = 10;
-            const maxSize = 100 * 1024 * 1024; // 100 МБ
+            const maxSize = 100 * 1024 * 1024; 
             
-            // Обработчики для drag and drop
+            
             const dropArea = document.getElementById('drop-area');
             
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
@@ -869,7 +863,7 @@
                 dropArea.classList.remove('drag-over');
             }
             
-            // Обработка события drop
+            
             dropArea.addEventListener('drop', handleDrop, false);
             
             function handleDrop(e) {
@@ -878,69 +872,69 @@
                 handleFiles(files);
             }
             
-            // Обработка клика на область загрузки
-            // Обработка клика на область загрузки
+            
+            
             $('#drop-area').on('click', function(e) {
-                if (e.target !== this) return; // Игнорируем клики на дочерние элементы
+                if (e.target !== this) return; 
                 e.preventDefault();
                 $('#upload-files').trigger('click');
             });
             
-            // Отдельный обработчик для ссылки "выберите файлы"
+            
             $('#browse-files').off('click').on('click', function(e) {
                 e.preventDefault();
-                e.stopPropagation(); // Предотвращаем всплытие события
+                e.stopPropagation(); 
                 
-                // Проверим имя поля для файлов
+                
                 const uploadInput = document.getElementById('upload-files');
                 if (uploadInput.name !== 'upload_files[]') {
                     console.log('Исправляем имя поля для файлов перед выбором:', uploadInput.name, '->', 'upload_files[]');
                     uploadInput.name = 'upload_files[]';
                 }
                 
-                // Используем непосредственный клик на элементе вместо trigger
+                
                 uploadInput.click();
             });
             
-            // Обработчик выбора файлов через диалог
+            
             $('#upload-files').off('change').on('change', function() {
                 console.log('Выбрано файлов:', this.files.length);
                 
-                // Убеждаемся, что имя поля правильное
+                
                 if (this.name !== 'upload_files[]') {
                     console.log('Исправляем имя поля для файлов после выбора:', this.name, '->', 'upload_files[]');
                     this.name = 'upload_files[]';
                 }
                 
-                // Показываем имена и размеры выбранных файлов
+                
                 for (let i = 0; i < this.files.length; i++) {
                     console.log(`Выбран файл ${i+1}: ${this.files[i].name}, ${this.files[i].size} байт`);
                 }
                 
                 handleFiles(this.files);
                 
-                // НЕ сбрасываем input, чтобы файлы сохранились для отправки на сервер
-                // $(this).val(''); // Убираем эту строку
                 
-                // Добавляем визуальное подтверждение
+                
+                
+                
                 $('#drop-area').addClass('border-success').removeClass('border-dashed');
                 setTimeout(() => {
                     $('#drop-area').removeClass('border-success').addClass('border-dashed');
                 }, 2000);
             });
             
-            // Общая функция обработки файлов
+            
             function handleFiles(files) {
-                // Проверка на количество файлов
+                
                 if (uploadedFiles.length + files.length > maxFiles) {
                     showErrorMessage(`Можно загрузить максимум ${maxFiles} файлов. Сейчас выбрано: ${uploadedFiles.length + files.length}`);
                     return;
                 }
                 
-                // Преобразуем FileList в массив для обработки
+                
                 const filesArray = Array.from(files);
                 
-                // Проверка размера каждого файла
+                
                 for (let i = 0; i < filesArray.length; i++) {
                     if (filesArray[i].size > maxSize) {
                         showErrorMessage(`Файл "${filesArray[i].name}" имеет размер ${(filesArray[i].size / (1024 * 1024)).toFixed(1)} МБ. Максимально допустимый размер - 100 МБ.`);
@@ -948,29 +942,51 @@
                     }
                 }
                 
-                // Добавляем файлы в наш глобальный массив
+                
                 filesArray.forEach(file => {
-                    // Добавляем уникальный ID для каждого файла
+                    
                     file.id = generateUniqueId();
                     uploadedFiles.push(file);
                 });
                 
-                // Обновляем превью
+                
                 updateFilePreviews();
             }
             
-            // Генерирует уникальный ID для файла
+            
             function generateUniqueId() {
                 return 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             }
             
-            // Показывает сообщение об ошибке
+            
             function showErrorMessage(message) {
                 alert(message);
-                // Здесь можно реализовать более красивое отображение ошибки
+                
             }
             
-            // Обновляет превью для всех загруженных файлов
+            function updateGlobalFilesArray() {
+                const fileDataArray = uploadedFiles.map(file => ({
+                    id: file.id,
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                }));
+                
+                $('#uploaded-files-data').val(JSON.stringify(fileDataArray));
+                
+                if ($('#files-counter').length) {
+                    $('#files-counter').text(uploadedFiles.length);
+                }
+                
+                if (uploadedFiles.length > 0) {
+                    $('#file-preview-container').show();
+                } else {
+                    $('#file-preview-container').hide();
+                }
+                
+                console.log('Глобальный массив файлов обновлен:', fileDataArray);
+            }
+            
             function updateFilePreviews() {
                 const preview = $('#file-preview');
                 preview.empty();
@@ -981,7 +997,7 @@
                     const fileId = file.id;
                     const fileUrl = URL.createObjectURL(file);
                     
-                    // Создаем превью в едином стиле
+                    
                     let previewContent = '';
                     if (fileType === 'image') {
                         previewContent = `<img src="${fileUrl}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;" alt="${file.name}">`;
@@ -990,7 +1006,7 @@
                     } else if (fileType === 'audio') {
                         previewContent = `<div class="d-flex align-items-center justify-content-center" style="height: 100px; background: #f8f9fa;"><i class="fas fa-music fa-2x text-info"></i></div>`;
                     } else {
-                        // Документы и прочее
+                        
                         let iconClass = 'fa-file';
                         if (file.name) {
                             const ext = file.name.split('.').pop().toLowerCase();
@@ -1033,46 +1049,46 @@
                     preview.append(fileElement);
                 });
                 
-                // Привязываем обработчики событий к новым элементам
+                
                 attachFileEventHandlers();
                 
-                // Обновляем глобальный массив для галереи
+                
                 updateGlobalFilesArray();
             }
             
-            // Привязывает обработчики событий к превью файлов
+            
             function attachFileEventHandlers() {
-                // Обработчик для удаления файлов
+                
                 $('.file-remove').off('click').on('click', function(e) {
                     e.stopPropagation();
                     const fileId = $(this).data('file-id');
                     const fileName = uploadedFiles.find(file => file.id === fileId)?.name || 'файл';
                     
-                    // Используем модальное окно подтверждения вместо confirm
+                    
                     createConfirmationModal(
                         'Удалить файл?',
                         `Вы уверены, что хотите удалить файл "${fileName}"?`,
                         'Удалить',
                         'Отмена',
                         function() {
-                            // Удаляем файл из массива
+                            
                             uploadedFiles = uploadedFiles.filter(file => file.id !== fileId);
                             
-                            // Удаляем превью из DOM
+                            
                             $(`#file-item-${fileId}`).fadeOut(300, function() {
                                 $(this).remove();
-                                // Обновляем глобальный массив для галереи
+                                
                                 updateGlobalFilesArray();
                             });
                         }
                     );
                 });
                 
-                // Обработчик кнопок просмотра файлов уже настроен в file-viewer.js как '.new-file-preview'
+                
                 console.log('Привязаны обработчики для', $('.file-remove').length, 'кнопок удаления и', $('.new-file-preview').length, 'кнопок просмотра');
             }
             
-            // Функция для определения типа файла
+            
             function getFileType(mimeType) {
                 if (mimeType.startsWith('image/')) return 'image';
                 if (mimeType.startsWith('video/')) return 'video';
@@ -1084,7 +1100,7 @@
                 return 'file';
             }
             
-            // Загрузка списка папок
+            
             function loadFoldersList() {
                 $.ajax({
                     url: '/api/folders',
@@ -1094,15 +1110,15 @@
                             const foldersContainer = $('#folders-list');
                             foldersContainer.empty();
                             
-                            // Сортируем папки по имени (числовое упорядочивание)
+                            
                             const sortedFolders = response.data.sort((a, b) => {
-                                // Извлекаем числа из имен папок (если они есть)
+                                
                                 const numA = parseInt(a.name.match(/\d+/)) || 0;
                                 const numB = parseInt(b.name.match(/\d+/)) || 0;
                                 return numA - numB;
                             });
                             
-                            // Отображение папок
+                            
                             sortedFolders.forEach(function(folder) {
                                 const folderName = folder.name;
                                 const count = folder.count || 0;
@@ -1133,32 +1149,31 @@
                 });
             }
             
-            // Загружаем папки при загрузке страницы
+            
             loadFoldersList();
             
-            // Инициализация темного режима
+            
             const darkThemeEnabled = localStorage.getItem('darkTheme') === 'true';
-            // Примечание: управление темой перенесено в theme-manager.js
-                  // Отключаем клики на цветах в боковой панели
+            
+                  
         $('.sidebar .color-option').css('pointer-events', 'none');
         
-        // Гарантируем, что серый цвет в боковой панели всегда выбран, а остальные цвета не выбраны
+        
         $('.sidebar .color-option.color-default').addClass('selected');
         $('.sidebar .color-option:not(.color-default)').removeClass('selected');
         
-        // Следим за изменением цвета в основном блоке
+        
         $('.col-lg-9 .color-option, .col-md-9 .color-option').on('click', function() {
-            // Убеждаемся, что в боковой панели только серый цвет выбран
+            
             $('.sidebar .color-option.color-default').addClass('selected');
             $('.sidebar .color-option:not(.color-default)').removeClass('selected');
         });
             
-            // Инициализируем просмотрщик файлов
+            
             initFileViewer();
         });
     </script>
 
-    <!-- Модальное окно для просмотра файлов -->
     <div class="modal fade" id="fileViewerModal" tabindex="-1" aria-labelledby="fileViewerModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content">
@@ -1168,10 +1183,8 @@
                 </div>
                 <div class="modal-body p-0">
                     <div class="file-viewer-container d-flex align-items-center justify-content-center position-relative">
-                        <!-- Содержимое будет добавлено динамически -->
                         <div id="file-viewer-content" class="w-100"></div>
                         
-                        <!-- Элементы управления навигацией для галереи изображений -->
                         <button class="btn btn-light position-absolute start-0 top-50 translate-middle-y rounded-circle ms-2 file-nav-btn" id="prev-file-btn" style="display:none">
                             <i class="fas fa-chevron-left"></i>
                         </button>

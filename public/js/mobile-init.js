@@ -1,8 +1,3 @@
-/**
- * Инициализация мобильной адаптации
- * Гарантирует правильную инициализацию всех компонентов
- */
-
 class MobileInitializer {
     constructor() {
         this.initialized = false;
@@ -12,7 +7,7 @@ class MobileInitializer {
     init() {
         if (this.initialized) return;
         
-        // Проверяем готовность DOM
+        
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.initializeComponents());
         } else {
@@ -22,22 +17,22 @@ class MobileInitializer {
     
     initializeComponents() {
         try {
-            // Инициализируем базовые мобильные функции
+            
             if (typeof MobileResponsiveManager !== 'undefined') {
                 window.mobileResponsiveManager = new MobileResponsiveManager();
                 console.log('✅ Mobile Responsive Manager initialized');
             }
             
-            // Инициализируем продвинутые мобильные функции
+            
             if (typeof AdvancedMobileFeatures !== 'undefined' && this.isMobile()) {
                 window.advancedMobileFeatures = new AdvancedMobileFeatures();
                 console.log('✅ Advanced Mobile Features initialized');
             }
             
-            // Настраиваем глобальные функции
+            
             this.setupGlobalFunctions();
             
-            // Добавляем мобильные классы
+            
             this.addMobileClasses();
             
             this.initialized = true;
@@ -49,7 +44,7 @@ class MobileInitializer {
     }
     
     setupGlobalFunctions() {
-        // Глобальная функция для меню
+        
         window.toggleMobileMenu = () => {
             if (window.mobileResponsiveManager && window.mobileResponsiveManager.toggleMobileMenu) {
                 window.mobileResponsiveManager.toggleMobileMenu();
@@ -58,17 +53,17 @@ class MobileInitializer {
             }
         };
         
-        // Глобальная функция для toast уведомлений
+        
         window.showMobileToast = (message, type = 'info', duration = 3000) => {
             if (window.advancedMobileFeatures && window.advancedMobileFeatures.showMobileToast) {
                 window.advancedMobileFeatures.showMobileToast(message, type, duration);
             } else {
-                // Fallback
+                
                 alert(message);
             }
         };
         
-        // Функция для проверки мобильного устройства
+        
         window.isMobileDevice = () => {
             return window.innerWidth <= 768;
         };
@@ -82,12 +77,12 @@ class MobileInitializer {
                 document.body.classList.add('touch-device');
             }
             
-            // Добавляем класс для iOS
+            
             if (this.isIOS()) {
                 document.body.classList.add('ios-device');
             }
             
-            // Добавляем класс для Android
+            
             if (this.isAndroid()) {
                 document.body.classList.add('android-device');
             }
@@ -111,10 +106,10 @@ class MobileInitializer {
     }
 }
 
-// Создаем экземпляр инициализатора
+
 new MobileInitializer();
 
-// Дополнительная проверка через некоторое время
+
 setTimeout(() => {
     if (!window.mobileResponsiveManager && window.innerWidth <= 768) {
         console.warn('⚠️ Mobile manager not initialized, retrying...');

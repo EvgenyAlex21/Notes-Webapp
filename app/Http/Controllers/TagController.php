@@ -11,7 +11,6 @@ class TagController extends Controller
 {
     /**
      * Получение уникальных тегов из заметок
-     *
      * @return \Illuminate\Http\JsonResponse
      */
     public function index()

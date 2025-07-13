@@ -19,7 +19,6 @@ Route::get('/notes/archive', [PagesController::class, 'archive']);
 Route::get('/notes/calendar', [PagesController::class, 'calendar']);
 Route::get('/notes/folder/{folder}', [PagesController::class, 'folder']);
 
-// Маршрут для просмотра заметки по id (GET /notes/{id})
 Route::get('/notes/{id}', [PagesController::class, 'show'])->name('notes.show');
 Route::get('/notes/{id}/edit', [PagesController::class, 'edit']);
 

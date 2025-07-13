@@ -1,16 +1,9 @@
-/**
- * Дополнительные исправления для темной темы
- * Улучшает контрастность и читаемость элементов
- */
-
-/* Стили для счетчиков в боковой панели в темной теме */
 .dark-theme .notes-count,
 .dark-theme .folder-badge {
-    background-color: #6c757d !important; /* Более заметный светло-серый для счетчиков */
+    background-color: #6c757d !important;
     color: #ffffff !important;
 }
 
-/* Стили для прикрепленных файлов в карточках заметок */
 .dark-theme .note-attachment-icon {
     color: #ffffff;
 }
@@ -26,7 +19,6 @@
     border: 1px solid #5a606b;
 }
 
-/* Стиль для списка прикрепленных файлов */
 .dark-theme .note-attachments {
     background-color: #2a2f36;
     border-radius: 6px;
@@ -40,7 +32,6 @@
     margin-bottom: 5px;
 }
 
-/* Название прикрепленных файлов */
 .dark-theme .attachment-label {
     color: #e0e0e0;
     font-weight: 500;
@@ -49,7 +40,6 @@
     margin-bottom: 10px;
 }
 
-/* Делаем текст читабельным на темном фоне */
 .dark-theme #searchResults .note-item h4, 
 .dark-theme #searchResults .note-item .note-content,
 .dark-theme #searchResults .note-item .note-date,
@@ -57,14 +47,12 @@
     color: #ffffff !important;
 }
 
-/* Улучшаем отображение блока "Прикрепленные файлы" */
 .dark-theme .attached-files-header,
 .dark-theme h3 {
     color: #ffffff;
     font-weight: 600;
 }
 
-/* Исправляем отображение списка файлов */
 .dark-theme a.file {
     color: #ffffff !important;
     background-color: #2a2f36;
@@ -75,7 +63,6 @@
     border: 1px solid #5a606b;
 }
 
-/* Блок с файлами */
 .dark-theme .files-section {
     background-color: #1e2227;
     padding: 15px;
@@ -83,13 +70,11 @@
     border: 1px solid #495057;
 }
 
-/* Исправляем контрастность имен файлов */
 .dark-theme .file-name {
     color: #ffffff !important;
     font-weight: 500;
 }
 
-/* Исправляем отображение ссылок на файлы */
 .dark-theme a[href^="storage"],
 .dark-theme a[href*=".jpg"],
 .dark-theme a[href*=".png"],
@@ -106,7 +91,6 @@
     border: 1px solid #495057;
 }
 
-/* Исправляем контрастность и видимость текста */
 .dark-theme p,
 .dark-theme div,
 .dark-theme span,
@@ -114,7 +98,6 @@
     color: #ffffff !important;
 }
 
-/* Улучшаем отображение блока с прикрепленными файлами в карточке заметки */
 .dark-theme .note-files-container {
     background-color: #2a2f36;
     border-radius: 8px;
@@ -124,7 +107,6 @@
     margin-bottom: 15px;
 }
 
-/* Улучшаем видимость названия файлов в карточке */
 .dark-theme .note-file-item,
 .dark-theme a.note-file-item {
     color: #ffffff !important;
@@ -143,7 +125,6 @@
     border-color: #6c757d;
 }
 
-/* Улучшаем отображение блока "Прикрепленные файлы" на странице с темной темой */
 .dark-theme .attached-files-header {
     color: #ffffff !important;
     background-color: #2a2f36;
@@ -154,7 +135,6 @@
     font-weight: 600;
 }
 
-/* Кнопка "выберите файлы" в зоне загрузки */
 .dark-theme .file-upload-area {
     background-color: #2a2f36 !important;
     border: 2px dashed #6c757d !important;
@@ -175,18 +155,15 @@
     font-weight: 500;
 }
 
-/* Улучшаем видимость текста в зоне загрузки */
 .dark-theme .file-upload-instructions {
     color: #ffffff !important;
     margin-top: 10px;
 }
 
-/* Улучшенное отображение белых текстовых элементов на темном фоне */
 .dark-theme {
     color-scheme: dark;
 }
 
-/* Улучшаем контрастность текста внутри редактора */
 .dark-theme .ql-editor {
     color: #ffffff !important;
 }
@@ -205,7 +182,6 @@
     color: #ffffff !important;
 }
 
-/* Улучшение контрастности для облачной иконки загрузки файлов */
 .dark-theme .fa-cloud-upload-alt,
 .dark-theme .fa-cloud-upload,
 .dark-theme .fa-upload {
@@ -214,7 +190,6 @@
     margin-bottom: 10px;
 }
 
-/* Улучшаем контрастность для прикрепленных файлов в списке */
 .dark-theme a[href^="/storage/"],
 .dark-theme a[href^="/file/"],
 .dark-theme a[href*=".jpg"],
@@ -233,7 +208,6 @@
     text-decoration: none;
 }
 
-/* Исправляем контрастность текста "выберите файлы" */
 .dark-theme .btn-outline-primary {
     color: #0d6efd !important;
     border-color: #0d6efd !important;
@@ -244,7 +218,6 @@
     background-color: #0d6efd !important;
 }
 
-/* Добавляем контрастности для элементов блока прикрепленных файлов */
 .dark-theme span.file-counter,
 .dark-theme .attachment-count {
     color: #ffffff !important;
@@ -254,12 +227,10 @@
     font-weight: 500;
 }
 
-/* Исправляем видимость всех текстовых элементов с классом text-muted */
 .dark-theme .text-muted {
     color: #adb5bd !important;
 }
 
-/* Улучшаем контрастность для кнопки выбора файлов */
 .dark-theme .btn-file-select,
 .dark-theme a.btn-file-select,
 .dark-theme button.btn-file-select {
@@ -274,7 +245,6 @@
     margin-top: 10px;
 }
 
-/* Явно выделяем ссылки для загрузки файлов */
 .dark-theme .file-upload-area .btn,
 .dark-theme .file-upload-area .btn-primary {
     color: #ffffff !important;
@@ -287,7 +257,6 @@
     font-weight: 500;
 }
 
-/* Явно выделяем текст "выберите файлы" */
 .dark-theme a[href^="javascript"][onclick*="file"],
 .dark-theme a.file-select-link,
 .dark-theme span.file-select-text {
@@ -297,7 +266,6 @@
     background-color: transparent !important;
 }
 
-/* Улучшаем видимость текста в области загрузки файлов */
 .dark-theme .file-upload-area .upload-text,
 .dark-theme .file-upload-text {
     color: #ffffff !important;
@@ -305,21 +273,18 @@
     font-size: 1.1rem;
 }
 
-/* Исправляем цвет иконки загрузки */
 .dark-theme .fa-cloud-arrow-up,
 .dark-theme .fa-cloud-upload-alt {
     color: #0d6efd !important;
     font-size: 2.5rem;
 }
 
-/* Исправляем видимость прикрепленных файлов в режиме просмотра */
 .dark-theme .existing-files-container a,
 .dark-theme .existing-files-container span,
 .dark-theme .existing-files-container div {
     color: #ffffff !important;
 }
 
-/* Улучшаем отображение списка файлов в карточке заметки */
 .dark-theme .note-files-list {
     background-color: #353941;
     border-radius: 8px;
@@ -346,7 +311,6 @@
     border-color: #6c757d;
 }
 
-/* Делаем заголовок "Прикрепленные файлы" более контрастным */
 .dark-theme h3,
 .dark-theme h3.mb-3,
 .dark-theme .files-header {
@@ -357,7 +321,6 @@
     font-weight: 600;
 }
 
-/* Улучшение видимости кнопки "Посмотреть" */
 .dark-theme .btn-primary {
     background-color: #0d6efd;
     border-color: #0b5ed7;
@@ -369,14 +332,12 @@
     border-color: #0a58ca;
 }
 
-/* Улучшение для отображения списка прикрепленных файлов с подсчетом (10): */
 .dark-theme .files-section h3 {
     color: #ffffff !important;
     font-weight: 600;
     margin-bottom: 15px;
 }
 
-/* Исправление для файлов в списке в карточке заметки */
 .dark-theme .note-item .file,
 .dark-theme .note-card .file {
     background-color: #353941;
@@ -396,7 +357,6 @@
     border-color: #6c757d;
 }
 
-/* Специфические исправления для области выбора файлов на форме создания/редактирования */
 .dark-theme .file-upload-container {
     background-color: #2a2f36;
     border: 1px solid #495057;
@@ -406,7 +366,6 @@
     margin-bottom: 15px;
 }
 
-/* Улучшаем видимость текста "выберите файлы" */
 .dark-theme .file-upload-area .file-select-link {
     color: #0d6efd !important;
     font-weight: 600;
@@ -415,7 +374,6 @@
     border: none !important;
 }
 
-/* Исправляем отображение текста рядом с облачной иконкой */
 .dark-theme .upload-cloud-icon + span,
 .dark-theme .fa-cloud-upload-alt + span,
 .dark-theme .fa-cloud-arrow-up + span {
@@ -424,7 +382,6 @@
     margin-left: 10px;
 }
 
-/* Делаем более видимыми элементы формы и поле описания */
 .dark-theme textarea.form-control,
 .dark-theme input[type="text"].form-control,
 .dark-theme input[type="search"].form-control {
@@ -442,14 +399,12 @@
     box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
 }
 
-/* Исправление для плейсхолдера в темной теме */
 .dark-theme input::placeholder,
 .dark-theme textarea::placeholder {
     color: #adb5bd !important;
     opacity: 1;
 }
 
-/* Исправляем отображение архива */
 .dark-theme .archive-empty-container .card,
 .dark-theme .trash-empty-container .card {
     background-color: var(--dark-bg-secondary);
@@ -457,27 +412,23 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Убираем нижнюю линию в архиве на темной теме */
 .dark-theme .archive-header:after,
 .dark-theme .trash-header:after {
     display: none;
 }
 
-/* Улучшаем контрастность текста в пустом архиве и корзине */
 .dark-theme .archive-empty-text,
 .dark-theme .trash-empty-text {
     color: var(--dark-text-primary);
     font-weight: 500;
 }
 
-/* Улучшаем видимость иконок в пустом архиве и корзине */
 .dark-theme .archive-icon,
 .dark-theme .trash-icon {
     color: var(--dark-text-secondary);
     opacity: 0.9;
 }
 
-/* Улучшаем контраст для информационных уведомлений в темной теме */
 .dark-theme .alert-info,
 .dark-theme .alert-warning,
 .dark-theme .alert-danger {
@@ -486,7 +437,6 @@
     color: var(--dark-text-primary);
 }
 
-/* Исправляем отображение уведомления о корзине */
 .dark-theme .trash-notification,
 .dark-theme .archive-notification {
     background-color: rgba(220, 53, 69, 0.2);
@@ -494,7 +444,6 @@
     color: #fff;
 }
 
-/* Улучшаем отображение панели фильтров и сортировки */
 .dark-theme .filter-buttons .btn {
     background-color: var(--dark-bg-tertiary);
     border-color: var(--dark-border-color);
@@ -506,7 +455,6 @@
     color: white;
 }
 
-/* Исправляем отображение счетчиков */
 .dark-theme .badge.bg-primary,
 .dark-theme .badge.bg-success,
 .dark-theme .badge.bg-info,
@@ -514,7 +462,6 @@
     color: #fff !important;
 }
 
-/* Улучшаем отображение поиска */
 .dark-theme .search-container input {
     background-color: var(--dark-bg-tertiary);
     color: var(--dark-text-primary);
@@ -525,7 +472,6 @@
     filter: invert(1);
 }
 
-/* Улучшаем читаемость текста в заметках */
 .dark-theme .note-content {
     color: var(--dark-text-primary) !important;
 }
@@ -540,34 +486,29 @@
     color: var(--dark-text-secondary) !important;
 }
 
-/* Улучшаем контраст для статусов заметок */
 .dark-theme .note-status {
     background-color: var(--dark-bg-tertiary);
     border: 1px solid var(--dark-border-color);
     color: var(--dark-text-primary);
 }
 
-/* Стилизация заметок в корзине и архиве */
 .dark-theme .archived-note,
 .dark-theme .trashed-note {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--dark-border-color);
 }
 
-/* Улучшаем отображение меток заметок */
 .dark-theme .note-tag {
     background-color: #2c3e50;
     color: #ecf0f1;
 }
 
-/* Исправляем отображение предупреждений в заметках */
 .dark-theme .note-warning {
     background-color: rgba(255, 193, 7, 0.2);
     border: 1px solid rgba(255, 193, 7, 0.3);
     color: #fff;
 }
 
-/* Исправляем отображение текста в уведомлениях и тостах */
 .dark-theme .toast-header,
 .dark-theme .toast-body {
     background-color: var(--dark-bg-tertiary);
@@ -575,7 +516,6 @@
     border-color: var(--dark-border-color);
 }
 
-/* Исправляем отображение активных табов и кнопок */
 .dark-theme .nav-tabs .nav-link.active {
     background-color: var(--dark-bg-tertiary);
     color: var(--dark-text-primary);

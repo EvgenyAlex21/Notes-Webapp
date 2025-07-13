@@ -122,13 +122,15 @@ $(document).ready(function() {
         });
     }
     function setActiveFolderFromUrl() {
-        const currentUrl = window.location.pathname;
-        if (currentUrl.includes('/notes/folder/')) {
-            resetFolderStyles();
-            const folderId = currentUrl.split('/').pop();
-            const folderItem = $(`.folder-item a[href*="/notes/folder/${folderId}"]`).closest('.folder-item');
-            if (folderItem.length > 0) {
-                folderItem.addClass('active-folder');
+        const url = window.location.href;
+        if (url.includes('/notes/folder/')) {
+            const folderId = url.split('/').pop();
+            try {
+                localStorage.setItem('activeFolder', folderId);
+                $('.folder-link').removeClass('active');
+                $(`.folder-link[href$="/notes/folder/${folderId}"]`).addClass('active');
+            } catch (e) {
+                console.error('Ошибка при установке активной папки:', e);
             }
         }
     }
@@ -214,8 +216,9 @@ function updateSidebarCounters() {
         updateMainPageCounterExcludingFolders(statsSource);
     } else if (currentPath.includes('/notes/folder')) {
         updateFolderPageCounter();
-    } else if (currentPath.includes('/notes/') && currentPath.includes('/edit')) {
-        $('#all-notes-count').text(statsSource.total || 0);
+    } else    if (currentPath.includes('/notes/') && currentPath.includes('/edit')) {
+        const totalActive = Math.max(0, statsSource.active || 0);
+        $('#all-notes-count').text(totalActive);
         $('#archive-notes-count').text(statsSource.archived || 0);
         $('#trash-notes-count').text(statsSource.trashed || 0);
         $('#calendar-notes-count').text(statsSource.calendar || 0);
@@ -249,8 +252,8 @@ function updateCountersFromAPI(statsSource, currentPath) {
         currentPath.match(/\/notes\/\d+$/)
     );
     if (isEditPage) {
-        const totalNotesCount = (statsSource.total || 0) - (statsSource.archived || 0) - (statsSource.trashed || 0);
-        $('#all-notes-count').text(totalNotesCount);
+        const totalActive = Math.max(0, statsSource.active || 0);
+        $('#all-notes-count').text(totalActive);
         $('#archive-notes-count').text(statsSource.archived || 0);
         $('#trash-notes-count').text(statsSource.trashed || 0);
         $('#calendar-notes-count').text(statsSource.calendar || 0);
@@ -274,32 +277,28 @@ function updateCountersFromAPI(statsSource, currentPath) {
 }
 
 function updateMainPageCounterExcludingFolders(statsSource) {
-    let mainPageCount = 0;
-    const totalNotesElement = $('#total-notes');
-    if (totalNotesElement.length > 0) {
-        const match = totalNotesElement.text().match(/Всего:\s*(\d+)/);
-        if (match && match[1]) {
-            mainPageCount = parseInt(match[1]);
-        }
-    }
-    if (mainPageCount === 0) {
-        mainPageCount = $('.note-item').length;
-    }
-    console.log('Счетчик "Все заметки" на главной странице (без папок):', mainPageCount);
-    $('#all-notes-count').text(mainPageCount);
+    const totalActive = Math.max(0, statsSource.active || 0);
+    $('#all-notes-count').text(totalActive);
+    console.log('Счетчик "Все заметки" на главной странице:', totalActive);
 }
 
 function updateFolderPageCounter() {
     const statsSource = window.statsData || sidebarStatsData;
     if (statsSource && statsSource.total !== undefined) {
-        let totalWithoutFolders = statsSource.total || 0;
-        if (statsSource.by_folder) {
-            Object.values(statsSource.by_folder).forEach(folderCount => {
-                totalWithoutFolders -= folderCount;
-            });
+        const totalActive = Math.max(0, statsSource.active || 0);
+        $('#all-notes-count').text(totalActive);
+        console.log('Счетчик "Все заметки" в папке:', totalActive);
+        
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/notes/folder/')) {
+            const folderName = decodeURIComponent(currentPath.split('/').pop());
+            const normalizedName = folderName.toLowerCase().trim();
+            const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
+            
+            if ($('.note-item').length === 0) {
+                $(`#${folderId} .badge`).text(0);
+            }
         }
-        $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
-        console.log('Счетчик "Все заметки" в папке (общие заметки без папок):', Math.max(0, totalWithoutFolders));
     }
 }
 
@@ -325,13 +324,8 @@ function updateCurrentPageCounter(pagePath, statsSource) {
     try {
         if (pagePath.includes('/notes/create') || pagePath.includes('/notes/edit')) {
             if (statsSource) {
-                let totalWithoutFolders = statsSource.total || 0;
-                if (statsSource.by_folder) {
-                    Object.values(statsSource.by_folder).forEach(folderCount => {
-                        totalWithoutFolders -= folderCount;
-                    });
-                }
-                $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
+                const totalActive = Math.max(0, statsSource.active || 0);
+                $('#all-notes-count').text(totalActive);
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
                 $('#calendar-notes-count').text(statsSource.calendar || 0);
@@ -372,39 +366,24 @@ function updateCurrentPageCounter(pagePath, statsSource) {
         if (pagePath.includes('/notes/archive')) {
             $('#archive-notes-count').text(countToUse);
             if (statsSource) {
-                let totalWithoutFolders = statsSource.total || 0;
-                if (statsSource.by_folder) {
-                    Object.values(statsSource.by_folder).forEach(folderCount => {
-                        totalWithoutFolders -= folderCount;
-                    });
-                }
-                $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
+                const totalActive = Math.max(0, statsSource.active || 0);
+                $('#all-notes-count').text(totalActive);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
                 $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/trash') || pagePath.includes('/notes/new-trash')) {
             $('#trash-notes-count').text(countToUse);
             if (statsSource) {
-                let totalWithoutFolders = statsSource.total || 0;
-                if (statsSource.by_folder) {
-                    Object.values(statsSource.by_folder).forEach(folderCount => {
-                        totalWithoutFolders -= folderCount;
-                    });
-                }
-                $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
+                const totalActive = Math.max(0, statsSource.active || 0);
+                $('#all-notes-count').text(totalActive);
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/calendar')) {
             $('#calendar-notes-count').text(countToUse);
             if (statsSource) {
-                let totalWithoutFolders = statsSource.total || 0;
-                if (statsSource.by_folder) {
-                    Object.values(statsSource.by_folder).forEach(folderCount => {
-                        totalWithoutFolders -= folderCount;
-                    });
-                }
-                $('#all-notes-count').text(Math.max(0, totalWithoutFolders));
+                const totalActive = Math.max(0, statsSource.active || 0);
+                $('#all-notes-count').text(totalActive);
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
             }
@@ -418,6 +397,17 @@ function updateCurrentPageCounter(pagePath, statsSource) {
 }
 
 function updateMainPageCounter() {
+    const statsSource = window.statsData || sidebarStatsData;
+    
+    if (statsSource && statsSource.total !== undefined) {
+        const totalActive = Math.max(0, statsSource.active || 0);
+        $('#all-notes-count').text(totalActive);
+        $('#archive-notes-count').text(statsSource.archived || 0);
+        $('#trash-notes-count').text(statsSource.trashed || 0);
+        $('#calendar-notes-count').text(statsSource.calendar || 0);
+        return totalActive;
+    }
+    
     const totalNotesElement = $('#total-notes');
     let visibleNotesCount = 0;
     if (totalNotesElement.length > 0) {
@@ -428,6 +418,7 @@ function updateMainPageCounter() {
             return visibleNotesCount;
         }
     }
+    
     const counterTotal = $('.counter-total');
     if (counterTotal.length > 0) {
         const counterValue = parseInt(counterTotal.text());
@@ -437,6 +428,7 @@ function updateMainPageCounter() {
             return visibleNotesCount;
         }
     }
+    
     const alternativeSelectors = [
         '.card-header .badge:contains("Всего")', 
         '.header-counters .badge:contains("Всего")',
@@ -456,6 +448,7 @@ function updateMainPageCounter() {
             }
         }
     }
+    
     const bodyText = $('body').text();
     const bodyMatch = bodyText.match(/Всего:?\s*(\d+)/);
     if (bodyMatch && bodyMatch[1]) {
@@ -463,9 +456,24 @@ function updateMainPageCounter() {
         $('#all-notes-count').text(visibleNotesCount);
         return visibleNotesCount;
     }
+    
     visibleNotesCount = $('.note-item').length;
     $('#all-notes-count').text(visibleNotesCount);
     return visibleNotesCount;
+}
+
+function setActiveFolderFromUrl() {
+    const url = window.location.href;
+    if (url.includes('/notes/folder/')) {
+        const folderId = url.split('/').pop();
+        try {
+            localStorage.setItem('activeFolder', folderId);
+            $('.folder-link').removeClass('active');
+            $(`.folder-link[href$="/notes/folder/${folderId}"]`).addClass('active');
+        } catch (e) {
+            console.error('Ошибка при установке активной папки:', e);
+        }
+    }
 }
 
 function handleSidebarChanges() {
@@ -508,10 +516,20 @@ function updateFolderCountersFromAPI() {
             if (response && response.success && response.data) {
                 response.data.forEach(function(folder) {
                     const folderName = folder.name;
-                    const count = folder.count || 0;
+                    const count = Math.max(0, folder.count || 0);
                     const normalizedName = folderName.toLowerCase().trim();
                     const folderId = 'folder-' + normalizedName.replace(/[^a-z0-9]/g, '-');
-                    $(`#${folderId} .badge`).text(count);
+                    
+                    const currentPath = window.location.pathname;
+                    const currentFolderName = decodeURIComponent(currentPath.split('/').pop());
+                    
+                    if (currentPath.includes('/notes/folder/') && 
+                        currentFolderName === folderName && 
+                        $('.note-item').length === 0) {
+                        $(`#${folderId} .badge`).text(0);
+                    } else {
+                        $(`#${folderId} .badge`).text(count);
+                    }
                 });
                 console.log('Счетчики папок обновлены из API');
             }

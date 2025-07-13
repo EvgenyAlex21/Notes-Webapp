@@ -1,28 +1,22 @@
-/**
- * Общие стили для темной темы
- * Обеспечивает единое отображение темной темы на всех страницах приложения
- */
-
-/* Основные цвета для темной темы */
 :root {
-    --dark-bg-primary: #121417;       /* Обновлено: немного темнее */
-    --dark-bg-secondary: #1e2227;     /* Обновлено: немного темнее */
-    --dark-bg-tertiary: #2a2f36;      /* Обновлено: немного темнее */
-    --dark-text-primary: #ffffff;     /* Обновлено: ярче для лучшей контрастности */
-    --dark-text-secondary: #e0e0e0;   /* Обновлено: ярче для лучшей контрастности */
-    --dark-text-muted: #b0b8c4;       /* Обновлено: ярче для лучшей контрастности */
+    --dark-bg-primary: #121417;      
+    --dark-bg-secondary: #1e2227;    
+    --dark-bg-tertiary: #2a2f36;     
+    --dark-text-primary: #ffffff;    
+    --dark-text-secondary: #e0e0e0;  
+    --dark-text-muted: #b0b8c4;      
     --dark-border-color: #495057;
     --dark-border-light: #5a606b;
     --dark-highlight: #4a5568;
 }
 
-/* Основное оформление */
+
 body.dark-theme {
     background-color: var(--dark-bg-primary);
     color: var(--dark-text-primary);
 }
 
-/* Заголовки и основные компоненты */
+
 .dark-theme h1, 
 .dark-theme h2, 
 .dark-theme h3, 
@@ -43,7 +37,7 @@ body.dark-theme {
     border-color: var(--dark-border-color);
 }
 
-/* Элементы ввода */
+
 .dark-theme .form-control,
 .dark-theme .form-select,
 .dark-theme .input-group-text {
@@ -59,7 +53,7 @@ body.dark-theme {
     border-color: #0d6efd;
 }
 
-/* Заметки */
+
 .dark-theme .note-item {
     background-color: var(--dark-bg-secondary);
     border-color: var(--dark-border-color);
@@ -69,7 +63,7 @@ body.dark-theme {
     color: var(--dark-text-primary) !important;
 }
 
-/* Исправляем отображение текста в карточке заметки */
+
 .dark-theme .note-content,
 .dark-theme .note-content p,
 .dark-theme .note-content div,
@@ -86,14 +80,14 @@ body.dark-theme {
     color: var(--dark-text-primary) !important;
 }
 
-/* Исправляем отображение заголовка заметки */
+
 .dark-theme .note-item h4,
 .dark-theme .note-header h4 {
     color: var(--dark-text-primary) !important;
     font-weight: 600;
 }
 
-/* Панель навигации */
+
 .dark-theme .sidebar {
     background-color: var(--dark-bg-secondary);
     border-color: var(--dark-border-color);
@@ -115,21 +109,21 @@ body.dark-theme {
     color: #ffffff !important;
 }
 
-/* Теги */
+
 .dark-theme .tag {
     background-color: var(--dark-bg-tertiary);
     color: var(--dark-text-primary) !important;
     border: 1px solid var(--dark-border-light);
 }
 
-/* Значок закрепления */
+
 .dark-theme .pin-badge {
     background-color: #ffac33;
     color: #212529;
     font-weight: bold;
 }
 
-/* Поиск */
+
 .dark-theme .search-results {
     background-color: var(--dark-bg-secondary);
     border-color: var(--dark-border-color);
@@ -143,7 +137,7 @@ body.dark-theme {
     background-color: var(--dark-highlight);
 }
 
-/* Кнопки */
+
 .dark-theme .btn-light {
     background-color: var(--dark-bg-tertiary);
     border-color: var(--dark-border-color);
@@ -160,7 +154,7 @@ body.dark-theme {
     color: var(--dark-text-primary);
 }
 
-/* Утилиты */
+
 .dark-theme .text-muted {
     color: var(--dark-text-muted) !important;
 }
@@ -183,7 +177,7 @@ body.dark-theme {
     border-top-color: var(--dark-border-color);
 }
 
-/* Файлы */
+
 .dark-theme .file-preview-card {
     background-color: var(--dark-bg-tertiary);
 }
@@ -192,7 +186,7 @@ body.dark-theme {
     background-color: var(--dark-bg-primary);
 }
 
-/* Модальные окна */
+
 .dark-theme #viewNoteModal .modal-content,
 .dark-theme #fileViewerModal .modal-content {
     background-color: var(--dark-bg-secondary);
@@ -204,7 +198,7 @@ body.dark-theme {
     border-color: var(--dark-border-color);
 }
 
-/* Стили для календаря */
+
 .dark-theme .calendar-container,
 .dark-theme .fc-theme-standard td, 
 .dark-theme .fc-theme-standard th {
@@ -255,7 +249,7 @@ body.dark-theme {
     background-color: var(--dark-bg-tertiary);
 }
 
-/* Стили для списка файлов */
+
 .dark-theme .existing-files-container,
 .dark-theme .files-container {
     background-color: var(--dark-bg-tertiary);
@@ -295,7 +289,7 @@ body.dark-theme {
     background-color: var(--dark-bg-secondary);
 }
 
-/* Quill Editor в темной теме */
+
 .dark-theme .ql-toolbar.ql-snow,
 .dark-theme .ql-container.ql-snow {
     border-color: var(--dark-border-color) !important;
@@ -337,7 +331,7 @@ body.dark-theme {
     fill: var(--dark-text-primary) !important;
 }
 
-/* Улучшаем контрастность текста */
+
 .dark-theme {
     color: var(--dark-text-primary);
 }
@@ -348,7 +342,7 @@ body.dark-theme {
     color: var(--dark-text-primary);
 }
 
-/* Дополнительная контрастность для текста в карточках */
+
 .dark-theme .note-item * {
     color: var(--dark-text-primary);
 }
@@ -367,7 +361,7 @@ body.dark-theme {
     color: var(--dark-text-primary) !important;
 }
 
-/* Выделение тегов в темной теме */
+
 .dark-theme .tag {
     background-color: var(--dark-bg-tertiary);
     color: var(--dark-text-primary) !important;
@@ -382,7 +376,7 @@ body.dark-theme {
     color: var(--dark-text-primary);
 }
 
-/* Исправляем видимость HTML-контента в Quill редакторе */
+
 .dark-theme .ql-editor p,
 .dark-theme .ql-editor h1,
 .dark-theme .ql-editor h2, 
@@ -393,7 +387,7 @@ body.dark-theme {
     color: var(--dark-text-primary) !important;
 }
 
-/* Улучшаем контрастность для файлов в темной теме */
+
 .dark-theme .file-item .file-name {
     color: var(--dark-text-primary) !important;
 }
@@ -402,13 +396,13 @@ body.dark-theme {
     color: var(--dark-text-secondary) !important;
 }
 
-/* Исправляем контрастность для элементов списка */
+
 .dark-theme ul li, 
 .dark-theme ol li {
     color: var(--dark-text-primary);
 }
 
-/* Исправляем контрастность для ссылок */
+
 .dark-theme a:not(.btn) {
     color: #3f9fff;
 }
@@ -417,13 +411,13 @@ body.dark-theme {
     color: #63b1ff;
 }
 
-/* Контрастность для инпутов и элементов ввода */
+
 .dark-theme input::placeholder,
 .dark-theme textarea::placeholder {
     color: var(--dark-text-muted);
 }
 
-/* Исправляем видимость текста в фильтрах и выпадающих меню */
+
 .dark-theme .dropdown-menu,
 .dark-theme .filter-options {
     background-color: var(--dark-bg-secondary);
@@ -440,7 +434,7 @@ body.dark-theme {
     background-color: var(--dark-highlight);
 }
 
-/* Контрастное отображение счетчиков файлов */
+
 .dark-theme .file-counter,
 .dark-theme .attachment-count {
     color: var(--dark-text-primary) !important;
@@ -450,7 +444,7 @@ body.dark-theme {
     font-weight: 500;
 }
 
-/* Четкое отображение списков файлов */
+
 .dark-theme ul.note-files-list {
     background-color: var(--dark-bg-tertiary);
     border-radius: 8px;
@@ -467,13 +461,13 @@ body.dark-theme {
     border-bottom: none;
 }
 
-/* Убираем нежелательные линии/полоски */
+
 .dark-theme .note-item:after,
 .dark-theme .note-item:before {
     display: none !important;
 }
 
-/* Заголовки разделов */
+
 .dark-theme h3,
 .dark-theme h3.mb-3 {
     color: var(--dark-text-primary);
@@ -482,7 +476,7 @@ body.dark-theme {
     margin-bottom: 15px;
 }
 
-/* Исправляем отображение прикрепленных файлов */
+
 .dark-theme .existing-files-container,
 .dark-theme .files-container {
     background-color: var(--dark-bg-secondary) !important;
@@ -491,7 +485,7 @@ body.dark-theme {
     border-radius: 8px;
 }
 
-/* Файлы в заметке - белый текст на темном фоне */
+
 .dark-theme .existing-files-container a,
 .dark-theme .files-container a {
     color: var(--dark-text-primary) !important;

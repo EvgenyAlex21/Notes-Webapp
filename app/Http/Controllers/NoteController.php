@@ -339,12 +339,10 @@ class NoteController extends Controller
         
         $note = Note::create($data);
         
-        // Если запрос через AJAX, возвращаем JSON
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['data' => $note]);
         }
         
-        // Если обычный POST запрос, делаем редирект
         return redirect()->route('notes.show', $note->id)->with('success', 'Заметка успешно создана');
     }
 
@@ -779,6 +777,7 @@ class NoteController extends Controller
             foreach ($folders as $folderName) {
                 $count = Note::where('folder', $folderName)
                           ->where('is_deleted', false)
+                          ->where('is_archived', false) 
                           ->count();
                 
                 $folderData[] = [
@@ -815,12 +814,10 @@ class NoteController extends Controller
     
     public function getByDueDate(Request $request)
     {
-        // Для календаря получаем диапазон дат
         if ($request->has('start') && $request->has('end')) {
             $start = $request->input('start');
             $end = $request->input('end');
             
-            // Преобразуем ISO 8601 в дату
             $startDate = Carbon::parse($start)->format('Y-m-d');
             $endDate = Carbon::parse($end)->format('Y-m-d');
             
@@ -836,7 +833,6 @@ class NoteController extends Controller
             return response()->json(['success' => true, 'data' => $notes]);
         }
         
-        // Для старого API с одной датой
         $date = $request->validate([
             'date' => 'required|date_format:Y-m-d',
         ]);
@@ -886,6 +882,7 @@ class NoteController extends Controller
         foreach ($folders as $folder) {
             $folderStats[$folder] = Note::where('folder', $folder)
                 ->where('is_deleted', false)
+                ->where('is_archived', false) 
                 ->count();
         }
         

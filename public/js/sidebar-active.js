@@ -44,7 +44,7 @@ function updateActiveSidebar() {
             
             if (!foundFolder) {
                 $('.folder-item').each(function() {
-                    const linkText = $(this).find('.folder-link').text().trim().replace(/\s*\d+\s*$/, ''); // Удаляем счетчик из текста
+                    const linkText = $(this).find('.folder-link').text().trim().replace(/\s*\d+\s*$/, ''); 
                     if (linkText === folderName || linkText.includes(folderName) || folderName.includes(linkText)) {
                         $(this).addClass('active-folder');
                         $(this).find('.folder-link').addClass('active');
