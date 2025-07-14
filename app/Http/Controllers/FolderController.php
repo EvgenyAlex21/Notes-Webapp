@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Note;
 use App\Models\Folder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class FolderController extends Controller
 {
@@ -19,16 +20,20 @@ class FolderController extends Controller
             'new_folder' => 'required|string|different:old_folder'
         ]);
         
-        $newFolderExists = Folder::where('name', $validatedData['new_folder'])->exists();
+        $newFolderExists = Folder::where('name', $validatedData['new_folder'])
+                                 ->where('user_id', Auth::id())
+                                 ->exists();
                               
         $oldNewFolderExists = Note::where('folder', $validatedData['new_folder'])
-                               ->where('is_deleted', false)
-                               ->exists();
+                                 ->where('is_deleted', false)
+                                 ->where('user_id', Auth::id())
+                                 ->exists();
         
         if ($newFolderExists || $oldNewFolderExists) {
             $deletedFolder = Folder::where('name', $validatedData['new_folder'])
-                            ->where('is_deleted', true)
-                            ->first();
+                                  ->where('is_deleted', true)
+                                  ->where('user_id', Auth::id())
+                                  ->first();
                 
             if ($deletedFolder) {
                 $deletedFolder->delete();
@@ -57,6 +62,7 @@ class FolderController extends Controller
         try {
             $folder = Folder::where('name', $validatedData['old_folder'])
                       ->where('is_deleted', false)
+                      ->where('user_id', Auth::id())
                       ->first();
             
             if ($folder) {
@@ -66,11 +72,13 @@ class FolderController extends Controller
                 $folder = new Folder();
                 $folder->name = $validatedData['new_folder'];
                 $folder->is_deleted = false;
+                $folder->user_id = Auth::id();
                 $folder->save();
             }
             
             $updatedCount = Note::where('folder', $validatedData['old_folder'])
                               ->where('is_deleted', false)
+                              ->where('user_id', Auth::id())
                               ->update(['folder' => $validatedData['new_folder']]);
             
             return response()->json([
@@ -105,10 +113,12 @@ class FolderController extends Controller
         try {
             $folder = Folder::where('name', $validatedData['folder'])
                       ->where('is_deleted', false)
+                      ->where('user_id', Auth::id())
                       ->first();
             
             $oldFolderExists = Note::where('folder', $validatedData['folder'])
                              ->where('is_deleted', false)
+                             ->where('user_id', Auth::id())
                              ->exists();
             
             if (!$folder && !$oldFolderExists) {
@@ -125,6 +135,7 @@ class FolderController extends Controller
 
             $updatedCount = Note::where('folder', $validatedData['folder'])
                               ->where('is_deleted', false)
+                              ->where('user_id', Auth::id())
                               ->update(['folder' => null]);
             
             return response()->json([
@@ -171,13 +182,16 @@ class FolderController extends Controller
         
         try {
             if ($folder) {
-                $folderExists = Folder::where('name', $folder)->exists();
+                $folderExists = Folder::where('name', $folder)
+                                     ->where('user_id', Auth::id())
+                                     ->exists();
                 
                 if (!$folderExists) {
                     \Log::info('Создаем новую папку', ['folder' => $folder]);
                     $newFolder = new Folder();
                     $newFolder->name = $folder;
                     $newFolder->is_deleted = false;
+                    $newFolder->user_id = Auth::id();
                     $newFolder->save();
                 }
             }
@@ -185,6 +199,7 @@ class FolderController extends Controller
             $folder = $folder === '' ? null : (string)$folder;
             $updatedCount = Note::whereIn('id', $noteIds)
                             ->where('is_deleted', false)
+                            ->where('user_id', Auth::id())
                             ->update(['folder' => $folder]);
             
             \Log::info('Обновлено заметок', ['count' => $updatedCount, 'folder_type' => gettype($folder)]);
@@ -222,16 +237,20 @@ class FolderController extends Controller
         ]);
         
         try {
-            $folderExists = Folder::where('name', $validatedData['folder'])->exists();
+            $folderExists = Folder::where('name', $validatedData['folder'])
+                                 ->where('user_id', Auth::id())
+                                 ->exists();
             
             $oldFolderExists = Note::where('folder', $validatedData['folder'])
                              ->where('is_deleted', false)
+                             ->where('user_id', Auth::id())
                              ->exists();
             
             if ($folderExists || $oldFolderExists) {
                 $deletedFolder = Folder::where('name', $validatedData['folder'])
-                                ->where('is_deleted', true)
-                                ->first();
+                                      ->where('is_deleted', true)
+                                      ->where('user_id', Auth::id())
+                                      ->first();
                 
                 if ($deletedFolder) {
                     $deletedFolder->is_deleted = false;
@@ -270,6 +289,7 @@ class FolderController extends Controller
             $folder = new Folder();
             $folder->name = $validatedData['folder'];
             $folder->is_deleted = false;
+            $folder->user_id = Auth::id();
             $folder->save();
             
             return response()->json([

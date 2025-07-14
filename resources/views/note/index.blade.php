@@ -19,13 +19,17 @@
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/unified-notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notification-text-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-cards-uniform.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
@@ -36,6 +40,7 @@
     <script src="{{ asset('js/mobile-responsive.js') }}"></script>
     <script src="{{ asset('js/advanced-mobile.js') }}"></script>
     <script src="{{ asset('js/mobile-init.js') }}"></script>
+    <script src="{{ asset('js/counter-updater.js') }}"></script>
     <script>
         const originalWarn = console.warn;
         console.warn = function() {
@@ -76,6 +81,51 @@
             border-left: 5px solid #6c757d;
             position: relative;
             border-top: none;
+            min-height: 280px; 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .note-item .row {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .note-item .col-12 {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .note-item .note-header,
+        .note-item .note-meta,
+        .note-item .tags-container {
+            flex-shrink: 0;
+        }
+
+        .note-item .note-description {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .note-item .d-flex.justify-content-between.align-items-center {
+            margin-top: auto;
+            flex-shrink: 0;
+        }
+        
+        .note-item .note-content-preview {
+            max-height: 120px;
+            overflow: hidden;
+            position: relative;
+            padding-top: 0;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
         }
         .note-item:hover {
             box-shadow: 0 8px 20px rgba(0,0,0,0.12);
@@ -287,6 +337,9 @@
             border-top: none;
             border-right: none;
             border-bottom: none;
+            min-height: 280px; 
+            display: flex;
+            flex-direction: column;
         }
         .dark-theme .note-item.pinned {
             background-color: #3b3a30;
@@ -654,31 +707,62 @@
             transform: translateY(-2px);
             box-shadow: 0 3px 8px rgba(0,0,0,0.1);
         }
+        
+        .user-mini-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <h1 class="h3 mb-0 order-1">
                     <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : (isset($archiveMode) && $archiveMode ? 'fas fa-archive' : (isset($folderMode) && $folderMode ? 'fas fa-folder' : 'fas fa-sticky-note')) }} me-2"></i> 
                     <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : (isset($archiveMode) && $archiveMode ? 'Архив' : (isset($folderMode) && $folderMode ? '' . $folderName : 'Заметки')) }}</span>
                 </h1>
-                @if(isset($trashMode) && $trashMode)
-                    <button id="empty-trash" class="btn btn-danger d-none-mobile">
-                        <i class="fas fa-trash-alt"></i> Очистить корзину
-                    </button>
-                    <button id="empty-trash-mobile" class="btn btn-danger d-block-mobile d-none">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                @else
-                    <a href="/notes/create" class="btn btn-primary d-flex align-items-center d-none-mobile">
-                        <i class="fas fa-plus me-2"></i> Создать заметку
-                    </a>
-                    <a href="/notes/create" class="btn btn-primary d-block-mobile d-none">
-                        <i class="fas fa-plus"></i>
-                    </a>
-                @endif
+                <div class="d-flex align-items-center ms-auto order-2">
+                    @if(isset($trashMode) && $trashMode)
+                        <button id="empty-trash" class="btn btn-danger d-none-mobile">
+                            <i class="fas fa-trash-alt me-2"></i> Очистить корзину
+                        </button>
+                    @else
+                        <a href="/notes/create" class="btn btn-primary d-flex align-items-center d-none-mobile">
+                            <i class="fas fa-plus me-2"></i> Создать заметку
+                        </a>
+                        <a href="/notes/create" class="btn btn-primary d-block-mobile d-md-none">
+                            <i class="fas fa-plus"></i>
+                        </a>
+                    @endif
+                    <div class="dropdown ms-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                            @else
+                                <i class="fas fa-user-circle me-1"></i>
+                            @endif
+                            <span>{{ Auth::user()->name }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="dropdown-item text-muted">{{ Auth::user()->email }}</li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a href="{{ route('profile.edit') }}" class="dropdown-item"><i class="fas fa-user-cog me-1"></i> Профиль</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt me-1"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -795,10 +879,10 @@
                         </div>
                     </div>
                     <div class="note-stats mb-3">
-                        <span class="badge bg-primary me-2" id="total-notes">Всего: 0</span>
-                        <span class="badge bg-success me-2" id="completed-notes">Выполнено: 0</span>
-                        <span class="badge bg-warning me-2" id="active-notes">Активно: 0</span>
-                        <span class="badge bg-info me-2" id="pinned-notes">Закреплено: 0</span>
+                        <span class="badge bg-primary me-2" id="total-notes">Всего: <span data-counter="total">0</span></span>
+                        <span class="badge bg-success me-2" id="completed-notes">Выполнено: <span data-counter="done">0</span></span>
+                        <span class="badge bg-warning me-2" id="active-notes">Активно: <span data-counter="active">0</span></span>
+                        <span class="badge bg-info me-2" id="pinned-notes">Закреплено: <span data-counter="pinned">0</span></span>
                     </div>
                     <div class="notes-container">
                     </div>

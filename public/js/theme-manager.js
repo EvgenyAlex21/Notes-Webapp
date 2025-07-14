@@ -1,22 +1,45 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
+    const userPreference = document.querySelector('meta[name="theme-preference"]')?.content;
     
-    setTheme(savedTheme);
+    let theme;
+    
+    if (userPreference === 'auto') {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        theme = prefersDark ? 'dark' : 'light';
+        
+        window.matchMedia('(prefers-color-scheme: dark)')
+            .addEventListener('change', e => {
+                setTheme(e.matches ? 'dark' : 'light');
+                localStorage.setItem('theme', e.matches ? 'dark' : 'light');
+            });
+    } else if (userPreference) {
+        theme = userPreference;
+    } else {
+        theme = localStorage.getItem('theme') || 'light';
+    }
+    
+    setTheme(theme);
+    
+    localStorage.setItem('theme', theme);
     
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
-        themeToggle.checked = savedTheme === 'dark';
+        updateThemeToggleState(themeToggle, theme);
         
-        themeToggle.addEventListener('change', function() {
-            const newTheme = this.checked ? 'dark' : 'light';
+        themeToggle.addEventListener('click', function() {
+            const newTheme = document.body.classList.contains('dark-theme') ? 'light' : 'dark';
             setTheme(newTheme);
             localStorage.setItem('theme', newTheme);
+            
+            const userId = document.querySelector('meta[name="user-id"]')?.content;
+            if (userId) {
+                updateUserThemePreference(newTheme);
+            }
         });
     }
 });
 
 /**
- * Устанавливает тему для всего приложения
  * @param {string} theme 
  */
 function setTheme(theme) {
@@ -28,6 +51,52 @@ function setTheme(theme) {
     
     const themeToggle = document.getElementById('theme-toggle');
     if (themeToggle) {
-        themeToggle.checked = theme === 'dark';
+        updateThemeToggleState(themeToggle, theme);
     }
+}
+
+/**
+ * @param {HTMLElement} toggleButton 
+ * @param {string} theme 
+ */
+function updateThemeToggleState(toggleButton, theme) {
+    const isDark = theme === 'dark';
+    
+    const iconElement = toggleButton.querySelector('i');
+    if (iconElement) {
+        iconElement.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    
+    const textElement = toggleButton.querySelector('span');
+    if (textElement) {
+        textElement.textContent = isDark ? 'Светлая тема' : 'Темная тема';
+    }
+}
+
+/**
+ * @param {string} theme
+ */
+function updateUserThemePreference(theme) {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    
+    if (!csrfToken) return;
+    
+    fetch('/api/update-theme-preference', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ theme_preference: theme })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Тема пользователя успешно обновлена');
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка при обновлении настроек темы:', error);
+    });
 }

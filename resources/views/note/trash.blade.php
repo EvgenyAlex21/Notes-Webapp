@@ -18,10 +18,14 @@
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/unified-notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notification-text-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/note-cards-uniform.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="{{ asset('js/scroll-top.js') }}"></script>
@@ -30,6 +34,7 @@
     <script src="{{ asset('js/mobile-responsive.js') }}"></script>
     <script src="{{ asset('js/advanced-mobile.js') }}"></script>
     <script src="{{ asset('js/mobile-init.js') }}"></script>
+    <script src="{{ asset('js/counter-updater.js') }}"></script>
     <style>
         .note-item {
             border-radius: 5px;

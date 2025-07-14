@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Note;
+use Illuminate\Support\Facades\Auth;
 
 class PagesController extends Controller
-{
+{    
     public function index()
     {
         return view('note.index', [
@@ -55,11 +56,27 @@ class PagesController extends Controller
 
     public function edit($id)
     {
+        $note = Note::where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->first();
+        
+        if (!$note) {
+            abort(404);
+        }
+        
         return view('note.edit', compact('id'));
     }
 
     public function show($id)
     {
+        $note = Note::where('id', $id)
+                    ->where('user_id', Auth::id())
+                    ->first();
+        
+        if (!$note) {
+            abort(404);
+        }
+        
         return view('note.index', [
             'trashMode' => false, 
             'archiveMode' => false,

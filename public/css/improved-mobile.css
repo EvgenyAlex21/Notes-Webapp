@@ -1,0 +1,142 @@
+@media (max-width: 767px) {
+    body {
+        overflow-x: hidden;
+    }
+    
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .header {
+        padding: 10px 0;
+    }
+    
+    .header .container {
+        flex-wrap: wrap;
+    }
+    
+    .header h1 {
+        font-size: 1.25rem;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+
+    .dropdown-menu-end {
+        right: 0;
+        left: auto;
+    }
+    
+    .header .d-flex {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .header .btn-primary {
+        margin-left: 0;
+        margin-top: 5px;
+    }
+    
+    .header .search-form {
+        width: 100%;
+        margin: 10px 0;
+        order: 3;
+    }
+    
+    .filters-container {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .filters-container .btn-group {
+        margin-bottom: 10px;
+        width: 100%;
+    }
+    
+    .notes-grid .note-item {
+        width: 100%;
+    }
+    
+    .form-control, .form-select {
+        margin-bottom: 10px;
+    }
+    
+    .mobile-nav-bottom {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #fff;
+        border-top: 1px solid rgba(0,0,0,.1);
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        z-index: 1000;
+    }
+    
+    .mobile-nav-bottom a {
+        text-align: center;
+        color: #666;
+        font-size: 0.8rem;
+    }
+    
+    .mobile-nav-bottom a i {
+        font-size: 1.2rem;
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .mobile-nav-bottom a.active {
+        color: #0d6efd;
+    }
+    
+    body {
+        padding-bottom: 70px;
+    }
+    
+    .dropdown, .dropdown button {
+        width: 100%;
+    }
+    
+    .header .justify-content-between {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 575px) {
+    .navbar-brand {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .btn-group-sm > .btn, .btn-sm {
+        padding: .25rem .4rem;
+        font-size: .75rem;
+    }
+    
+    .header .d-flex {
+        justify-content: center;
+    }
+    
+    .header .btn {
+        padding: .25rem .5rem;
+    }
+    
+    .header .d-flex.align-items-center {
+        flex-direction: column;
+        margin-bottom: 10px;
+    }
+    
+    .header .dropdown {
+        margin-bottom: 10px;
+    }
+    
+    #userDropdown {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 5px;
+    }
+}

@@ -10,155 +10,6 @@ function initNotificationsSystem() {
         notificationContainer.id = 'notification-container';
         notificationContainer.className = 'notification-container';
         document.body.appendChild(notificationContainer);
-
-        const style = document.createElement('style');
-        style.textContent = `
-            .notification-container {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 9999;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                max-width: 350px;
-                max-height: 90vh;
-                overflow-y: auto;
-                scrollbar-width: thin;
-                padding-right: 5px;
-            }
-            .notification-container::-webkit-scrollbar {
-                width: 5px;
-            }
-            .notification-container::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            .notification-container::-webkit-scrollbar-thumb {
-                background-color: rgba(0,0,0,0.2);
-                border-radius: 10px;
-            }
-            .notification-item {
-                background: #fff;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                padding: 12px 15px;
-                animation: notification-slide-in 0.3s ease-out;
-                transition: transform 0.2s, opacity 0.2s;
-                width: 100%;
-                position: relative;
-                border-left: 4px solid #4CAF50;
-            }
-            .notification-item.closing {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-            .notification-item.error {
-                border-left-color: #f44336;
-            }
-            .notification-item.warning {
-                border-left-color: #ff9800;
-            }
-            .notification-item.info {
-                border-left-color: #2196F3;
-            }
-            .notification-item.reminder {
-                border-left-color: #7e57c2;
-            }
-            .notification-item.reminder.overdue {
-                border-left-color: #ff5722;
-                background: #fff3e0;
-            }
-            .overdue-text {
-                font-size: 12px;
-                color: #ff5722;
-                font-style: italic;
-                margin-top: 4px;
-            }
-            .notification-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 8px;
-            }
-            .notification-title {
-                font-weight: 600;
-                font-size: 14px;
-                color: #333;
-                margin: 0;
-            }
-            .notification-close {
-                background: none;
-                border: none;
-                cursor: pointer;
-                color: #999;
-                font-size: 16px;
-                padding: 0;
-                margin: 0;
-                line-height: 1;
-            }
-            .notification-content {
-                color: #555;
-                font-size: 13px;
-                word-break: break-word;
-            }
-            .notification-actions {
-                display: flex;
-                justify-content: flex-end;
-                margin-top: 8px;
-                gap: 8px;
-            }
-            .notification-actions button {
-                background: none;
-                border: none;
-                font-size: 13px;
-                cursor: pointer;
-                padding: 2px 8px;
-                border-radius: 4px;
-            }
-            .notification-actions .primary {
-                color: #2196F3;
-                font-weight: 600;
-            }
-            .notification-actions .secondary {
-                color: #757575;
-            }
-            @keyframes notification-slide-in {
-                from {
-                    transform: translateX(400px);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
-            }
-            body.dark-theme .notification-item {
-                background: #333;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            }
-            body.dark-theme .notification-title {
-                color: #f1f1f1;
-            }
-            body.dark-theme .notification-content {
-                color: #ccc;
-            }
-            body.dark-theme .notification-close {
-                color: #aaa;
-            }
-            body.dark-theme .notification-actions .primary {
-                color: #64B5F6;
-            }
-            body.dark-theme .notification-actions .secondary {
-                color: #bdbdbd;
-            }
-            body.dark-theme .notification-item.reminder.overdue {
-                background: #3e2723;
-            }
-            body.dark-theme .overdue-text {
-                color: #ff8a65;
-            }
-        `;
-        document.head.appendChild(style);
     }
     if (!notificationCheckInterval) {
         setTimeout(checkReminders, 2000);
@@ -310,10 +161,13 @@ function showReminderNotificationUI(options) {
             <button type="button" class="primary" onclick="openNoteFromReminder(${reminder.note_id}, '${notificationId}')">Открыть</button>
         </div>
     `;
-    if (isOverdue) {
-        notification.style.borderLeftColor = '#ff5722';
-    }
+    
     notificationContainer.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
     activeNotifications.push({
         id: notificationId,
         element: notification,
@@ -398,15 +252,21 @@ function showNotification(message, type = 'info', duration = 3000) {
     }
     const notification = document.createElement('div');
     notification.id = notificationId;
-    notification.className = `notification alert bg-${type === 'info' ? 'info' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} ${type === 'warning' ? 'text-dark' : 'text-white'} d-flex align-items-center fade show mb-2`;
-    notification.style.cssText = 'border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; width: 300px;';
+    notification.className = `notification notification-${type} show`;
+    
     notification.innerHTML = `
-        <i class="fas ${icon} me-2" style="font-size: 1.2rem;"></i>
-        <div class="flex-grow-1" style="font-size: 0.9rem;">${message}</div>
-        <button type="button" class="btn-close btn-close-white ms-3" data-bs-dismiss="alert" aria-label="Close" style="font-size: 0.8rem;"></button>
-        <div class="notification-progress-bar"></div>
+        <div class="notification-content">
+            <i class="fas ${icon} notification-icon"></i>
+            <div class="notification-message">${message}</div>
+            <button type="button" class="notification-close-btn" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="notification-progress-bar active" style="animation-duration: ${duration}ms;"></div>
     `;
+    
     notificationContainer.appendChild(notification);
+    
     const notifObj = {
         id: notificationId,
         element: notification,
@@ -415,25 +275,43 @@ function showNotification(message, type = 'info', duration = 3000) {
         timeout: null
     };
     activeNotifications.push(notifObj);
+    
+    const closeBtn = notification.querySelector('.notification-close-btn');
+    closeBtn.addEventListener('click', () => {
+        hideNotification(notificationId);
+    });
+    
+    if (duration > 0) {
+        notifObj.timeout = setTimeout(() => {
+            hideNotification(notificationId);
+        }, duration);
+    }
     setTimeout(() => {
         notification.classList.add('show');
     }, 10);
-    if (duration > 0) {
-        const progressBar = notification.querySelector('.notification-progress-bar');
-        progressBar.style.animationDuration = `${duration}ms`;
-        progressBar.classList.add('active');
-        notifObj.timeout = setTimeout(() => {
-            closeNotification(notificationId);
-        }, duration);
-    }
-    const closeBtn = notification.querySelector('.btn-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            closeNotification(notificationId);
-        });
-    }
+    
     notificationContainer.scrollTop = notificationContainer.scrollHeight;
     return notificationId;
+}
+
+function hideNotification(id) {
+    const notificationIndex = activeNotifications.findIndex(n => n.id === id);
+    if (notificationIndex !== -1) {
+        const notificationObj = activeNotifications[notificationIndex];
+        const notification = notificationObj.element;
+        if (notification) {
+            notification.classList.add('hiding');
+            if (notificationObj.timeout) {
+                clearTimeout(notificationObj.timeout);
+            }
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+                activeNotifications.splice(notificationIndex, 1);
+            }, 300);
+        }
+    }
 }
 
 function closeNotification(id) {

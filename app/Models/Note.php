@@ -24,39 +24,50 @@ class Note extends Model
         'version_history' => 'array',
     ];
     
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+    
     public static function active()
     {
         return self::where('is_deleted', false)
-                   ->where('is_archived', false);
+                   ->where('is_archived', false)
+                   ->where('user_id', auth()->id());
     }
     
     public static function archived()
     {
         return self::where('is_archived', true)
-                   ->where('is_deleted', false);
+                   ->where('is_deleted', false)
+                   ->where('user_id', auth()->id());
     }
     
     public static function trashed()
     {
-        return self::where('is_deleted', true);
+        return self::where('is_deleted', true)
+                   ->where('user_id', auth()->id());
     }
     
     public static function withReminders()
     {
         return self::where('is_deleted', false)
-                   ->whereNotNull('reminder_at');
+                   ->whereNotNull('reminder_at')
+                   ->where('user_id', auth()->id());
     }
     
     public static function byFolder($folder)
     {
         return self::where('is_deleted', false)
-                   ->where('folder', $folder);
+                   ->where('folder', $folder)
+                   ->where('user_id', auth()->id());
     }
     
     public static function byTag($tag)
     {
         return self::where('is_deleted', false)
-                   ->where('tags', 'like', "%$tag%");
+                   ->where('tags', 'like', "%$tag%")
+                   ->where('user_id', auth()->id());
     }
     
     public function addVersion()

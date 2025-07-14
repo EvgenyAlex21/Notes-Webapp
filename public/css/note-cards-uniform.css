@@ -1,0 +1,75 @@
+.notes-container .note-item,
+.notes-container .note-wrapper {
+    min-height: 280px !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.note-item .row,
+.note-wrapper .row {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.note-item .col-12,
+.note-wrapper .col-12 {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}
+
+.note-item .note-header,
+.note-item .note-meta,
+.note-item .tags-container {
+    flex-shrink: 0 !important;
+}
+
+.note-item .note-description {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    margin-bottom: 15px !important;
+}
+
+.note-item .note-content-preview {
+    max-height: 120px !important;
+    overflow: hidden !important;
+}
+
+.note-item .d-flex.justify-content-between.align-items-center:last-child {
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+}
+
+.note-item .note-files {
+    margin-top: auto !important;
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .note-item,
+    .note-wrapper {
+        min-height: 240px !important;
+    }
+    
+    .note-item .note-content-preview {
+        max-height: 100px !important;
+    }
+}
+
+.dark-theme .note-item .row,
+.dark-theme .note-wrapper .row {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.dark-theme .note-item .col-12,
+.dark-theme .note-wrapper .col-12 {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+}

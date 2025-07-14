@@ -20,13 +20,13 @@ class MobileInitializer {
             
             if (typeof MobileResponsiveManager !== 'undefined') {
                 window.mobileResponsiveManager = new MobileResponsiveManager();
-                console.log('✅ Mobile Responsive Manager initialized');
+                console.log('Mobile Responsive Manager initialized');
             }
             
             
             if (typeof AdvancedMobileFeatures !== 'undefined' && this.isMobile()) {
                 window.advancedMobileFeatures = new AdvancedMobileFeatures();
-                console.log('✅ Advanced Mobile Features initialized');
+                console.log('Advanced Mobile Features initialized');
             }
             
             
@@ -36,10 +36,10 @@ class MobileInitializer {
             this.addMobileClasses();
             
             this.initialized = true;
-            console.log('✅ Mobile adaptation fully initialized');
+            console.log('Mobile adaptation fully initialized');
             
         } catch (error) {
-            console.error('❌ Error initializing mobile components:', error);
+            console.error('Error initializing mobile components:', error);
         }
     }
     
@@ -112,7 +112,7 @@ new MobileInitializer();
 
 setTimeout(() => {
     if (!window.mobileResponsiveManager && window.innerWidth <= 768) {
-        console.warn('⚠️ Mobile manager not initialized, retrying...');
+        console.warn('Mobile manager not initialized, retrying...');
         new MobileInitializer();
     }
 }, 1000);

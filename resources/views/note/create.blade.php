@@ -19,6 +19,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/unified-notifications.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notification-text-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/file-viewer.css') }}">
     <link rel="stylesheet" href="{{ asset('css/note-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
@@ -26,6 +29,7 @@
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -35,6 +39,7 @@
     <script src="{{ asset('js/mobile-responsive.js') }}"></script>
     <script src="{{ asset('js/advanced-mobile.js') }}"></script>
     <script src="{{ asset('js/mobile-init.js') }}"></script>
+    <script src="{{ asset('js/counter-updater.js') }}"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -351,22 +356,56 @@
             color: #f1f3f5;
             background-color: #2c3034;
         }
+        
+        .user-mini-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #dee2e6;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h3 mb-0">
+                <h1 class="h3 mb-0 order-1">
                     <i class="fas fa-plus me-2"></i> 
                     <span class="fw-bold">Создание заметки</span>
                 </h1>
-                <a href="/notes" class="btn btn-outline-secondary d-none-mobile">
-                    <i class="fas fa-arrow-left"></i> Назад к списку
-                </a>
-                <a href="/notes" class="btn btn-outline-secondary d-block-mobile d-none">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
+                <div class="d-flex align-items-center ms-auto order-2">
+                    <a href="/notes" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">Назад к списку</span>
+                    </a>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                            @else
+                                <i class="fas fa-user-circle me-1"></i>
+                            @endif
+                            {{ Auth::user()->name }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li class="dropdown-item text-muted">{{ Auth::user()->email }}</li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a href="{{ route('profile.edit') }}" class="dropdown-item"><i class="fas fa-user-cog me-1"></i> Профиль</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt me-1"></i> Выйти
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    <a href="/notes" class="btn btn-outline-secondary d-block-mobile d-none">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

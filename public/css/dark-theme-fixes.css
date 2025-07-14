@@ -530,3 +530,72 @@
 .dark-theme .nav-tabs .nav-link:not(.active) {
     color: var(--dark-text-muted);
 }
+
+.dark-theme .notification,
+.dark-theme .alert:not(.alert-secondary) {
+    background-color: var(--dark-bg-secondary) !important;
+    color: var(--dark-text-primary) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid var(--dark-border-color) !important;
+}
+
+.dark-theme .notification-success,
+.dark-theme .alert-success {
+    background-color: rgba(16, 185, 129, 0.15) !important;
+    border-left-color: #10b981 !important;
+    color: #6ee7b7 !important;
+}
+
+.dark-theme .notification-danger,
+.dark-theme .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    border-left-color: #ef4444 !important;
+    color: #fca5a5 !important;
+}
+
+.dark-theme .notification-warning,
+.dark-theme .alert-warning {
+    background-color: rgba(245, 158, 11, 0.15) !important;
+    border-left-color: #f59e0b !important;
+    color: #fcd34d !important;
+}
+
+.dark-theme .notification-info,
+.dark-theme .alert-info {
+    background-color: rgba(59, 130, 246, 0.15) !important;
+    border-left-color: #3b82f6 !important;
+    color: #93c5fd !important;
+}
+
+.dark-theme .notification-close-btn,
+.dark-theme .alert .btn-close {
+    color: var(--dark-text-muted) !important;
+    filter: invert(1) opacity(0.7) !important;
+}
+
+.dark-theme .notification-close-btn:hover,
+.dark-theme .alert .btn-close:hover {
+    filter: invert(1) opacity(1) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark-theme .notification-icon,
+.dark-theme .alert i:first-child,
+.dark-theme .alert .fas:first-child {
+    filter: brightness(1.2) !important;
+}
+
+.dark-theme .mobile-toast.success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #ffffff !important;
+}
+
+.dark-theme .mobile-toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #ffffff !important;
+}
+
+.dark-theme .mobile-toast.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #ffffff !important;
+}

@@ -7,12 +7,13 @@ use App\Models\Note;
 use App\Models\Folder;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class NoteController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Note::query();
+        $query = Note::query()->where('user_id', Auth::id());
         
         if ($request->has('trash')) {
             $query->where('is_deleted', true);
@@ -29,12 +30,14 @@ class NoteController extends Controller
                 
                 $archiveCount = Note::where('is_archived', true)
                                    ->where('is_deleted', false)
+                                   ->where('user_id', Auth::id())
                                    ->count();
                 
                 \Log::info('Количество архивных заметок в базе: ' . $archiveCount);
                 
                 $archiveNotes = Note::where('is_archived', true)
                                    ->where('is_deleted', false)
+                                   ->where('user_id', Auth::id())
                                    ->get();
                 
                 \Log::info('Архивные заметки:', ['notes' => $archiveNotes->toArray()]);
@@ -204,6 +207,7 @@ class NoteController extends Controller
         }
         
         $data['is_deleted'] = false;
+        $data['user_id'] = Auth::id();
         
         $uploadedFiles = [];
         $uploadFiles = null;

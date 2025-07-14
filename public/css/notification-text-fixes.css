@@ -1,0 +1,137 @@
+.notification,
+.alert:not(.alert-dismissible),
+.alert-dismissible,
+.toast,
+.toast-body {
+    color: #212529 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #dee2e6 !important;
+    text-shadow: none !important;
+}
+
+.notification-success,
+.alert-success {
+    color: #0f5132 !important;
+    background-color: #ffffff !important;
+    border-left: 4px solid #198754 !important;
+}
+
+.notification-danger,
+.alert-danger {
+    color: #842029 !important;
+    background-color: #ffffff !important;
+    border-left: 4px solid #dc3545 !important;
+}
+
+.notification-warning,
+.alert-warning {
+    color: #664d03 !important;
+    background-color: #ffffff !important;
+    border-left: 4px solid #ffc107 !important;
+}
+
+.notification-info,
+.alert-info {
+    color: #055160 !important;
+    background-color: #ffffff !important;
+    border-left: 4px solid #0dcaf0 !important;
+}
+
+.notification-icon,
+.alert i,
+.alert .fas,
+.alert .far {
+    color: inherit !important;
+    opacity: 0.8 !important;
+}
+
+.notification-close-btn,
+.btn-close,
+.alert .btn-close {
+    color: #000000 !important;
+    opacity: 0.5 !important;
+    background: none !important;
+    border: none !important;
+    filter: invert(1) !important;
+}
+
+.notification-close-btn:hover,
+.btn-close:hover,
+.alert .btn-close:hover {
+    opacity: 0.8 !important;
+}
+
+.dark-theme .notification,
+.dark-theme .alert:not(.alert-dismissible),
+.dark-theme .alert-dismissible,
+.dark-theme .toast,
+.dark-theme .toast-body {
+    color: #f8f9fa !important;
+    background-color: #343a40 !important;
+    border: 1px solid #495057 !important;
+}
+
+.dark-theme .notification-success,
+.dark-theme .alert-success {
+    color: #75dd8c !important;
+    background-color: #343a40 !important;
+}
+
+.dark-theme .notification-danger,
+.dark-theme .alert-danger {
+    color: #ea868f !important;
+    background-color: #343a40 !important;
+}
+
+.dark-theme .notification-warning,
+.dark-theme .alert-warning {
+    color: #ffda6a !important;
+    background-color: #343a40 !important;
+}
+
+.dark-theme .notification-info,
+.dark-theme .alert-info {
+    color: #6ea8fe !important;
+    background-color: #343a40 !important;
+}
+
+.dark-theme .notification-close-btn,
+.dark-theme .btn-close,
+.dark-theme .alert .btn-close {
+    color: #ffffff !important;
+    filter: invert(1) brightness(0) saturate(100%) invert(89%) sepia(6%) saturate(199%) hue-rotate(201deg) brightness(97%) contrast(96%) !important;
+}
+
+.swal2-popup,
+.swal2-modal,
+.modal-content {
+    color: #212529 !important;
+}
+
+.dark-theme .swal2-popup,
+.dark-theme .swal2-modal,
+.dark-theme .modal-content {
+    color: #f8f9fa !important;
+    background-color: #343a40 !important;
+}
+
+.toast-header {
+    color: #212529 !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark-theme .toast-header {
+    color: #f8f9fa !important;
+    background-color: rgba(52, 58, 64, 0.85) !important;
+}
+
+.notification *,
+.alert * {
+    color: inherit !important;
+}
+
+.notification-progress-bar,
+.progress-bar {
+    background-color: currentColor !important;
+    opacity: 0.3 !important;
+}

@@ -3145,7 +3145,6 @@ function safeInitBootstrap() {
 }
 
 /**
- * Создает модальное окно подтверждения действия в едином стиле
  * @param {Object} options 
  * @param {string} options.id 
  * @param {string} options.title 
