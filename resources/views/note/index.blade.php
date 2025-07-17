@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
@@ -720,35 +721,32 @@
 <body>
     <div class="header">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <h1 class="h3 mb-0 order-1">
+            <div class="d-flex justify-content-between align-items-center header-mobile-container">
+                <h1 class="h3 mb-0">
                     <i class="{{ isset($trashMode) && $trashMode ? 'fas fa-trash' : (isset($archiveMode) && $archiveMode ? 'fas fa-archive' : (isset($folderMode) && $folderMode ? 'fas fa-folder' : 'fas fa-sticky-note')) }} me-2"></i> 
                     <span class="fw-bold">{{ isset($trashMode) && $trashMode ? 'Корзина' : (isset($archiveMode) && $archiveMode ? 'Архив' : (isset($folderMode) && $folderMode ? '' . $folderName : 'Заметки')) }}</span>
                 </h1>
-                <div class="d-flex align-items-center ms-auto order-2">
+                <div class="d-flex align-items-center header-mobile-actions">
                     @if(isset($trashMode) && $trashMode)
-                        <button id="empty-trash" class="btn btn-danger d-none-mobile">
-                            <i class="fas fa-trash-alt me-2"></i> Очистить корзину
+                        <button id="empty-trash" class="btn btn-danger mobile-action-btn">
+                            <i class="fas fa-trash-alt"></i> <span>Очистить корзину</span>
                         </button>
                     @else
-                        <a href="/notes/create" class="btn btn-primary d-flex align-items-center d-none-mobile">
-                            <i class="fas fa-plus me-2"></i> Создать заметку
-                        </a>
-                        <a href="/notes/create" class="btn btn-primary d-block-mobile d-md-none">
-                            <i class="fas fa-plus"></i>
+                        <a href="/notes/create" class="btn btn-primary mobile-action-btn">
+                            <i class="fas fa-plus"></i> <span>Создать заметку</span>
                         </a>
                     @endif
                     <div class="dropdown ms-2">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle mobile-action-btn avatar-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar calendar-avatar">
                             @else
-                                <i class="fas fa-user-circle me-1"></i>
+                                <i class="fas fa-user-circle"></i>
                             @endif
                             <span>{{ Auth::user()->name }}</span>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                            <li class="dropdown-item text-muted">{{ Auth::user()->email }}</li>
+                        <ul class="dropdown-menu dropdown-menu-end mobile-dropdown-menu" aria-labelledby="userDropdown">
+                            <li class="dropdown-item text-muted text-truncate">{{ Auth::user()->email }}</li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a href="{{ route('profile.edit') }}" class="dropdown-item"><i class="fas fa-user-cog me-1"></i> Профиль</a></li>
                             <li><hr class="dropdown-divider"></li>

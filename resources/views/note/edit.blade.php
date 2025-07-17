@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/file-viewer.js') }}"></script>
@@ -451,9 +452,9 @@
                         <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">Назад к списку</span>
                     </a>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle mobile-action-btn avatar-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar calendar-avatar">
                             @else
                                 <i class="fas fa-user-circle me-1"></i>
                             @endif

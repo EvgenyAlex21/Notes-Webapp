@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -379,13 +380,13 @@
                         <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">Назад к списку</span>
                     </a>
                     <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle mobile-action-btn avatar-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar calendar-avatar">
                             @else
                                 <i class="fas fa-user-circle me-1"></i>
                             @endif
-                            {{ Auth::user()->name }}
+                            <span>{{ Auth::user()->name }}</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li class="dropdown-item text-muted">{{ Auth::user()->email }}</li>
@@ -402,9 +403,6 @@
                             </li>
                         </ul>
                     </div>
-                    <a href="/notes" class="btn btn-outline-secondary d-block-mobile d-none">
-                        <i class="fas fa-arrow-left"></i>
-                    </a>
                 </div>
             </div>
         </div>

@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="/images/logo.png?v=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+    
     <link rel="stylesheet" href="{{ asset('css/note-selection.css') }}">
     <link rel="stylesheet" href="{{ asset('css/scroll-top.css') }}">
     <link rel="stylesheet" href="{{ asset('css/view-button.css') }}">
@@ -31,6 +31,8 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/calendar-mobile.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/calendar-avatar-fixes.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
@@ -404,23 +406,23 @@
 <body>
     <div class="header">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <h1 class="h3 mb-0 order-1">
+            <div class="d-flex justify-content-between align-items-center header-mobile-container">
+                <h1 class="h3 mb-0">
                     <i class="fas fa-calendar me-2"></i>
                     <span class="fw-bold">Календарь</span>
                 </h1>
-                <div class="d-flex align-items-center ms-auto order-2">
-                    <a href="/notes" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">Назад к списку</span>
+                <div class="d-flex align-items-center ms-auto header-mobile-actions">
+                    <a href="/notes" class="btn btn-outline-secondary mobile-action-btn">
+                        <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">Назад</span>
                     </a>
                     <div class="dropdown ms-2">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-outline-secondary dropdown-toggle mobile-action-btn avatar-button" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                             @if(Auth::user()->avatar && Auth::user()->avatar !== 'default-avatar.png')
-                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar me-1">
+                                <img src="{{ Auth::user()->avatar_url }}" alt="{{ Auth::user()->name }}" class="user-mini-avatar calendar-avatar">
                             @else
-                                <i class="fas fa-user-circle me-1"></i>
+                                <i class="fas fa-user-circle"></i>
                             @endif
-                            {{ Auth::user()->name }}
+                            <span class="d-none-mobile">{{ Auth::user()->name }}</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li class="dropdown-item text-muted">{{ Auth::user()->email }}</li>
