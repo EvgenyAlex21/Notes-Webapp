@@ -5,6 +5,32 @@ let currentTheme = localStorage.getItem('theme') || 'light';
 let statsData = {};
 let viewNoteModal = null;
 
+function countNotesExcludingFolders() {
+    const allNotes = window.notesData || [];
+    
+    const notesNotInFolders = allNotes.filter(note => 
+        !note.folder && 
+        !note.is_archived && 
+        !note.is_deleted);
+    
+    console.log('Подсчет заметок не в папках:', {
+        total: allNotes.length,
+        filtered: notesNotInFolders.length
+    });
+    
+    if (allNotes.length > 0) {
+        return notesNotInFolders.length;
+    }
+    
+    if (window.location.pathname === '/notes' || window.location.pathname === '/notes/') {
+        return $('.note-item').length;
+    }
+    
+    return 0;
+}
+
+window.countNotesExcludingFolders = countNotesExcludingFolders;
+
 $(document).ready(function() {
     if (typeof initNotificationsSystem === 'function') {
         initNotificationsSystem();
@@ -416,6 +442,7 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
         dataType: 'json',
         success: function(response) {
             const notes = response.data;
+            window.notesData = notes;
             console.log('Загружено заметок:', notes.length, notes);
             console.log('URL запроса:', url);
             console.log('Режим архива:', archiveMode, 'Режим корзины:', trashMode, 'Режим папки:', folderMode);
@@ -497,6 +524,14 @@ function loadAllNotes(trashMode = false, folder = null, archiveModeParam = false
             }
             if ($('.counter-pinned').length) {
                 $('.counter-pinned').text(window.currentNotesCount.pinned);
+            }
+            
+            const mainPageNotesCount = countNotesExcludingFolders();
+            
+            if (window.location.pathname === '/notes' || window.location.pathname === '/notes/') {
+                $('#all-notes-count').text(filteredNotes.length);
+            } else {
+                $('#all-notes-count').text(mainPageNotesCount);
             }
             
             if ($('#counter-all').length) {
@@ -2356,10 +2391,10 @@ function updateStatsDisplay() {
         console.log('Обновляем статистику:', statsData);
         
         const visibleNotes = {
-            total: $('.note-wrapper:visible').length, 
-            active: $('.note-wrapper:visible:not(.completed)').length,
-            completed: $('.note-wrapper:visible.completed').length,
-            pinned: $('.note-wrapper:visible.pinned').length
+            total: $('.note-wrapper:visible, .note-item:visible').length, 
+            active: $('.note-wrapper:visible:not(.completed), .note-item:visible:not(.completed)').length,
+            completed: $('.note-wrapper:visible.completed, .note-item:visible.completed').length,
+            pinned: $('.note-wrapper:visible.pinned, .note-item:visible.pinned').length
         };
         
         const folderMode = window.location.pathname.match(/\/notes\/folder\/(.+)/) !== null;
@@ -2367,11 +2402,16 @@ function updateStatsDisplay() {
         
         const trashMode = (typeof pageData !== 'undefined' && pageData.trashMode) || window.location.pathname === '/notes/trash';
         const archiveMode = (typeof pageData !== 'undefined' && pageData.archiveMode) || window.location.pathname === '/notes/archive';
+        const isMainPage = window.location.pathname === '/notes' || window.location.pathname === '/notes/';
         
         $('#total-notes').text(`Всего: ${visibleNotes.total}`);
         $('#completed-notes').text(`Выполнено: ${visibleNotes.completed}`);
         $('#active-notes').text(`Активно: ${visibleNotes.active}`);
         $('#pinned-notes').text(`Закреплено: ${visibleNotes.pinned}`);
+        
+        if (isMainPage) {
+            $('#all-notes-count').text(visibleNotes.total);
+        }
         
         $('.counter-total').text(visibleNotes.total);
         $('.counter-completed').text(visibleNotes.completed);

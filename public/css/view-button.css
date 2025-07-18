@@ -46,3 +46,42 @@ body.dark-theme .view-more-badge:hover {
     opacity: 1 !important;
     margin-top: 10px;
 }
+
+.btn i.fas,
+.btn i.fa,
+.btn i.far,
+.btn i.fab,
+.btn-primary i,
+.btn-secondary i,
+.btn-danger i,
+.btn-success i,
+.btn-warning i,
+.btn-info i,
+.btn-outline-primary i,
+.btn-outline-secondary i,
+.btn-outline-danger i,
+.btn-outline-success i,
+.btn-outline-warning i,
+.btn-outline-info i {
+    margin-right: 8px;
+}
+
+.btn .fa-arrow-left {
+    margin-right: 10px;
+}
+
+.btn .fa-plus {
+    margin-right: 8px;
+}
+
+.btn .fa-trash-alt,
+.btn .fa-trash {
+    margin-right: 8px;
+}
+
+.btn i.fa-chevron-right,
+.btn i.fa-arrow-right,
+.btn i.fa-angle-right {
+    margin-right: 0;
+    margin-left: 8px;
+}

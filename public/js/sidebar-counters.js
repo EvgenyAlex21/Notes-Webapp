@@ -17,7 +17,16 @@ $(document).ready(function() {
         success: function(response) {
             if (response && response.data) {
                 sidebarStatsData = response.data;
-                $('#all-notes-count').text(sidebarStatsData.total || 0);
+                
+                if (window.location.pathname === '/notes' || window.location.pathname === '/notes/') {
+                    setTimeout(function() {
+                        const visibleNotesCount = $('.note-item').length;
+                        $('#all-notes-count').text(visibleNotesCount);
+                    }, 100);
+                } else {
+                    $('#all-notes-count').text(sidebarStatsData.total || 0);
+                }
+                
                 $('#archive-notes-count').text(sidebarStatsData.archived || 0);
                 $('#trash-notes-count').text(sidebarStatsData.trashed || 0);
                 $('#calendar-notes-count').text(sidebarStatsData.calendar || 0);
@@ -279,17 +288,42 @@ function updateCountersFromAPI(statsSource, currentPath) {
     console.log('Обновлены счетчики из API для невидимых разделов');
 }
 
+function countNotesExcludingFolders() {
+    const allNotes = window.notesData || [];
+    
+    const notesNotInFolders = allNotes.filter(note => 
+        !note.folder && 
+        !note.is_archived && 
+        !note.is_deleted);
+    
+    console.log('Подсчет заметок не в папках:', {
+        total: allNotes.length,
+        filtered: notesNotInFolders.length
+    });
+    
+    if (allNotes.length > 0) {
+        return notesNotInFolders.length;
+    }
+    
+    if (window.location.pathname === '/notes' || window.location.pathname === '/notes/') {
+        return $('.note-item').length;
+    }
+
+    return 0;
+}
+
 function updateMainPageCounterExcludingFolders(statsSource) {
     const visibleNotesCount = $('.note-item').length;
+    const activeNotesCount = countNotesExcludingFolders();
     
-    if (visibleNotesCount > 0) {
-        $('#all-notes-count').text(visibleNotesCount);
-        console.log('Счетчик "Все заметки" на главной странице (по видимым заметкам):', visibleNotesCount);
-    } else {
-        const totalActive = Math.max(0, statsSource.active || 0);
-        $('#all-notes-count').text(totalActive);
-        console.log('Счетчик "Все заметки" на главной странице (из API):', totalActive);
-    }
+    const countToUse = window.location.pathname === '/notes' || window.location.pathname === '/notes/' 
+        ? visibleNotesCount 
+        : activeNotesCount;
+    
+    $('#all-notes-count').text(countToUse);
+    console.log('Счетчик "Все заметки" на главной странице (по видимым заметкам):', countToUse);
+    
+    return countToUse;
 }
 
 function updateFolderPageCounter() {
@@ -315,15 +349,35 @@ function updateFolderPageCounter() {
 function countRealNotesOnPage() {
     const pagePath = window.location.pathname;
     const statsSource = window.statsData || sidebarStatsData;
-    if (pagePath === '/notes' || pagePath === '/notes/') {
-        updateMainPageCounterExcludingFolders(statsSource);
-        updateCountersFromAPI(statsSource, pagePath);
-    } else if (pagePath.includes('/notes/folder')) {
-        updateFolderPageCounter();
-        updateCountersFromAPI(statsSource, pagePath);
-    } else {
-        updateCurrentPageCounter(pagePath, statsSource);
+    
+    try {
+        if (pagePath === '/notes' || pagePath === '/notes/') {
+            updateMainPageCounterExcludingFolders(statsSource);
+            updateCountersFromAPI(statsSource, pagePath);
+        } else if (pagePath.includes('/notes/folder')) {
+            updateFolderPageCounter();
+            updateCountersFromAPI(statsSource, pagePath);
+        } else if (pagePath === '/notes/calendar') {
+            if (statsSource) {
+                $('#all-notes-count').text(statsSource.active || 0);
+                $('#archive-notes-count').text(statsSource.archived || 0);
+                $('#trash-notes-count').text(statsSource.trashed || 0);
+                $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+            }
+        } else {
+            updateCurrentPageCounter(pagePath, statsSource);
+        }
+    } catch (err) {
+        console.warn('Ошибка при обновлении счетчиков:', err);
+        
+        if (statsSource) {
+            $('#all-notes-count').text(statsSource.active || 0);
+            $('#archive-notes-count').text(statsSource.archived || 0);
+            $('#trash-notes-count').text(statsSource.trashed || 0);
+            $('#calendar-notes-count').text(statsSource.with_reminders || 0);
+        }
     }
+    
     $('.notes-count').each(function() {
         $(this).removeClass('d-none');
     });
@@ -332,6 +386,10 @@ function countRealNotesOnPage() {
 function updateCurrentPageCounter(pagePath, statsSource) {
     let pageNotesCount = 0;
     try {
+        if (typeof countNotesExcludingFolders !== 'function') {
+            console.warn('Функция countNotesExcludingFolders не определена, используем данные из API');
+        }
+        
         if (pagePath.includes('/notes/create') || pagePath.includes('/notes/edit')) {
             if (statsSource) {
                 const totalActive = Math.max(0, statsSource.active || 0);
@@ -373,27 +431,39 @@ function updateCurrentPageCounter(pagePath, statsSource) {
             }
         }
         const countToUse = !isNaN(pageCount) && pageCount > 0 ? pageCount : notesOnPage;
+        let mainPageCount = 0;
+        
+        if (window.location.pathname === '/notes/calendar') {
+            mainPageCount = statsSource ? statsSource.active || 0 : 0;
+        } else {
+            try {
+                mainPageCount = typeof countNotesExcludingFolders === 'function' 
+                    ? countNotesExcludingFolders() 
+                    : (statsSource ? statsSource.active || 0 : 0);
+            } catch (e) {
+                console.warn('Ошибка при вызове countNotesExcludingFolders:', e);
+                mainPageCount = statsSource ? statsSource.active || 0 : 0;
+            }
+        }
+        
         if (pagePath.includes('/notes/archive')) {
             $('#archive-notes-count').text(countToUse);
             if (statsSource) {
-                const totalActive = Math.max(0, statsSource.active || 0);
-                $('#all-notes-count').text(totalActive);
+                $('#all-notes-count').text(mainPageCount);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
                 $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/trash') || pagePath.includes('/notes/new-trash')) {
             $('#trash-notes-count').text(countToUse);
             if (statsSource) {
-                const totalActive = Math.max(0, statsSource.active || 0);
-                $('#all-notes-count').text(totalActive);
+                $('#all-notes-count').text(mainPageCount);
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#calendar-notes-count').text(statsSource.calendar || 0);
             }
         } else if (pagePath.includes('/notes/calendar')) {
             $('#calendar-notes-count').text(countToUse);
             if (statsSource) {
-                const totalActive = Math.max(0, statsSource.active || 0);
-                $('#all-notes-count').text(totalActive);
+                $('#all-notes-count').text(mainPageCount);
                 $('#archive-notes-count').text(statsSource.archived || 0);
                 $('#trash-notes-count').text(statsSource.trashed || 0);
             }
@@ -409,13 +479,23 @@ function updateCurrentPageCounter(pagePath, statsSource) {
 function updateMainPageCounter() {
     const statsSource = window.statsData || sidebarStatsData;
     
-    if (statsSource && statsSource.total !== undefined) {
-        const totalActive = Math.max(0, statsSource.active || 0);
-        $('#all-notes-count').text(totalActive);
+    if (window.location.pathname === '/notes' || window.location.pathname === '/notes/') {
+        const visibleNotesCount = $('.note-item').length;
+        $('#all-notes-count').text(visibleNotesCount);
+        
+        if (statsSource && statsSource.total !== undefined) {
+            $('#archive-notes-count').text(statsSource.archived || 0);
+            $('#trash-notes-count').text(statsSource.trashed || 0);
+            $('#calendar-notes-count').text(statsSource.calendar || 0);
+        }
+        return visibleNotesCount;
+    } else if (statsSource && statsSource.total !== undefined) {
+        const mainPageCount = countNotesExcludingFolders();
+        $('#all-notes-count').text(mainPageCount);
         $('#archive-notes-count').text(statsSource.archived || 0);
         $('#trash-notes-count').text(statsSource.trashed || 0);
         $('#calendar-notes-count').text(statsSource.calendar || 0);
-        return totalActive;
+        return mainPageCount;
     }
     
     const totalNotesElement = $('#total-notes');

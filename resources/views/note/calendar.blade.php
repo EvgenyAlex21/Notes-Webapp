@@ -528,11 +528,10 @@
             
             <div class="col-md-9">
                 <div class="calendar-content">
-                    <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                    <div class="alert alert-info d-flex align-items-center mb-3" role="alert" style="position: relative; left: -15px; width: calc(100% + 30px); border-left: none; border-right: none; border-radius: 0; padding: 10px 20px;">
                         <i class="fas fa-info-circle me-2"></i>
-                        <small>
-                            <strong>Подсказка:</strong> Кликните по дню для создания заметки с этой датой. 
-                            Кликните по событию для просмотра заметки. Используйте цветовые фильтры для отображения заметок по приоритету.
+                        <small style="word-break: normal; white-space: normal; overflow-wrap: break-word; display: block; width: 100%;">
+                            <strong>Подсказка:</strong> Кликните по дню для создания заметки с этой датой. Кликните по событию для просмотра заметки. Используйте цветовые фильтры для отображения заметок по приоритету.
                         </small>
                     </div>
                     <div id="calendar"></div>
