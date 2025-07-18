@@ -29,9 +29,8 @@
     <link rel="stylesheet" href="{{ asset('css/unified-notifications.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/avatar-styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -442,14 +441,15 @@
 <body>
     <div class="header">
         <div class="container">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <h1 class="h3 mb-0 order-1">
-                    <i class="fas fa-user me-2 text-primary"></i> 
-                    <span class="fw-bold">Профиль пользователя</span>
+            <div class="d-flex justify-content-between align-items-center header-mobile-container">
+                <h1 class="h3 mb-0">
+                    <i class="fas fa-user me-2"></i> 
+                    <span class="fw-bold full-title">Профиль пользователя</span>
+                    <span class="fw-bold short-title">Профиль</span>
                 </h1>
-                <div class="d-flex align-items-center ms-auto order-2">
-                    <a href="{{ route('notes.index') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-arrow-left me-1"></i> <span class="d-none-mobile">К заметкам</span>
+                <div class="d-flex align-items-center ms-auto header-mobile-actions">
+                    <a href="{{ route('notes.index') }}" class="btn btn-outline-secondary mobile-action-btn">
+                        <i class="fas fa-arrow-left"></i> <span class="d-none-mobile">К заметкам</span>
                     </a>
                 </div>
             </div>

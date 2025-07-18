@@ -28,11 +28,9 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/calendar-mobile.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/calendar-avatar-fixes.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
@@ -409,7 +407,8 @@
             <div class="d-flex justify-content-between align-items-center header-mobile-container">
                 <h1 class="h3 mb-0">
                     <i class="fas fa-calendar me-2"></i>
-                    <span class="fw-bold">Календарь</span>
+                    <span class="fw-bold full-title">Календарь</span>
+                    <span class="fw-bold short-title">Календарь</span>
                 </h1>
                 <div class="d-flex align-items-center ms-auto header-mobile-actions">
                     <a href="/notes" class="btn btn-outline-secondary mobile-action-btn">

@@ -27,7 +27,6 @@
     <link rel="stylesheet" href="{{ asset('css/dark-theme.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dark-theme-fixes.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sidebar-counters.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/mobile-responsive.css') }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-components.css') }}">
     <link rel="stylesheet" href="{{ asset('css/improved-mobile.css') }}">
     <link rel="stylesheet" href="{{ asset('css/avatar-unified.css') }}">

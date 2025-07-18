@@ -44,7 +44,7 @@ class MobileResponsiveManager {
         }
         
         
-        const header = document.querySelector('.header .d-flex');
+        const header = document.querySelector('.header .d-flex') || document.querySelector('.header .header-mobile-container');
         if (!header) {
             console.warn('Хедер не найден для размещения кнопки меню');
             return;
