@@ -1,5 +1,4 @@
 PHP_COMPOSER/
-project_view/
 *.log
 .DS_Store
 .env
